@@ -1,0 +1,166 @@
+{
+  "schema": "nine65-assessment-remediation-evidence-v1",
+  "assessment_target": "main@924f52edfbcbb52345bfae42de5f244a3a93ffbc",
+  "remediation_source_commit": "1c553f6d723ecf52c4f131ca4060c794b59e52e6",
+  "harness_followup": {
+    "commit": "2e667018006e1882a438d2728fe1d5fc98bbb2d9",
+    "changes": "smoke-contract compatibility and regenerable current modulus ledger; FHE library source unchanged",
+    "files_sha256": {
+      "artifacts/security/modulus_class_audit_current.json": "7c4903cfc8789b9ae8c7fe41670acced2abe97ef39ab2b2e4ad663d72806873d",
+      "scripts/validate_cram_comparative_smoke.py": "d82311407f2acca7138f620c54915606243412b96897e9a97ebdbeff3f92236f",
+      "scripts/test_validate_cram_comparative_smoke.py": "b36421ff4b09bea1c4787eda7ca3a16fd59c95ae92c2ab941b3380627ecd98e6"
+    }
+  },
+  "source_binding": "Source hashes capture the tested working tree before documentation-only changes; earlier dirty-run manifests are preserved verbatim.",
+  "rustc": "rustc 1.89.0 (29483883e 2025-08-04)\nbinary: rustc\ncommit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2\ncommit-date: 2025-08-04\nhost: x86_64-unknown-linux-gnu\nrelease: 1.89.0\nLLVM version: 20.1.7\n",
+  "cgroup_memory_limit_bytes": "8589934592",
+  "local_library": {
+    "passed": 1118,
+    "failed": 0,
+    "ignored": 140,
+    "seconds": "270.95",
+    "command": "cargo test --locked --config profile.test.package.nine65.opt-level=2 -j2 -p nine65 --lib -- --test-threads=2"
+  },
+  "native": {
+    "test": "ops::public_refresh_native::native_public_refresh_current_single_cycle_with_dependent_square",
+    "command": "cargo test --locked --config profile.test.package.nine65.opt-level=2 -j2 -p nine65 --lib ops::public_refresh_native::native_public_refresh_current_single_cycle_with_dependent_square -- --exact --ignored --nocapture --test-threads=1",
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "seconds": "579.60",
+    "refresh_cycles": 1,
+    "following_squares": 1,
+    "work_degree": 8192,
+    "outer_degree": 32768,
+    "plaintext_comparisons": 16384,
+    "ideal_grid_error_checks": 24576,
+    "maximum_measured_scaled_errors": {
+      "input": "762490188487606471",
+      "returned": "1043073383",
+      "following_square": "257071113810960355"
+    },
+    "seed_scope": "same deterministic native fixture; not an independent random sample",
+    "binary_sha256": "445ab07b5d5d9c0126d28979128e2b3a1ea5003e4c86231ac8fb7d88706ba2c3",
+    "memory": {
+      "pid": 76038,
+      "max_observed_proc_vmhwm_kib": 6799296,
+      "samples": 494,
+      "method": "/proc/PID/status VmHWM, polled each second; monitoring began after key generation"
+    }
+  },
+  "timing": {
+    "original_main_finding": {
+      "run_id": 41311607984,
+      "job_id": 124862982875,
+      "control_t": "1.4003",
+      "signal_t": "8.6550",
+      "threshold": 5,
+      "status": "open"
+    },
+    "binary_source_commit": "7ddb2b4b0f301a78c56e322192281a27c36afe6b",
+    "binary_sha256": "a022e609128c7b3668b40c39f715f8eaf0f8ea9727ae4ae2302626b949ae6380",
+    "unchanged_relevant_source": [
+      "crates/nine65/src/arithmetic/montgomery.rs",
+      "crates/nine65/src/security/ct_verification.rs"
+    ],
+    "local_repeats": {
+      "below_threshold": 4,
+      "inconclusive": 1,
+      "measured_signal": 0
+    },
+    "caveat": "No constant-time certification or resolution of the original hosted finding."
+  },
+  "architecture_meter": {
+    "feature": "architecture-meter",
+    "actual_fhe_tests_passed": 1,
+    "core_unit_tests_passed": 13,
+    "phase_lock_tests_passed": 5,
+    "scope": "selected context-owned main and anchor routes; not global instrumentation"
+  },
+  "comparison_contract": {
+    "controls_passed": 21,
+    "smoke_controls_passed": 15,
+    "modulus_controls_passed": 8,
+    "actual_sweep_summary": {
+      "cases": 2,
+      "depth_complete": 2,
+      "depth_stops": 0,
+      "missing_or_invalid_results": 0,
+      "nonzero_exits": 2,
+      "operation_correctness_failures": 0,
+      "process_failures": 0,
+      "unrun": 0,
+      "unsupported": 2,
+      "unverified_operation_evidence": 0,
+      "wrong_plaintext": 0
+    },
+    "strict_runner_returncode": 1,
+    "strict_capability_gate": "unsupported"
+  },
+  "other_checks": [
+    "formatting",
+    "workspace/all-target Clippy with architecture-meter,allow_insecure,serde",
+    "dependency policy",
+    "panic ratchet",
+    "residue architecture scanner",
+    "status routing and security claim self-tests"
+  ],
+  "unsigned_review_packet": {
+    "native_domains": 3,
+    "relations": 7,
+    "named_profiles": 4,
+    "external_attestation": "not_obtained",
+    "joint_setup_confidentiality": "not_established"
+  },
+  "excluded_attempts": [
+    "interrupted unoptimized library run",
+    "Python control repeat missing rustc on PATH; rerun passed"
+  ],
+  "release_commit_acceptance": "not granted; selected release commit must be revalidated",
+  "evidence_sha256": {
+    "architecture-accepted.log.gz": "547b67f069fd655f4c5a439a88a102d5b4bcb87d6a7d3f45603f51341603e36f",
+    "benchmark-controls-accepted.log.gz": "0e8c97a720adc5d298f4bea9c3fa41a5ceece9e0a64e22c245180ffe6cd9ad8f",
+    "clippy-all-final.log.gz": "40b049d5af94325581bf2af687bf7700a57306f515450a48f3348f3bb07122ec",
+    "cram-meter-tests.log.gz": "a4e4d98820725560434d6cc9347dc4039d2c128054faad11476cdbd853763fbd",
+    "dependency-audit.log.gz": "7a7a1ffa9985358bc9ad714ec90d2657a8b7b37e7824498ee3d3731d8187db1e",
+    "followup-source-manifest.json": "5946ce77de3cf8a1fb602ba9db5ef9a4feee527756ae2f59757139bae7f6226a",
+    "hosted-architecture-meter.log.gz": "b69bb18a6bd3558c01db7e652b68db9682f2d4f2afae73bec3c762d13ca0c08c",
+    "hosted-followup-124987605795.log.gz": "883b421d8901277ffb6fbce43049711f39f9a4c57d408dda51f197e8ec517223",
+    "hosted-followup-124987605975.log.gz": "5c22e0f22d78d94aed8f674c4b5b1c381476a482bbc49f6322569a471a66a94c",
+    "hosted-followup-124987606002.log.gz": "f9f6271d00c1e1825f67325abcc9f8f299bbd8be279306afcab4f2b428149530",
+    "hosted-followup-124987606090.log.gz": "641e0eba073b3e1efef88668612d49ab29c7c7b793fc4b9fb7093b533336142a",
+    "hosted-timing.log.gz": "b1edab8c1aaca81e9068317abc640d3f92e05914acfcb47846a0357bec2fedb3",
+    "independent-review-inputs.json": "f31f61f1620d9d0da86efaa42dd904696de60aa72e69dba32b7ac6f2702c194e",
+    "library-optimized.log.gz": "0ef89561d95732f118b7613b49e7e3dc169a894c1ec512cb3ab7f9baaa7c91a3",
+    "main-runs.json": "a5fe794f81bee732d46c70a33d9f0484c223ba5f9caa1f40447babfa6b55d6db",
+    "meter-accepted.log.gz": "8aaaa1da489e2553bb04cb77d688ed0a19e0ec24fbe75d9b121c2747b07c3b4a",
+    "modulus-controls-accepted.log.gz": "05e653e57adcee751bcecb49d2ce25277a6716aa7aa9cb6dfc63f6a1dab7b11f",
+    "modulus-current-accepted.log.gz": "70a29f9626c2293874b39b0e6051b3170c6f7b61225d9e308a06634e37040ec8",
+    "montgomery-repeat-0.log.gz": "c8cd1e4d0d9488feb5767abd88e65b1d509a65f2149d8b4f0bb363da5abf4330",
+    "montgomery-repeat-1.log.gz": "a471c9056399a956a2d01bd85a3cfa1aaba4269ce1c3439dfa2b8f6e5a422e40",
+    "montgomery-repeat-2.log.gz": "a6e247342485962af2007d4632099a0418a6af696cfbf9bc59403dd8c98a9fbc",
+    "montgomery-repeat-3.log.gz": "4751db2a447637363335641d3d97533c1b46db10d4aac65bb3f1d96461ed3bc4",
+    "montgomery-repeat-4.log.gz": "aa7222778909869edb883dbcbc4abac37083c7f9e360e6413584d3bdeda2297b",
+    "montgomery-repeats.json": "cc136dbbf3f687f38e633fa9f5955c92147b3769cef620d76b63e63f4d33eb66",
+    "native-accepted.log.gz": "07e409e27cd37e3dd853f7aaed2bc806a6cfc61fe687137276aff664f0d41fe8",
+    "native-memory.json": "feb2f0a8407ab24a15d0a2d1fbd83d991614bceb9721cb7708effaa7a5d07001",
+    "panic.log.gz": "e5b334b6a1cd9022e8e9a1c77a8e9e7d9871bf05c500ccfb68a85dd13a1ca44c",
+    "probe-build.log.gz": "adcb271d05d8c9493c045e56ddebc21a88e1b5448c982f3d6d57949ae1889ef8",
+    "review-build-final.log.gz": "27418dfce2f6be8559a35d09fb70c0e5b6a713c76d2615f37b7d233f6cc5a463",
+    "scale/cases/0000-v6_compat_4096-s42-i1-m1-d2.json": "6c97c8e4873ca668e1c2862cf47b6a81b72e941b66b218e046dd2e37df0e7a2f",
+    "scale/cases/0001-secure_128-s42-i1-m1-d2.json": "d8d6586c5d70a515993651a793fbd964bd894268106d38492e13cbbaa2de832a",
+    "scale/logs/0000-v6_compat_4096-s42-i1-m1-d2.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "scale/logs/0000-v6_compat_4096-s42-i1-m1-d2.stdout.log": "e01b3f0a863e6ce473f75ef0edf8b800980c6e0c085a3a66c1896a36749f2686",
+    "scale/logs/0001-secure_128-s42-i1-m1-d2.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "scale/logs/0001-secure_128-s42-i1-m1-d2.stdout.log": "3f67ba73077dda728cfb1ec42bfbe39ec5c122a20b7f3fb055130286a3672d9b",
+    "scale/manifest.json": "c283a33875e91e9c14960cbe5265af7f642c3a6bb8b035319169582b6f11059a",
+    "security-claims-accepted.log.gz": "6d8acab68b0cd3f3b9303c10e006c92a0bb9f07083ec555627049dcdbd725cb0",
+    "smoke-actual-accepted.json": "0f7f6beedd608c3b933557d0663e810a1a8734724d88ab28f00f3c26ac8cab58",
+    "smoke-contract-accepted.log.gz": "fe268a07c4e0b75670f263f4f45772aad5f280c1ddcddf86391db2e1d88b8694",
+    "smoke-contract-red.log.gz": "10b429b3b0874319d533cc60db40c150ab5c087984c428e1b2e8a67e92571ba6",
+    "source-manifest.json": "3a97d6bda4efc4c61bbe5276c077521d11de847b5283de3a4d54ab9a3142229d",
+    "status-routing-accepted.log.gz": "ae0fd55349bbf883ecf8aee2bac32ba8d9b0c8901e88bd20ef931c53bd8bf76b",
+    "timing-assembly.txt.gz": "03edf254b7f1157413e5755ed61ab1038ab5473cd02a37b5e2a26a9d44e624de",
+    "timing-build.log.gz": "f35ed367be681f05b4cab8d99b533d64a5e7343c19d032b3b287de8ee7527f59"
+  }
+}

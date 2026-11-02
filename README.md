@@ -468,14 +468,14 @@ operation does not implement the integer contract above. Exact-rational API
 availability does not change its restriction, and arbitrary scalar ciphertexts
 cannot be cast into bit words without a valid conversion.
 
-The public [`feat/enable-fpd-stack` branch](https://github.com/Skyelabz210/NINE65_v7/tree/feat/enable-fpd-stack)
-([PR #204](https://github.com/Skyelabz210/NINE65_v7/pull/204))
-contains prepared-key acceleration, default-feature activation, and
-[reproducible benchmark evidence](https://github.com/Skyelabz210/NINE65_v7/blob/feat/enable-fpd-stack/docs/FEATURE_ACTIVATION_2026-11-02.md).
-Its [division scope note and coefficient-level vectors](https://github.com/Skyelabz210/NINE65_v7/blob/feat/enable-fpd-stack/docs/FPD_DIVISION_SCOPE_2026-11-02.md)
-distinguish working shared-factor kernels from the missing encrypted adapter.
-This branch link does not assert that its feature defaults have merged into
-`main`.
+Prepared-key acceleration and default-feature activation have
+[reproducible multiplication benchmark evidence](docs/FEATURE_ACTIVATION_2026-11-02.md).
+The [original division scope note](docs/FPD_DIVISION_SCOPE_2026-11-02.md)
+records the earlier coefficient-kernel boundary; the
+[encrypted integer division note](docs/ENCRYPTED_INTEGER_DIVISION_2026-11-02.md)
+documents the added typed API and its finite noise limits. Public implementation
+reviews are [PR #204](https://github.com/Skyelabz210/NINE65_v7/pull/204) and
+[PR #206](https://github.com/Skyelabz210/NINE65_v7/pull/206).
 
 Normative contracts:
 

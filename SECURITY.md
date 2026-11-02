@@ -44,11 +44,20 @@ We follow a 90-day responsible disclosure timeline. If a fix is released before 
 
 ### Parameter Security
 
-NINE65 provides multiple parameter configurations. Only the following are validated for production use:
+Named profiles are internally screened research configurations, not independently
+validated production-security levels. No profile currently has external
+attestation for its exact tuple. The in-tree figures are heuristic estimates:
 
-- `secure_128` -- targets 128-bit post-quantum security
-- `secure_192` -- targets 192-bit post-quantum security
-- `secure_256` -- targets 256-bit post-quantum security
+| Profile | Core-SVP screen | MATZOV screen |
+| --- | --- | --- |
+| secure_128 / secure_128_deep | 196 | 176 |
+| secure_192 | 320 | 288 |
+| secure_256 | 267 | 240 |
+
+In particular, secure_256 does not reach its nominal name under MATZOV.
+These numbers do not establish post-quantum security or confidentiality of
+correlated evaluation keys. See [current status](docs/PUBLIC_REFRESH_STATUS.md)
+and [the security model](docs/security/SECURITY_MODEL_PUBLIC_REFRESH.md).
 
 Configurations such as `light_insecure`, `he_standard_128_insecure`, and `light_rns_exact_insecure` exist solely for testing and development. These require the `allow_insecure` feature flag to compile and **must not be used in production deployments**. All legacy presets in `FHEConfig` have been renamed with an `_insecure` suffix to prevent accidental production use.
 
@@ -66,7 +75,14 @@ For noise-sensitive operations, use `TrackedEvaluator` to monitor noise budget c
 
 ## Deployment Warning: fhe-service Decryption Oracle
 
-The `fhe-service` crate exposes a `/decrypt` endpoint for session-based decryption. **This endpoint is a decryption oracle.** Any caller with network access to this endpoint can submit arbitrary ciphertexts and observe whether decryption succeeds. This constitutes a CCA2 (adaptive chosen-ciphertext) attack surface.
+The service is a server-key-holder boundary: session secret keys stay with the
+operator, so this is not evaluator-blind FHE. It defaults to loopback and uses
+tenant-bound authorization. The `/v1/sessions/{id}/decrypt` route is disabled
+unless `FHE_ENABLE_DECRYPT=1` and its separate `FHE_DECRYPT_TOKEN` check succeeds.
+Those controls do not make adversarial decryption queries safe: exposing the
+capability to untrusted callers creates a chosen-ciphertext oracle surface.
+Non-loopback deployments require an authenticated TLS boundary such as a
+reverse proxy or mTLS. See the service README and security-mode matrix.
 
 **Do not expose the fhe-service decrypt endpoint to untrusted clients.** Deployment guidance:
 - Place the service behind an authentication layer (mTLS, API key, or equivalent) that restricts access to authorized enclave operators only.
@@ -75,15 +91,32 @@ The `fhe-service` crate exposes a `/decrypt` endpoint for session-based decrypti
 
 ### Production Safety Assertions
 
-All core FHE Context constructors (`RNSFHEContext`, etc.) perform mandatory production safety checks via `assert_production_safe_fhe_config()`. Any configuration providing less than 128-bit security causes a panic in release builds unless the `allow_insecure` feature is explicitly enabled.
+Constructor parameter checks enforce their implemented screening and arithmetic
+preconditions. They are not external security certificates. Release library
+builds with `allow_insecure` are rejected at compile time; this feature does
+not provide a production bypass. Research execution uses the documented
+opt-in development/test profiles.
 
 ---
 
 ## Known Limitations
 
-- **Public-mode depth**: Symmetric mode supports 50+ levels. Public mode has automatic modulus switching at level 3+ (since 2026-02-06) which extends depth beyond the original 4-5 level baseline, but remains shallower than symmetric mode.
-- **Timing side-channel hardening**: Constant-time hardening for Montgomery multiplication and K-Elimination paths is COMPLETE. All secret-key paths now use branchless arithmetic.
-- **Security estimator validation**: The built-in lattice security estimator provides conservative Core-SVP and realistic MATZOV estimates. These should still be periodically cross-validated against the latest lattice attack literature.
+- **Functional scope**: exact leveled computation has finite parameter- and
+  history-dependent capacity. Use the sourced capability table in README.md;
+  the former high symmetric-depth claim is not an accepted capability.
+- **Public refresh**: the opt-in PublicRefreshCircuit has identified native
+  execution and deterministic noise evidence. Legacy Clockwork entry points
+  remain fail-closed. The full correlated key setup is not production admitted.
+- **Timing**: branchless arithmetic and timing/assembly tests are evidence,
+  not complete constant-time certification. The November 1 main-branch
+  Montgomery multiplication measurement exceeded its blocking t=5 threshold
+  (signal8.6550, control1.4003); investigation and controlled repeats are required.
+  See [the timing roadmap](docs/CT_VERIFICATION_PLAN.md). Do not weaken the
+  threshold or classify a failed measurement as an established exploit.
+- **Open security obligations**: related-key confidentiality, independent exact
+  parameter attestation, a probabilistic decryption-failure bound and research
+  refresh constant-time posture remain unestablished. Deterministic bounds,
+  functional tests and selected Lean proofs do not discharge those obligations.
 
 ## Scope
 

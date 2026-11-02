@@ -1,0 +1,29 @@
+{
+  "schema": "nine65-bounded-digit-polynomial-v1",
+  "p": 17,
+  "bound": 2,
+  "degree": 9,
+  "degree_upper_bound": 9,
+  "coefficients_ascending_mod_p_squared": [
+    0,
+    238,
+    0,
+    57,
+    0,
+    222,
+    0,
+    78,
+    0,
+    273
+  ],
+  "certificate": {
+    "value_identities": 5,
+    "derivative_identities": 5,
+    "implied_domain_elements": 85,
+    "identity": "F(r+p*m) = r (mod p^2), for -B <= r <= B and every m"
+  },
+  "exhaustive_small_prime_checks": 9482,
+  "required_unproved_input_condition": "actual hidden phase error lies in [-B,B]",
+  "native_ciphertext_evaluator_implemented": false,
+  "public_refresh_enabled": false
+}

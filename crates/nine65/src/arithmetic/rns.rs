@@ -867,6 +867,8 @@ pub(crate) fn compute_delta_rns_overflow_safe(primes: &[u64], t: u64) -> Vec<u64
 
 /// RNS Context for managing multiple prime moduli
 pub struct RNSContext {
+    #[cfg(feature = "architecture-meter")]
+    pub(crate) architecture_meter: std::sync::Arc<cram_core::ArchitectureCounters>,
     /// List of coprime moduli
     pub primes: Vec<u64>,
     /// Product of all primes (as u128, may overflow for many primes)
@@ -924,6 +926,8 @@ impl RNSContext {
         };
 
         Self {
+            #[cfg(feature = "architecture-meter")]
+            architecture_meter: std::sync::Arc::default(),
             primes,
             product,
             mont_contexts,
@@ -952,6 +956,10 @@ impl RNSContext {
             "Cannot call to_int when product overflows u128. Use RNS-domain operations instead."
         );
 
+        #[cfg(feature = "architecture-meter")]
+        self.architecture_meter
+            .crt_reconstructions
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let mut result = 0u128;
         for i in 0..self.primes.len() {
             let (mi, mi_inv) = self.crt_values[i];
@@ -1002,6 +1010,10 @@ impl RNSContext {
             .iter()
             .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128))?;
 
+        #[cfg(feature = "architecture-meter")]
+        self.architecture_meter
+            .crt_reconstructions
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         // Compute CRT reconstruction for partial primes
         // For each prime q_i: M_i = partial_product / q_i, M_i_inv = M_i^(-1) mod q_i
         let mut result = 0u128;
@@ -1024,6 +1036,10 @@ impl RNSContext {
         to_u256_level_calls::increment();
         assert!(level <= self.primes.len(), "Level exceeds prime count");
         assert!(rns.len() >= level, "RNS length mismatch");
+        #[cfg(feature = "architecture-meter")]
+        self.architecture_meter
+            .crt_reconstructions
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         crt_reconstruct_u256(&rns[..level], &self.primes[..level])
     }
 

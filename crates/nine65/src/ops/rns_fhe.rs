@@ -1102,6 +1102,19 @@ impl DecryptCompareBit {
 }
 
 impl RNSFHEContext {
+    /// Diagnostic counts for this context's main/anchor reconstruction routes.
+    /// Free-standing projectors and other contexts are not included.
+    #[cfg(feature = "architecture-meter")]
+    pub fn architecture_snapshot(&self) -> cram_core::ArchitectureSnapshot {
+        self.rns.architecture_meter.snapshot()
+    }
+
+    /// Enforce the emission policy; permitted weighted CRT is counted separately.
+    #[cfg(feature = "architecture-meter")]
+    pub fn assert_no_synthetic_emissions(&self) -> Result<(), cram_core::ArchitectureSnapshot> {
+        self.rns.architecture_meter.assert_no_synthetic_emissions()
+    }
+
     /// Create RNS FHE context from config (fallible version)
     ///
     /// Prefer this over [`new()`](Self::new) for error handling in library code.
@@ -1143,6 +1156,14 @@ impl RNSFHEContext {
 
         // Keep main RNS context for backward compatibility
         let rns = RNSContext::new(config.primes.clone(), config.n);
+        #[cfg(feature = "architecture-meter")]
+        let (dual_rns, rns) = {
+            let mut dual_rns = dual_rns;
+            let mut rns = rns;
+            rns.architecture_meter = dual_rns.main.architecture_meter.clone();
+            dual_rns.anchor.architecture_meter = rns.architecture_meter.clone();
+            (dual_rns, rns)
+        };
 
         // NTT engines from main RNS (also available via dual_rns.main.ntt_engines)
         let ntt_engines: Vec<NTTEngine> = config
@@ -1940,6 +1961,10 @@ impl RNSFHEContext {
     ///
     /// Decoding: round(inner / Δ) mod t = round(inner * t / Q) mod t
     pub fn decrypt(&self, ct: &RNSCiphertext, sk: &RNSSecretKey) -> u64 {
+        #[cfg(feature = "architecture-meter")]
+        self.rns
+            .architecture_meter
+            .record_projection(cram_core::ProjectionCapability::UserOutput);
         let q_product = self.q_product_checked.unwrap_or_else(|| {
             panic!(
                 "RNSFHEContext::decrypt: Q does not fit in u128 for this config \
@@ -3429,6 +3454,10 @@ impl RNSFHEContext {
         ct: &DualRNSCiphertext,
         sk: &DualRNSSecretKey,
     ) -> (u64, i128) {
+        #[cfg(feature = "architecture-meter")]
+        self.rns
+            .architecture_meter
+            .record_projection(cram_core::ProjectionCapability::UserOutput);
         let ct_level = ct.c0.main.len();
         let sk_level = sk.s.main.len();
 
@@ -3525,6 +3554,10 @@ impl RNSFHEContext {
         ct: &DualRNSCiphertext,
         sk: &DualRNSSecretKey,
     ) -> (u64, i128) {
+        #[cfg(feature = "architecture-meter")]
+        self.rns
+            .architecture_meter
+            .record_projection(cram_core::ProjectionCapability::UserOutput);
         let ct_level = ct.c0.main.len();
         let sk_level = sk.s.main.len();
 

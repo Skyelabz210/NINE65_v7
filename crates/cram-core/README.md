@@ -1,22 +1,26 @@
 # cram-core
 
-Residue-native substrate primitives, plus the **A2 architecture meter**: the
-counters that make "no reconstruction on the hot path" a measured property
-rather than a claim.
+Residue-native substrate primitives and opt-in architecture instrumentation.
+The commissioned policy permits reconstruction and prohibits Garner/MRC
+synthetic emissions in residue compute; see
+[the implementation contract](../../docs/execution/2026-10-27/IMPLEMENTATION.md).
 
-## CRAM opportunity action items
+With nine65's `architecture-meter` feature, RNSContext's main and anchor
+counters are shared by the owning FHE context. Actual to_int, partial-level
+CRT and to_u256_level calls increment reconstruction counts; main-Q and DualRNS decrypt
+requests record user-output projections. The feature test performs genuine
+public encryption, multiplication and decryption and verifies the counters.
+The context exposes a read-only snapshot and the emission-policy guard.
 
-Mirrored from `CRAM_OPPORTUNITY_REPORT.md` (pass 1). Level-2 node is `pending`.
+`assert_no_synthetic_emissions` rejects recorded Garner/MRC emissions while
+allowing counted CRT. The historical stricter `assert_production_clean`
+remains available and still rejects all internal materialization counters.
+Negative controls deliberately inject both synthetic-emission counters.
 
-- `[14]` `src/lib.rs:276-317` — the meter exists (`crt_reconstructions`,
-  `mixed_radix_calls`, and an `== 0` compliance check) but is **not wired to
-  the nine65 FHE path**, so it currently measures nothing. Wiring it is what
-  converts entries `[5]`–`[9]` from a reading exercise into a build-failing
-  gate. → `reconstruction-retirement`
-
-Related, in sibling crates:
-
-- `crates/exact_transcendentals` `[5]`–`[9]` — the Garner call sites the meter
-  would catch once connected.
-- `crates/nine65` `[10]`, `[13]` — the RNS path and the BFV↔CRAM seam the meter
-  would have to instrument.
+This first wiring covers those context-owned routes. Standalone projectors,
+free reconstruction helpers, other FHE contexts and parallel pipelines are
+not a globally complete call inventory. A clean snapshot is not a proof that
+un-instrumented code is compliant. Keep the structural residue-native scanner
+and actual-operation arrow gates alongside these counters. The diagnostic
+feature is disabled by default so atomic counters do not enter default timing
+measurements or change their admission threshold.

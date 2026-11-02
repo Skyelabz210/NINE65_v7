@@ -94,7 +94,7 @@
   },
   "canonical_anchors_scope": "union_of_dimension_specific_runtime_bases",
   "current_anchor_execution_class": "CLASS-A_FIELD_BACKED_NTT_PLUS_CLASS-R_K-ELIM",
-  "evidence_sha256": "8f56f0e3ad8524b967cb42702bffe2e730f4666d79759d7a8cf7e8b434572661",
+  "evidence_sha256": "19d44ff969f6a2db0a6ff088f77d99d97f1035848b63fcbe72d55373b02362b1",
   "main_anchor_disjoint_and_coprime": true,
   "main_lane_class": "CLASS-F",
   "profiles": {
@@ -146,7 +146,7 @@
   "runtime_anchor_catalogue_verified": true,
   "schema": 2,
   "source_sha256": {
-    "rns.rs": "3cb9d07734f6ff9aacd216aa7fa38037e8322f1494e38c55ded1dd58eb2d66dc",
+    "rns.rs": "1f40b53217d42f1bf5d0e56ef407270a1a943290b022fa7bd6db463aa791e34b",
     "secure_configs.rs": "38e01b8dc2fd05aaa0bb08f8ddeb7d14f46704e7010ead1761d6e34d7ed05c41"
   },
   "status": "PASS"

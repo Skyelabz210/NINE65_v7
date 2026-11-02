@@ -1,0 +1,88 @@
+--- original.rs
++++ cycles.rs
+@@ -200,7 +200,6 @@
+     let extra = &src.delta / (BigInt::from(4 * P));
+     ct.c0[0] = (&ct.c0[0] + &extra).mod_floor(&src.q);
+     ct.c0[1] = (&ct.c0[1] - &extra).mod_floor(&src.q);
+-    let nb_in = noise_bits(&src, &s, &ct, &m);
+     assert_eq!(dec(&src, &s, &ct), m);
+     // outer ring
+     let kbits = 900u32;
+@@ -214,7 +213,15 @@
+     // bootstrapping key: encryption of s (plaintext mod p^2) under S'
+     let sp: Poly = s.iter().map(|v| v.mod_floor(&bi(P2))).collect();
+     let bk = enc(&out, &s2, &sp, &mut rng);
+-    // evaluator-only from here: uses ct, bk, rlk, gks, ret key (no s, no s2)
++    // Client setup: prepare reusable return and source relinearization keys.
++    let ret = gen_ksk(&src, &pred(&s2, &qin), &s, 8, &mut rng);
++    let source_rlk = gen_ksk(&src, &pred(&pmul_z(&s, &s), &qin), &s, 8, &mut rng);
++    let mut expected = m.clone();
++    // Public arithmetic uses the prepared keys; secrets below serve only observers.
++    for cycle in 0..5 {
++    let nb_in = noise_bits(&src, &s, &ct, &expected);
++    assert_eq!(dec(&src, &s, &ct), expected);
++    println!("cycle={cycle}; same_precharge=true");
+     let a: [Vec<i64>; 2] = [&ct.c0, &ct.c1].map(|c| c.iter().map(|v| div_round(&(bi(P2) * v), &src.q).mod_floor(&bi(P2)).to_i64().unwrap()).collect());
+     let z = plain_mul(&out, &bk, &a[1]); // plaintext a1*s
+     let galois = |ct: &Ct, diag: &dyn Fn(i64) -> Vec<i64>| -> Ct {
+@@ -232,12 +239,12 @@
+     let cw = galois(&z, &|g| slots.c2s_diag(g).iter().map(|&v| centered_i(v)).collect());
+     let a0slots = slots.encode(&a[0]);
+     let cw = add_plain(&out, &cw, &a0slots.iter().map(|&v| centered_i(v)).collect::<Vec<_>>());
+-    // diagnostic (observer): W slots = p*m + eps
++    // diagnostic (observer): W slots = p*expected + eps
+     let wdec: Poly = dec(&out, &s2, &cw);
+     let wslots = slots.decode(&wdec.iter().map(|v| v.to_i64().unwrap()).collect::<Vec<_>>());
+     let mut max_eps = 0i64;
+-    for j in 0..N { let eps = centered_i(wslots[j] - P * m[j].to_i64().unwrap()); max_eps = max_eps.max(eps.abs()); assert!(eps.abs() <= B); }
+-    println!("observer: W = p*m + eps with max|eps|={} (B={}) after encrypted C2S", max_eps, B);
++    for j in 0..N { let eps = centered_i(wslots[j] - P * expected[j].to_i64().unwrap()); max_eps = max_eps.max(eps.abs()); assert!(eps.abs() <= B); }
++    println!("observer: W = p*expected + eps with max|eps|={} (B={}) after encrypted C2S", max_eps, B);
+     // digit extraction: Horner
+     let mut acc = Ct { c0: { let mut p = zero(); p[0] = (&out.delta * bi(centered_i(f[f.len() - 1]))).mod_floor(&out.q); p }, c1: zero() };
+     for k in (0..f.len() - 1).rev() {
+@@ -245,22 +252,36 @@
+         let mut cst = vec![0i64; N]; cst[0] = centered_i(f[k]);
+         acc = add_plain(&out, &acc, &cst);
+     }
+-    let cpm = ct_sub(&out, &cw, &acc); // slots = p*m
+-    let cs = galois(&cpm, &|g| slots.s2c_diag(g).iter().map(|&v| centered_i(v)).collect()); // coeffs = p*m mod p^2
+-    let pm: Poly = m.iter().map(|v| v * P).collect();
++    let cpm = ct_sub(&out, &cw, &acc); // slots = p*expected
++    let cs = galois(&cpm, &|g| slots.s2c_diag(g).iter().map(|&v| centered_i(v)).collect()); // coeffs = p*expected mod p^2
++    let pm: Poly = expected.iter().map(|v| v * P).collect();
+     assert_eq!(dec(&out, &s2, &cs), pm.iter().map(|v| v.mod_floor(&bi(P2))).collect::<Poly>());
+-    println!("observer: encrypted digit extraction + S2C gives plaintext p*m exactly; outer noise bits = {}", noise_bits(&out, &s2, &cs, &pm.iter().map(|v| v.mod_floor(&bi(P2))).collect()));
++    println!("observer: encrypted digit extraction + S2C gives plaintext p*expected exactly; outer noise bits = {}", noise_bits(&out, &s2, &cs, &pm.iter().map(|v| v.mod_floor(&bi(P2))).collect()));
+     // view as t=p, switch modulus to Q_in
+     let ms = |p: &Poly| -> Poly { p.iter().map(|v| div_round(&(v * &qin), &qout).mod_floor(&qin)).collect() };
+     let swc = Ct { c0: ms(&cs.c0), c1: ms(&cs.c1) };
+     // return key switch S' -> s at Q_in
+-    let ret = gen_ksk(&src, &pred(&s2, &qin), &s, 8, &mut rng);
+     let fin = apply_ksk(&src, &ret, &swc.c0, &swc.c1);
+     let back = dec(&src, &s, &fin);
+-    assert_eq!(back, m);
+-    let nb_out = noise_bits(&src, &s, &fin, &m);
++    assert_eq!(back, expected);
++    let nb_out = noise_bits(&src, &s, &fin, &expected);
++    assert!(nb_out < nb_in, "observed noise must contract in this fixture");
+     println!("REFRESH EXACT: all {} coefficients recovered under original key at original modulus", N);
+     println!("input noise bits {} (budget {} bits)  ->  output noise bits {}", nb_in, (&src.delta / BigInt::from(2)).bits(), nb_out);
+-    // multiplication after refresh sanity: relin at source level and square
++    ct = ct_mul(&src, &fin, &fin, &source_rlk);
++    // Independent small-integer schoolbook plaintext oracle.
++    let values: Vec<i64> = expected.iter().map(|v| v.to_i64().unwrap()).collect();
++    let mut sums = [0i64; N];
++    for index in 0..N {
++        for left in 0..N {
++            let right = (index + N - left) % N;
++            let sign = if left > index { -1 } else { 1 };
++            sums[index] += sign * values[left] * values[right];
++        }
++    }
++    expected = sums.iter().map(|v| bi(v.rem_euclid(P))).collect();
++    assert_eq!(dec(&src, &s, &ct), expected, "post-refresh square {cycle}");
++    println!("post-refresh square: all {N} coefficients checked");
++    }
+     println!("elapsed {:?}", t0.elapsed());
+ }

@@ -18,6 +18,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  architecture-meter:
+    name: "Actual FHE architecture counters and emission-policy controls"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.89.0
+      - run: cargo test --locked -p cram-core emission_policy_counts_reconstruction_but_rejects_synthetic_emissions
+      - run: cargo test --locked -p nine65 --features architecture-meter,allow_insecure --test architecture_meter
+      - run: python3 scripts/check_residue_native_architecture.py
+
   exact-transcendentals:
     name: "Exact arithmetic · std tests + no_std library build"
     runs-on: ubuntu-latest

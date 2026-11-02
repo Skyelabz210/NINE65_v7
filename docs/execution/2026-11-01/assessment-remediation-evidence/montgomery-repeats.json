@@ -1,0 +1,53 @@
+{
+  "source_commit": "7ddb2b4b0f301a78c56e322192281a27c36afe6b",
+  "test": "security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_mul_operand_magnitude",
+  "threshold": 5,
+  "original_hosted_finding_status": "open",
+  "runs": [
+    {
+      "run": 0,
+      "cpu_affinity": 0,
+      "returncode": 0,
+      "actual_tests_executed": 1,
+      "control_t": "7.1061",
+      "signal_t": "2.2331",
+      "classification": "inconclusive"
+    },
+    {
+      "run": 1,
+      "cpu_affinity": 0,
+      "returncode": 0,
+      "actual_tests_executed": 1,
+      "control_t": "2.1225",
+      "signal_t": "0.8726",
+      "classification": "below_threshold_at_this_sample_size"
+    },
+    {
+      "run": 2,
+      "cpu_affinity": 0,
+      "returncode": 0,
+      "actual_tests_executed": 1,
+      "control_t": "1.7036",
+      "signal_t": "3.0186",
+      "classification": "below_threshold_at_this_sample_size"
+    },
+    {
+      "run": 3,
+      "cpu_affinity": 0,
+      "returncode": 0,
+      "actual_tests_executed": 1,
+      "control_t": "2.1649",
+      "signal_t": "0.6861",
+      "classification": "below_threshold_at_this_sample_size"
+    },
+    {
+      "run": 4,
+      "cpu_affinity": 0,
+      "returncode": 0,
+      "actual_tests_executed": 1,
+      "control_t": "3.0570",
+      "signal_t": "1.5870",
+      "classification": "below_threshold_at_this_sample_size"
+    }
+  ]
+}

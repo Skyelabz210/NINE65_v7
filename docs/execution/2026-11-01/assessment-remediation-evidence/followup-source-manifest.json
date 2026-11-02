@@ -1,0 +1,9 @@
+{
+  "commit": "2e667018006e1882a438d2728fe1d5fc98bbb2d9",
+  "changes": "smoke-contract compatibility and regenerable current modulus ledger; FHE library source unchanged",
+  "files_sha256": {
+    "artifacts/security/modulus_class_audit_current.json": "7c4903cfc8789b9ae8c7fe41670acced2abe97ef39ab2b2e4ad663d72806873d",
+    "scripts/validate_cram_comparative_smoke.py": "d82311407f2acca7138f620c54915606243412b96897e9a97ebdbeff3f92236f",
+    "scripts/test_validate_cram_comparative_smoke.py": "b36421ff4b09bea1c4787eda7ca3a16fd59c95ae92c2ab941b3380627ecd98e6"
+  }
+}

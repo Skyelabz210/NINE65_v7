@@ -1,0 +1,170 @@
+{
+  "source_commit": "b31f3fe8a3791bf400b1fd1fff464213e8582c73",
+  "scope": "Collector controls completed successfully in source/functional job; full statistical timing job still in progress",
+  "jobs": [
+    {
+      "id": 125135590532,
+      "name": "CT dudect gate (blocking, t < 5)",
+      "status": "in_progress",
+      "conclusion": null,
+      "run_id": 41401989840,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Install Rust",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Record timing runner and compiler",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Build test binary",
+          "status": "in_progress",
+          "conclusion": null,
+          "number": 5
+        },
+        {
+          "name": "Run blocking dudect tests",
+          "status": "pending",
+          "conclusion": null,
+          "number": 6
+        },
+        {
+          "name": "Publish three-valued timing evidence",
+          "status": "pending",
+          "conclusion": null,
+          "number": 7
+        },
+        {
+          "name": "Capture actual timing-function assembly",
+          "status": "pending",
+          "conclusion": null,
+          "number": 8
+        },
+        {
+          "name": "Upload measurements",
+          "status": "pending",
+          "conclusion": null,
+          "number": 9
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "pending",
+          "conclusion": null,
+          "number": 18
+        }
+      ]
+    },
+    {
+      "id": 125135590970,
+      "name": "CT source and functional gates",
+      "status": "in_progress",
+      "conclusion": null,
+      "run_id": 41401989840,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Install Rust",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Source-level CT and public-schedule gate",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Existing constant-time source verification",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Timing evidence collector controls",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "NTT and persistent-Montgomery correctness",
+          "status": "in_progress",
+          "conclusion": null,
+          "number": 7
+        },
+        {
+          "name": "Assert the CT timing harness is intact",
+          "status": "pending",
+          "conclusion": null,
+          "number": 8
+        },
+        {
+          "name": "Clippy touched arithmetic modules",
+          "status": "pending",
+          "conclusion": null,
+          "number": 9
+        },
+        {
+          "name": "Upload reports",
+          "status": "pending",
+          "conclusion": null,
+          "number": 10
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "pending",
+          "conclusion": null,
+          "number": 20
+        }
+      ]
+    },
+    {
+      "id": 125135591708,
+      "name": "CT open findings (scheduled state tripwire)",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 41401989840,
+      "logs_url": null,
+      "steps": null
+    },
+    {
+      "id": 125135591825,
+      "name": "CT robust-CV diagnostics (scheduled, recorded)",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 41401989840,
+      "logs_url": null,
+      "steps": null
+    }
+  ]
+}

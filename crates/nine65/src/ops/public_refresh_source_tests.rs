@@ -314,3 +314,110 @@ fn source_preparation_native_same_ring_h96_checks_all_coefficients() {
 fn source_preparation_native_embedded_h32_checks_all_coefficients_and_zeros() {
     native_case(32768, 32, 2);
 }
+
+// Client-side test oracle: direct weighted CRT, independently of the decoder
+// and its scale-rounding routines. Q and CRT sums are checked before using
+// u128; scaled phase differences use U512 (native t*Q exceeds u128).
+pub(crate) fn observed_work_error(
+    client: &PublicRefreshSourceClient,
+    input: &SourceWorkCiphertext,
+    expected: &[u64],
+) -> U512 {
+    let ctx = client.work_context();
+    assert_eq!(expected.len(), ctx.n);
+    assert!(expected.iter().all(|&m| m < ctx.t));
+    let q = ctx
+        .config
+        .primes
+        .iter()
+        .try_fold(1u128, |a, &p| a.checked_mul(p as u128))
+        .unwrap();
+    q.checked_mul(ctx.config.primes.len() as u128)
+        .expect("oracle CRT sum capacity");
+    let weights: Vec<_> = ctx
+        .config
+        .primes
+        .iter()
+        .map(|&p| {
+            let part = q / p as u128;
+            let mut a = part % p as u128;
+            let mut power = p - 2;
+            let mut inverse = 1u128;
+            while power != 0 {
+                if power & 1 != 0 {
+                    inverse = inverse * a % p as u128;
+                }
+                a = a * a % p as u128;
+                power >>= 1;
+            }
+            assert_eq!((part % p as u128) * inverse % p as u128, 1);
+            (part, inverse)
+        })
+        .collect();
+    let a = ordinary(ctx, &input.raw.c0);
+    let b = ordinary(ctx, &input.raw.c1);
+    let secret = ordinary(ctx, &client.work_secret_key().s);
+    let lanes: Vec<_> = ctx
+        .config
+        .primes
+        .iter()
+        .enumerate()
+        .map(|(lane, &p)| {
+            ctx.ntt_engines[lane]
+                .multiply(&b.limbs[lane], &secret.limbs[lane])
+                .iter()
+                .zip(&a.limbs[lane])
+                .map(|(&x, &y)| ((x as u128 + y as u128) % p as u128) as u64)
+                .collect::<Vec<_>>()
+        })
+        .collect();
+    let tq = U512::from_u128(q).mul_u128(ctx.t as u128);
+    let mut maximum = U512::zero();
+    for (j, &message) in expected.iter().enumerate() {
+        let phase = ctx
+            .config
+            .primes
+            .iter()
+            .enumerate()
+            .map(|(lane, &p)| {
+                weights[lane].0 * (lanes[lane][j] as u128 * weights[lane].1 % p as u128)
+            })
+            .sum::<u128>()
+            % q;
+        let left = U512::from_u128(phase).mul_u128(ctx.t as u128);
+        let right = U512::from_u128(q).mul_u128(message as u128);
+        let distance = if words(left) >= words(right) {
+            left.sub(right)
+        } else {
+            right.sub(left)
+        };
+        let opposite = tq.sub(distance);
+        let distance = if words(distance) <= words(opposite) {
+            distance
+        } else {
+            opposite
+        };
+        if words(distance) > words(maximum) {
+            maximum = distance;
+        }
+    }
+    maximum
+}
+
+#[test]
+fn work_error_observer_detects_understated_bound_before_plaintext_failure() {
+    let (client, evaluator, mut rng) = setup(8, 8, 4, 3, 0x4552524f525642);
+    let expected = vec![1, 0, 65536, 32768, 2, 3, 4, 5];
+    let input = evaluator.encrypt_with_rng(&expected, &mut rng).unwrap();
+    assert!(words(observed_work_error(&client, &input, &expected)) <= words(input.bound));
+    let mut corrupted = input.clone();
+    let ctx = client.work_context();
+    let injection = input.bound.d0 / ctx.t as u128 + 1024;
+    for (lane, &q) in ctx.config.primes.iter().enumerate() {
+        let term = ctx.rns.mont_contexts[lane].to_montgomery((injection % q as u128) as u64);
+        corrupted.raw.c0.limbs[lane][0] =
+            ((corrupted.raw.c0.limbs[lane][0] as u128 + term as u128) % q as u128) as u64;
+    }
+    assert_eq!(client.decrypt_work(&corrupted).unwrap(), expected);
+    assert!(words(observed_work_error(&client, &corrupted, &expected)) > words(corrupted.bound));
+}

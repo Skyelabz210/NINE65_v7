@@ -332,8 +332,11 @@ fn main() {
     let legacy_all_correct = legacy_correctness
         .as_object()
         .into_iter()
-        .flat_map(|object| object.values())
-        .all(|value| value.as_bool() == Some(true));
+        .flat_map(|object| object.iter())
+        .filter(|(name, _)| {
+            !(legacy_mul_refused && matches!(name.as_str(), "mul_ct" | "mul_ct_status"))
+        })
+        .all(|(_, value)| value.as_bool() == Some(true));
     let dual_all_correct = dual_correctness
         .as_object()
         .into_iter()
@@ -345,7 +348,9 @@ fn main() {
 
     let output = json!({
         "schema": "nine65-comparative-probe-v1",
-        "status": if legacy_all_correct && dual_all_correct { "PASS" } else { "FAIL" },
+        "status": if !legacy_all_correct || !dual_all_correct || !depth_all_correct || depth_entries.len() != args.ct_mul_depth {
+            "FAIL"
+        } else if legacy_mul_refused { "UNSUPPORTED" } else { "PASS" },
         "metadata": {
             "timestamp": timestamp(),
             "config": args.config,
@@ -414,7 +419,14 @@ fn main() {
         std::fs::write(path, rendered.as_bytes()).expect("write probe output");
     }
     println!("{rendered}");
-    if !legacy_all_correct || !dual_all_correct {
+    if !legacy_all_correct
+        || !dual_all_correct
+        || !depth_all_correct
+        || depth_entries.len() != args.ct_mul_depth
+    {
         std::process::exit(1);
+    }
+    if legacy_mul_refused {
+        std::process::exit(2);
     }
 }

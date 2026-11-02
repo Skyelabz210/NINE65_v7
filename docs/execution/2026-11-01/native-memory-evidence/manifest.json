@@ -1,0 +1,54 @@
+{
+  "schema": "nine65-native-bounded-memory-refresh-v1",
+  "source_commit": "4fc4328d45b3987003b937b322edb8286d4ca682",
+  "command": "cargo test --locked --config profile.test.package.nine65.opt-level=2 -j2 -p nine65 --lib ops::public_refresh_native::native_public_refresh_current_single_cycle_with_dependent_square -- --exact --ignored --nocapture --test-threads=1",
+  "test_name": "ops::public_refresh_native::native_public_refresh_current_single_cycle_with_dependent_square",
+  "binary_sha256": "c3559ceccc40d20a8c6b6ad4d202017ca922e49b01d0f9b7d50cfbca0ae32303",
+  "work_degree": 8192,
+  "outer_degree": 32768,
+  "plaintext_modulus": 65537,
+  "source_weight": 96,
+  "work_modulus_bits": 119,
+  "outer_modulus_bits": 650,
+  "refreshes": 1,
+  "following_squares": 1,
+  "coefficient_comparisons": 16384,
+  "initial_input_already_squared": true,
+  "same_original_work_key": true,
+  "canonical_value_root_preserved": true,
+  "representation_lineage_advanced": true,
+  "returned_producer_bound_checked": true,
+  "test_result": {
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "seconds": "577.66"
+  },
+  "memory": {
+    "binary_seen": true,
+    "peak_rss_kib": 6799280,
+    "running": false,
+    "elapsed_seconds": 639
+  },
+  "memory_measurement": "One-second sampling of Linux /proc/PID/status VmHWM for the selected test binary; compiler and page cache excluded. Sampled high-water is not an OS wait4 final measurement.",
+  "memory_limit_bytes": 8589934592,
+  "inverse_cache_payload_bytes": 2348810240,
+  "previous_inverse_cache_payload_bytes": 4697620480,
+  "inverse_galois_calls": 382,
+  "validation": {
+    "focused_tests_passed": 30,
+    "inverse_tests_passed": 6,
+    "workspace_all_targets_clippy": "passed",
+    "formatting": "passed",
+    "panic_ratchet": "passed",
+    "architecture_scan": "passed"
+  },
+  "scope": "Native research correctness and resource execution on identified commit; not production, constant-time or joint-key security admission",
+  "evidence_sha256": {
+    "panic.log.gz": "20c908056a2436d8dde2b49a09c1cccc71aa83312f49b38792ab69044050e471",
+    "source-manifest.json": "5a2664d6eb8124ea172d6a4926c0caa92ac3c507a22b6a136172d75fc517180f",
+    "native-run.log.gz": "4c5ca1fc29f28f423086b0493ad9b35360924644af0336ae3548054534b420fc",
+    "clippy.log.gz": "c2c678547f43c33a6ef47bbcdde78414f767869327ba394d5a942cc70ffdb16a",
+    "focused.log.gz": "b626e23c70f6ff554e2f520299221f4f03bf1b47e366980ab25980c42dafaf4c"
+  }
+}

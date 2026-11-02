@@ -4,6 +4,11 @@ Current routing: [public refresh status](../PUBLIC_REFRESH_STATUS.md).
 
 External parameter attestation is not obtained.
 
+An unsigned, key-free [exact-input packet and review request](../execution/2026-11-01/INDEPENDENT_REVIEW_REQUEST.md)
+is now reproducible from the native planner and named profile constructors.
+It prepares independent review; it is not an attestation or acceptance of the
+joint-key confidentiality premise.
+
 ## What would count
 
 An attestation for this circuit would name an external lattice estimator and its version, the exact dual-RNS inputs including the joint key distribution (not only the work-key margins), the raw output, and the identity of a reviewer who did not produce the implementation. None of those artifacts is in this repository.

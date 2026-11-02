@@ -726,3 +726,245 @@ fn encrypted_slot_bridge_applies_dense_cram_ternary_carry_gate() {
         ctx.n
     );
 }
+
+// ---------------------------------------------------------------------------
+// Bounded digit polynomial (research), an alternative to the degree-p gate.
+// F(r + p*m) = r (mod p^2) for |r| <= B and every m, with deg F <= 4B+1.
+// Public constants only; evaluated on every slot at once. See
+// scripts/bounded_digit_polynomial.py for the independent exact construction.
+// ---------------------------------------------------------------------------
+fn bounded_digit_polynomial(p: i64, bound: i64) -> Vec<i64> {
+    assert!((3..=65537).contains(&p) && nine65::params::is_prime(p as u64));
+    assert!(bound >= 1 && 2 * bound < p);
+    let m2 = p * p;
+    let mul = |a: &Vec<i64>, b: &Vec<i64>, m: i64| {
+        let mut o = vec![0i64; a.len() + b.len() - 1];
+        for (i, x) in a.iter().enumerate() {
+            for (j, y) in b.iter().enumerate() {
+                o[i + j] =
+                    ((o[i + j] as i128 + *x as i128 * *y as i128).rem_euclid(m as i128)) as i64;
+            }
+        }
+        o
+    };
+    let eval = |c: &Vec<i64>, x: i64, m: i64| {
+        c.iter().rev().fold(0i64, |o, &k| {
+            ((o as i128 * x as i128 + k as i128).rem_euclid(m as i128)) as i64
+        })
+    };
+    let mut g = vec![1i64];
+    for r in -bound..=bound {
+        g = mul(&g, &vec![(-r).rem_euclid(m2), 1], m2);
+    }
+    let mut h = vec![0i64; g.len() - 1];
+    for r in -bound..=bound {
+        let l = g.len() - 2;
+        let mut q = vec![0i64; l + 1];
+        q[l] = g[l + 1].rem_euclid(p);
+        for i in (0..l).rev() {
+            q[i] = (g[i + 1] + r * q[i + 1]).rem_euclid(p);
+        }
+        let d = eval(&q, r, p);
+        let inv = (0..p - 2).fold(1i64, |a, _| a * d % p);
+        for (i, c) in q.iter().enumerate() {
+            h[i] = (h[i] + c * inv % p * inv).rem_euclid(p);
+        }
+    }
+    let gh = mul(&g, &h, m2);
+    let mut f: Vec<i64> = gh.iter().map(|c| (-c).rem_euclid(m2)).collect();
+    f[1] = (f[1] + 1).rem_euclid(m2);
+    while f.len() > 1 && *f.last().unwrap() == 0 {
+        f.pop();
+    }
+    f
+}
+
+fn centered_mod(v: i64, m: i64) -> i64 {
+    let r = v.rem_euclid(m);
+    if 2 * r > m {
+        r - m
+    } else {
+        r
+    }
+}
+
+fn ntt_primes_below(n: usize, count: usize) -> Vec<u64> {
+    let step = 2 * n as u64;
+    let mut out = Vec::new();
+    let mut c = ((1u64 << 31) / step) * step + 1;
+    while out.len() < count {
+        c -= step;
+        if nine65::params::is_prime(c) {
+            out.push(c)
+        }
+    }
+    out
+}
+
+fn evaluate_bounded_digit(
+    ctx: &RNSFHEContext,
+    input: &RNSCiphertext,
+    f: &[i64],
+    relin: &RNSHybridGadgetKey,
+) -> RNSCiphertext {
+    let exact = ctx.try_exact_evaluator().unwrap();
+    assert!(f.len() >= 2, "nonconstant polynomial required");
+    let t = ctx.t as i64;
+    let mut constant = vec![0u64; ctx.n];
+    constant[0] = f[f.len() - 1].rem_euclid(t) as u64;
+    // acc = f_d*x + f_{d-1}; then acc = acc*x + f_k for k = d-2 .. 0.
+    let mut acc = multiply_plain(ctx, input, &constant);
+    acc = add_plain_constant(ctx, &acc, f[f.len() - 2].rem_euclid(t) as u64);
+    for k in (0..f.len() - 2).rev() {
+        acc = exact.try_mul_exact(&acc, input, relin).unwrap();
+        acc = add_plain_constant(ctx, &acc, f[k].rem_euclid(t) as u64);
+    }
+    acc
+}
+
+#[test]
+fn encrypted_slot_bridge_removes_bounded_digit_error_and_recovers_p_times_message() {
+    // p = 17, t = p^2, N = 8. Input coefficients W_j = p*m_j + eps_j, |eps_j| <= B.
+    const P: i64 = 17;
+    let bound: i64 = std::env::var("BDG_B")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(2);
+    assert!((1..=8).contains(&bound), "BDG_B must be in 1..=8 for p=17");
+    let lanes: usize = std::env::var("BDG_LANES")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(8);
+    assert!(
+        (2..=8).contains(&lanes),
+        "BDG_LANES must be in 2..=8 for the 256-bit exact evaluator"
+    );
+    let mut config = SecureConfig::secure_128().into_config();
+    config.n = 8;
+    config.t = (P * P) as u64;
+    config.security_bits = 0;
+    config.name = "INSECURE bounded digit gate toy";
+    config.primes = ntt_primes_below(config.n, lanes);
+    config.q = config.primes[0];
+    let ctx = RNSFHEContext::try_new(&config).unwrap();
+    let mut rng = ShadowHarvester::with_seed(0x4244_4947_4154_4531);
+    let keys = ctx.generate_keys(&mut rng);
+    let exact = ctx.try_exact_evaluator().unwrap();
+    let relin = exact.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
+    let galois = RNSGaloisEvaluator::new(&ctx).unwrap();
+    let (baby_exponents, giant_exponents) = automorphism_factor_sets(ctx.n);
+    let mut galois_keys = BTreeMap::new();
+    for exponent in required_galois_exponents(&baby_exponents, &giant_exponents) {
+        galois_keys.insert(
+            exponent,
+            galois
+                .generate_key_with_rng(&keys.secret_key, exponent, &mut rng)
+                .unwrap(),
+        );
+    }
+    let root_values = roots(ctx.n, ctx.t);
+    let (coefficient_to_slot, slot_to_coefficient) =
+        coefficient_matrices(ctx.n, ctx.t, &root_values);
+    let f = bounded_digit_polynomial(P, bound);
+    if bound == 2 {
+        // Independent Python construction, p=17/B=2.
+        assert_eq!(f, [0, 238, 0, 57, 0, 222, 0, 78, 0, 273]);
+    }
+    // exhaustive clear check of the construction over the whole domain
+    for r in -bound..=bound {
+        for m in 0..P {
+            let w = (r + P * m).rem_euclid(P * P);
+            let v = f
+                .iter()
+                .rev()
+                .fold(0i64, |o, &c| (o * w + c).rem_euclid(P * P));
+            assert_eq!(centered_mod(v, P * P), r);
+        }
+    }
+    // Encrypt every permitted (residual, message) pair, packed into batches.
+    // Padding wraps to the first cases and is still checked at every slot.
+    let cases: Vec<(i64, i64)> = (-bound..=bound)
+        .flat_map(|residual| (0..P).map(move |message| (residual, message)))
+        .collect();
+    let batches = cases.len().div_ceil(ctx.n);
+    let mut visited = vec![false; cases.len()];
+    for batch in 0..batches {
+        let indices: Vec<usize> = (0..ctx.n)
+            .map(|j| (batch * ctx.n + j) % cases.len())
+            .collect();
+        let messages: Vec<i64> = indices.iter().map(|&i| cases[i].1).collect();
+        let eps: Vec<i64> = indices.iter().map(|&i| cases[i].0).collect();
+        for &i in &indices {
+            visited[i] = true;
+        }
+        let input: Vec<u64> = (0..ctx.n)
+            .map(|j| (P * messages[j] + eps[j]).rem_euclid(P * P) as u64)
+            .collect();
+        let encrypted = encrypt_polynomial(&ctx, &keys, &input, &mut rng);
+        let slots = linear_map_from_slots_bsgs(
+            &ctx,
+            &encrypted,
+            &slot_to_coefficient,
+            &root_values,
+            &galois,
+            &galois_keys,
+            &baby_exponents,
+            &giant_exponents,
+        );
+        let slot_values = |ct: &RNSCiphertext| -> Vec<u64> {
+            let coeffs = decrypt_coefficients(&ctx, ct, &keys);
+            (0..ctx.n)
+                .map(|slot| {
+                    coeffs.iter().enumerate().fold(0u128, |sum, (c, &v)| {
+                        (sum + v as u128 * mod_pow(root_values[slot], c as u64, ctx.t) as u128)
+                            % ctx.t as u128
+                    }) as u64
+                })
+                .collect()
+        };
+        assert_eq!(
+            slot_values(&slots),
+            input,
+            "stage 1: coefficient->slot bridge"
+        );
+        let digits = evaluate_bounded_digit(&ctx, &slots, &f, &relin);
+        let want_digits: Vec<u64> = eps.iter().map(|e| e.rem_euclid(P * P) as u64).collect();
+        let got_digits = slot_values(&digits);
+        assert_eq!(
+            got_digits, want_digits,
+            "stage 2: bounded residual extraction"
+        );
+        eprintln!("stage 2 digits got {:?} want {:?}", got_digits, want_digits);
+        // p*m = W - F(W) on every slot, then back to coefficient form
+        let p_times_m = {
+            let neg = multiply_plain(&ctx, &digits, &{
+                let mut c = vec![0u64; ctx.n];
+                c[0] = ctx.t - 1;
+                c
+            });
+            add(&ctx, &slots, &neg)
+        };
+        let output = linear_map_from_slots_bsgs(
+            &ctx,
+            &p_times_m,
+            &coefficient_to_slot,
+            &root_values,
+            &galois,
+            &galois_keys,
+            &baby_exponents,
+            &giant_exponents,
+        );
+        let got = decrypt_coefficients(&ctx, &output, &keys);
+        let want: Vec<u64> = messages.iter().map(|&m| (P * m) as u64).collect();
+        assert_eq!(got, want);
+    }
+    assert!(visited.iter().all(|covered| *covered));
+    eprintln!(
+        "encrypted domain coverage: {} unique pairs, {batches} batches, one key setup",
+        cases.len()
+    );
+    eprintln!(
+        "bounded digit gate: p={P}, B={bound}, deg F={}, lanes={}, log2 Q ~ {} bits; p*m recovered exactly at all {} coefficients; insecure toy only",
+        f.len() - 1, lanes, lanes * 31, ctx.n
+    );
+}

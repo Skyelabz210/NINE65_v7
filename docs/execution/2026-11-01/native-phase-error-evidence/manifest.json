@@ -1,0 +1,44 @@
+{
+  "schema": "nine65-native-ideal-grid-error-witness-v1",
+  "source_commit": "2352435d625d7f36ffec41d162a8d769b84d6ab7",
+  "test": "ops::public_refresh_native::native_public_refresh_current_single_cycle_with_dependent_square",
+  "command": "cargo test --locked --config profile.test.package.nine65.opt-level=2 -j2 -p nine65 --lib ops::public_refresh_native::native_public_refresh_current_single_cycle_with_dependent_square -- --exact --ignored --nocapture --test-threads=1",
+  "work_degree": 8192,
+  "outer_degree": 32768,
+  "plaintext": 65537,
+  "seed": "same deterministic native fixture as prior single-cycle evidence",
+  "refreshes": 1,
+  "following_squares": 1,
+  "plaintext_comparisons": 16384,
+  "coefficient_error_checks": 24576,
+  "measured_max_scaled_errors": {
+    "input": "762490188487606471",
+    "returned": "1043073383",
+    "following_square": "257071113810960355"
+  },
+  "issued_bound_values_independently_recomputed": {
+    "input": "22048736201806500921345",
+    "returned": "122782933364666",
+    "following_square": "540211049801617924692520961"
+  },
+  "units": "centered |t*phase-Q*message| modulo tQ",
+  "contraction_observed": true,
+  "returned_bound_runtime_equality_checked": true,
+  "test_result": {
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "seconds": "580.96"
+  },
+  "focused_tests_passed": 31,
+  "negative_control": "understated bound detected while plaintext remains correct",
+  "binary_sha256": "7e308dac5a8494c55377e27137d5ffedb18442f69954695466805e9d8d7f2af0",
+  "scope": "finite native error conformance and renewal observation; not a universal noise-model proof or joint-key security admission",
+  "evidence_sha256": {
+    "source-manifest.json": "e8f9c0993708e0c8bb9a73670cdee989a09cde0da59c7d3dd2ba8f4ba3a8ca54",
+    "native-observer-focused.log.gz": "fba87cdac92bcd9f23993664eadebfe3850c775955b91d4d805066225e126e66",
+    "native-observed-run.log.gz": "e2b3e744aca134f4a2d9c5325ec48ac094fa71ab59b7bafd0acf6afe80a08ebf",
+    "native-observer-clippy.log.gz": "87520ed66921b58e2061b0eff6a98beedf6cf5546e58c91f2b0436fee8092392",
+    "native-observer-panic.log.gz": "1b7ec88b9d040e7f32a92f79595ee91da63037c0d0c6c9f1dec74a5d9b41bce9"
+  }
+}
