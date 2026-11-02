@@ -6,6 +6,11 @@ scale-and-round rule, main-Q wire format, key domain checks, immutable history
 bounds, and refusal before noise exhaustion. No key or parameter is weakened.
 The temporary raw key is dropped after preparing its transform cache.
 
+For division claims, see the [API-by-API scope note](FPD_DIVISION_SCOPE_2026-11-02.md).
+This activation accelerates BFV multiplication; it does not remove
+`CramPublicEvaluator::exact_divide`'s shared-factor rejection or add a general
+encrypted division adapter.
+
 ## Enabled paths
 
 | Item | Activation and scope |

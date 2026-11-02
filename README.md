@@ -439,7 +439,21 @@ operation on a stated domain; structural emission
 checks remain separate because reversible uniform maps can still use a forbidden
 conversion algorithm.
 
-K-Elimination is used only under its coprimality, exact-divisibility, anchor-capacity, and uniqueness-range preconditions. Shared-factor exact division is rejected until the Fused Piggyback Division production adapter is enabled.
+K-Elimination is used only under its coprimality, exact-divisibility,
+anchor-capacity, and uniqueness-range preconditions. The main-Q evaluator
+already uses remainder-adjusted FPD for its fixed-divisor BFV rescaling.
+This is separate from `CramPublicEvaluator::exact_divide`, which still rejects
+divisors sharing a factor with any main or anchor lane; the general encrypted
+division adapter is not enabled. Exact-rational API availability does not
+change that restriction.
+
+The public [`feat/enable-fpd-stack` branch](https://github.com/Skyelabz210/NINE65_v7/tree/feat/enable-fpd-stack)
+contains prepared-key acceleration, default-feature activation, and
+[reproducible benchmark evidence](https://github.com/Skyelabz210/NINE65_v7/blob/feat/enable-fpd-stack/docs/FEATURE_ACTIVATION_2026-11-02.md).
+Its [division scope note and coefficient-level vectors](https://github.com/Skyelabz210/NINE65_v7/blob/feat/enable-fpd-stack/docs/FPD_DIVISION_SCOPE_2026-11-02.md)
+distinguish working shared-factor kernels from the missing encrypted adapter.
+This branch link does not assert that its feature defaults have merged into
+`main`.
 
 Normative contracts:
 
