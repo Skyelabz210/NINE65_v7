@@ -1,0 +1,46 @@
+{
+  "source_commit": "bbcde3c17f6ec1c84507b67ca10ffa28edeac0ab",
+  "red_production_source": "6e8de9ba621bf347e9d39f1f0ceb1dddc4476892",
+  "red_test_scope": "Added worker-policy regression on baseline production code, before applying the sequential checks. Selected four workers; required one.",
+  "commands": [
+    "cargo test --offline --locked -p nine65 --lib --config profile.test.package.nine65.opt-level=2 --features sequential prepared_hybrid",
+    "cargo test --offline --locked -p nine65 --lib --config profile.test.package.nine65.opt-level=2 prepared_hybrid",
+    "target/debug/deps/nine65-80c2288a98ae6da7 cram_main::division --test-threads=4",
+    "cargo clippy --offline --locked -p nine65 --lib --tests --features sequential -- -D warnings"
+  ],
+  "results": {
+    "sequential_prepared": {
+      "passed": 3,
+      "ignored": 1
+    },
+    "default_prepared": {
+      "passed": 3,
+      "ignored": 1
+    },
+    "sequential_division": {
+      "passed": 8,
+      "failed": 0
+    },
+    "clippy": "passed"
+  },
+  "earlier_full_release_result": {
+    "source": "6e8de9ba621bf347e9d39f1f0ceb1dddc4476892",
+    "passed": 1212,
+    "ignored": 140,
+    "failed": 0,
+    "scope": "Before the sequential worker-policy correction; retained with its own source identity."
+  },
+  "source_sha256": {
+    "crates/nine65/src/ops/exact_mul.rs": "228d23cc8c86eeba566f8d53ced1cc3f7f86445c6bcc4e5828e30df338ea9d2a",
+    "crates/nine65/src/ops/exact_mul_tests.rs": "341762d5c6935b9b2d23597c807faa0a4c830a2625c19e47eb73b0092ce37796",
+    ".github/workflows/ci.yml": "8a360948b23dd0f41956f007ebe34d17bcb6267e9b180fb3db1b9c7dfb03d1e2"
+  },
+  "artifact_sha256": {
+    "default-workers-green.log.gz": "b61789a022e6a77f4afc79c002e0f61895e7c0808c72c976d9becd1dc2f40311",
+    "followup-full-clockwork.log.gz": "54c41a502754c8628027846d268b90a56d439b792bac2b8fe0512f7ca10929a6",
+    "sequential-clippy.log.gz": "e68c9f4b1527b84223a20a48ab73ab525ec8389889ee645756fecce35d9d47ae",
+    "sequential-division-green.log.gz": "66b9ecac1e7436073ba6158897fa69ab6ac03effed8c33e647c579fcfc6e6559",
+    "sequential-green.log.gz": "2cb307d8482ffedd0bf2910014cc74f76fc04254eb86ceb57df9fbdc2b92ab48",
+    "sequential-red.log.gz": "fb4be68e772c77dda0bf1096695705c2c391a4bd6a5b17507a2edbab8fc12985"
+  }
+}

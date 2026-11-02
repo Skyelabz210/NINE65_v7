@@ -48,10 +48,36 @@ These runs validate the harness under the tested scheduling conditions; they
 do not establish zero overhead, a constant-time property, or a new encrypted
 division speedup. The follow-up hosted suite must be assessed at its own SHA.
 
+The exact full release Clockwork command subsequently passes locally at
+`6e8de9ba621bf347e9d39f1f0ceb1dddc4476892`: 1,212 passed, 140 ignored and
+zero failures, in 300.90 seconds. This result precedes the worker-policy
+correction below; it is not a latest-head rerun.
+
 The [manifest and archived transcripts](../artifacts/execution/2026-11-02/fpd-integration-followup/manifest.json)
 bind both source versions, the executed diagnostic driver, raw samples and
 commands. The archived driver retains its original workspace paths; adjust
 those paths when reproducing it in another checkout.
+
+## Prepared-key sequential feature correction
+
+The automated review found that prepared keys selected workers from ring size
+and CPU availability without honoring `sequential`. A regression at N=1024
+with four main lanes reproduces the issue on the baseline: four selected
+workers where the feature requires one. Small-ring tests alone could not
+detect it because they already select one worker.
+
+Commit `bbcde3c17f6ec1c84507b67ca10ffa28edeac0ab` forces one worker both at key
+preparation and at execution when `sequential` is enabled. Prepared-key
+acceleration is retained. Three prepared-key tests pass in each of the default
+and sequential builds, including exact coefficient equality against raw keys;
+the existing opt-in N32768 timing test remains ignored. All eight division
+regressions also pass using the sequential build, including native coefficient
+checks. Clippy, formatting, CI-policy controls and the route denylist pass.
+
+The required full CI job now explicitly runs the prepared-key tests with the
+sequential feature. The [red/green evidence manifest](../artifacts/execution/2026-11-02/sequential-prepared-keys/manifest.json)
+preserves commands, hashes and source scopes, including the earlier full-release
+log. Hosted results must still be read at their own final head.
 
 ## Remaining capability boundary
 
