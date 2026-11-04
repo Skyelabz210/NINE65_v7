@@ -17,7 +17,7 @@ The refresh path in `PublicRefreshCircuit::refresh_with_progress` is:
 5. Slot return, charging `input_error_factor` and `added_error`.
 6. Return to the work key: `ReturnNoisePlan::output_bound` scales by t, drops the extra boot primes, adds switch error `t · N_boot · eta · (2^base_bits − 1) · digits`, and refuses if the result exceeds `Q_work / 2`.
 
-The published native figures, quoted from that lift note and not recomputed in this change, are 517 bits before slot return and 562 bits after, against a 633-bit threshold. The next square-then-source radius is 48, inside support 49. If this prose and the executable certificate disagree, the executable certificate wins and this sentence has to be updated from the new preflight.
+The native key-free preflight was recomputed on 2026-11-04: 517 ideal-grid error bits before slot return and 562 after, against the outer 633-bit half-Delta threshold. The final scaled work-ring bound after drops and key switching is 122782933364666 (47 bits), with a 119-bit work modulus; it is a different stage and unit. See the [written envelope derivation](../proofs/REFRESH_PIPELINE.md) and [verification continuation](../maintenance/VERIFICATION_2026-11-04.md). The next square-then-source radius is 48, inside support 49. If this prose and the executable certificate disagree, the executable certificate wins and this sentence has to be updated from the new preflight.
 
 ## What a failure probability would have to be
 

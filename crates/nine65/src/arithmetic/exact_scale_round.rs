@@ -67,15 +67,17 @@
 //! decorative: the tests show a sharp transition from exact to
 //! near-universally wrong as `A` crosses it.
 //!
-//! For the BFV tensor with centered coefficients, `|Xc| <= N * (Q/2)^2`, so the
-//! caller passes `x_bound_over_q_sq = N / 4`.
+//! For centered inputs, the single-product tensor components have
+//! `|Xc| <= N * Q^2 / 4`; the two-product cross component needs
+//! `|Xc| <= N * Q^2 / 2`. Production `ExactMulPlan` therefore uses
+//! `x_bound_over_q_sq = N / 2` for every component.
 //!
 //! ## Scope
 //!
-//! This is the coefficient-level kernel for T1.3. It is **not yet wired into
-//! the evaluator** — that is T1.4, which additionally needs the tensor product
-//! and relinearization carried in the extended base. Nothing here changes any
-//! existing production path.
+//! This coefficient-level kernel is integrated by `ops::exact_mul`, which
+//! lifts centered inputs before tensor multiplication in both bases and
+//! applies this exact scale-and-round to every tensor component. The algebra
+//! and error-envelope scope are described in `docs/proofs/REFRESH_PIPELINE.md`.
 
 use super::main_only_base_ext::{MainOnlyBaseExt, MainOnlyBaseExtError, RankPath};
 #[cfg(test)]

@@ -1,0 +1,93 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+   Compiling libc v0.2.178
+   Compiling cfg-if v1.0.4
+   Compiling zerocopy v0.8.31
+   Compiling zerocopy-derive v0.8.31
+   Compiling getrandom v0.3.4
+   Compiling serde_core v1.0.228
+   Compiling crossbeam-utils v0.8.21
+   Compiling typenum v1.19.0
+   Compiling autocfg v1.5.0
+   Compiling crossbeam-epoch v0.9.21
+   Compiling generic-array v0.14.7
+   Compiling num-traits v0.2.19
+   Compiling rustix v1.1.3
+   Compiling serde v1.0.228
+   Compiling rand_core v0.9.3
+   Compiling once_cell v1.21.3
+   Compiling rayon-core v1.13.0
+   Compiling linux-raw-sys v0.11.0
+   Compiling regex-syntax v0.8.8
+   Compiling bitflags v2.10.0
+   Compiling either v1.15.0
+   Compiling ppv-lite86 v0.2.21
+   Compiling half v2.7.1
+   Compiling crossbeam-deque v0.8.6
+   Compiling zeroize v1.8.2
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling itoa v1.0.16
+   Compiling zmij v0.1.7
+   Compiling ciborium-io v0.2.2
+   Compiling memchr v2.7.6
+   Compiling anstyle v1.0.13
+   Compiling plotters-backend v0.3.7
+   Compiling fastrand v2.3.0
+   Compiling clap_lex v0.7.6
+   Compiling tempfile v3.24.0
+   Compiling clap_builder v4.5.53
+   Compiling serde_json v1.0.147
+   Compiling plotters-svg v0.3.7
+   Compiling regex-automata v0.4.13
+   Compiling ciborium-ll v0.2.2
+   Compiling digest v0.10.7
+   Compiling mana v0.1.0 (/workspace/NINE65_v7/crates/mana)
+   Compiling itertools v0.10.5
+   Compiling wait-timeout v0.2.1
+   Compiling cpufeatures v0.2.17
+   Compiling cast v0.3.0
+   Compiling bit-vec v0.8.0
+   Compiling same-file v1.0.6
+   Compiling nine65 v0.1.0 (/workspace/NINE65_v7/crates/nine65)
+   Compiling fnv v1.0.7
+   Compiling quick-error v1.2.3
+   Compiling rusty-fork v0.3.1
+   Compiling walkdir v2.5.0
+   Compiling bit-set v0.8.0
+   Compiling criterion-plot v0.5.0
+   Compiling sha2 v0.10.9
+   Compiling thiserror v1.0.69
+   Compiling rayon v1.11.0
+   Compiling clap v4.5.53
+   Compiling regex v1.12.2
+   Compiling unhal v0.1.0 (/workspace/NINE65_v7/crates/unhal)
+   Compiling tinytemplate v1.2.1
+   Compiling ciborium v0.2.2
+   Compiling plotters v0.3.7
+   Compiling rand_chacha v0.9.0
+   Compiling rand_xorshift v0.4.0
+   Compiling rand v0.9.5
+   Compiling is-terminal v0.4.17
+   Compiling getrandom v0.2.16
+   Compiling subtle v2.6.1
+   Compiling anes v0.1.6
+   Compiling unarray v0.1.4
+   Compiling oorandom v11.1.5
+   Compiling rand_core v0.6.4
+   Compiling exact_transcendentals v1.0.0 (/workspace/NINE65_v7/crates/exact_transcendentals)
+   Compiling rand_chacha v0.3.1
+   Compiling proptest v1.9.0
+   Compiling criterion v0.5.1
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 09s
+     Running `target/debug/examples/public_refresh_circuit --describe`
+Research backend; production security admission remains closed.
+Preflight: PublicRefreshCircuitCertificate { key_graph: KeyGraphCertificate { fingerprint: [154, 146, 17, 54, 179, 108, 243, 102, 155, 0, 21, 184, 179, 95, 105, 111, 200, 130, 176, 32, 173, 227, 28, 180, 215, 209, 87, 243, 224, 242, 221, 105], relations: [KeyRelation { purpose: "work public key: zero", message_secret: None, encryption_secret: Work, ciphertexts: 1 }, KeyRelation { purpose: "work relinearization: gadget*W^2", message_secret: Some(Work), encryption_secret: Work, ciphertexts: 12 }, KeyRelation { purpose: "source switch: gadget*embedded W", message_secret: Some(Work), encryption_secret: Source, ciphertexts: 20 }, KeyRelation { purpose: "phase bank: shifted S, independent p^2/p encodings", message_secret: Some(Source), encryption_secret: Outer, ciphertexts: 256 }, KeyRelation { purpose: "outer relinearization: gadget*B^2", message_secret: Some(Outer), encryption_secret: Outer, ciphertexts: 66 }, KeyRelation { purpose: "phase/inverse automorphisms: gadget*sigma(B)", message_secret: Some(Outer), encryption_secret: Outer, ciphertexts: 264 }, KeyRelation { purpose: "return: gadget*B under embedded W", message_secret: Some(Outer), encryption_secret: Work, ciphertexts: 40 }], work_degree: 8192, domains: [KeyDomainParameters { domain: Work, ring_degree: 8192, primes: [998244353, 985661441, 754974721, 469762049], plaintext_moduli: [65537], cbd_eta: 3, secret_distribution: "dense ternary via next_u64()%3", source_weight: None }, KeyDomainParameters { domain: Source, ring_degree: 8192, primes: [998244353, 985661441], plaintext_moduli: [65537], cbd_eta: 3, secret_distribution: "balanced sparse ternary; hidden support", source_weight: Some(96) }, KeyDomainParameters { domain: Outer, ring_degree: 32768, primes: [998244353, 985661441, 754974721, 469762049, 576460752301785089, 576460752301391873, 576460752300015617, 576460752298835969, 576460752298180609, 576460752293134337, 576460752291954689, 576460752290775041, 575870995836829697], plaintext_moduli: [65537, 4295098369], cbd_eta: 3, secret_distribution: "dense ternary via FheRng::ternary_vector", source_weight: None }] }, ring_degree: 32768, work_degree: 8192, carry_radius: 49, phase_value_bound: 3178496, signed_carry_radius: 48, ciphertext_products: 68, inverse_ciphertext_babies: 128, inverse_plaintext_diagonals: 32768, inverse_galois_calls: 382, phase_error_bound: U1024 { limbs: [419222978561, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, carry_error_bound: U1024 { limbs: [10288826999292248065, 4233175997998657258, 11246017930726316007, 13219449154835207781, 13151372483853239890, 13370698935693203871, 13382494680177885386, 8829335756134111920, 27, 0, 0, 0, 0, 0, 0, 0] }, lift_restoration: AdjacentLiftRestorationCertificate { shift: 48, shifted_upper_bound: 96, capacity: 1332, additional_ciphertext_products: 0, output_error_bound: U1024 { limbs: [10288827418515226626, 4233175997998657258, 11246017930726316007, 13219449154835207781, 13151372483853239890, 13370698935693203871, 13382494680177885386, 8829335756134111920, 27, 0, 0, 0, 0, 0, 0, 0] } }, restored_error_bound: U1024 { limbs: [14411590868838580224, 7916573713113097828, 12897437797629331981, 5389880225993010003, 7550943308082507529, 18101082702189103901, 15571573057938712981, 16957766971993113233, 966818667881568, 0, 0, 0, 0, 0, 0, 0] }, returned_scaled_error_bound: U512 { d0: 122782933364666, d1: 0, d2: 0, d3: 0 }, next_square_source_radius: 48 }
+Key-publication fingerprint: 9a921136b36cf3669b0015b8b35f696fc882b020ade31cb4d7d157f3e0f2dd69
+Key domains: [KeyDomainParameters { domain: Work, ring_degree: 8192, primes: [998244353, 985661441, 754974721, 469762049], plaintext_moduli: [65537], cbd_eta: 3, secret_distribution: "dense ternary via next_u64()%3", source_weight: None }, KeyDomainParameters { domain: Source, ring_degree: 8192, primes: [998244353, 985661441], plaintext_moduli: [65537], cbd_eta: 3, secret_distribution: "balanced sparse ternary; hidden support", source_weight: Some(96) }, KeyDomainParameters { domain: Outer, ring_degree: 32768, primes: [998244353, 985661441, 754974721, 469762049, 576460752301785089, 576460752301391873, 576460752300015617, 576460752298835969, 576460752298180609, 576460752293134337, 576460752291954689, 576460752290775041, 575870995836829697], plaintext_moduli: [65537, 4295098369], cbd_eta: 3, secret_distribution: "dense ternary via FheRng::ternary_vector", source_weight: None }]
+Requires circular/joint-key security review: true
+Return effective secret degree: 8192
+Work deterministic engineering screen (not joint-key proof): FactoredDualEstimate { core_svp: FactoredSecurityEstimate { verdict: Screened(SecurityEstimate { classical_bits: 231, quantum_bits: 131, hybrid_bits: 196, effective_bits: 196, bkz_block_size: 791, bkz_iterations: 5005448, meets_claim: true, analysis: "Ring-LWE n=8192, log(q)=119, secret=Ternary\nn/log(q) ratio: 68.8\nCost model: Core-SVP (BKZ-791, 5005448 iters)\nClassical: 231 bits\nHybrid (ternary): 196 bits\nQuantum: 131 bits\nEffective: 196 bits (MEETS CLAIM)" }), findings: [PrimeField { prime: 998244353, bits: 30 }, PrimeField { prime: 985661441, bits: 30 }, PrimeField { prime: 754974721, bits: 30 }, PrimeField { prime: 469762049, bits: 29 }], total_log_q: 119, widest_lane_bits: 30, distinct_lane_count: 4, claimed_security: 128, cost_model: CoreSVP, analysis: "STRUCTURAL SCREEN (engineering filter, NOT a lattice-estimator run)\nn=8192, lanes=4, total log2(Q)=119, widest lane=30 bits\nverdict: SCREENED — every lane is a prime field >= 24 bits\nbinding estimate (min over full width and each CRT lane): 196 bits\nRing-LWE n=8192, log(q)=119, secret=Ternary\nn/log(q) ratio: 68.8\nCost model: Core-SVP (BKZ-791, 5005448 iters)\nClassical: 231 bits\nHybrid (ternary): 196 bits\nQuantum: 131 bits\nEffective: 196 bits (MEETS CLAIM)" }, matzov: FactoredSecurityEstimate { verdict: Screened(SecurityEstimate { classical_bits: 208, quantum_bits: 117, hybrid_bits: 176, effective_bits: 176, bkz_block_size: 712, bkz_iterations: 3041664, meets_claim: true, analysis: "Ring-LWE n=8192, log(q)=119, secret=Ternary\nn/log(q) ratio: 68.8\nCost model: MATZOV (BKZ-712, 3041664 iters)\nClassical: 208 bits\nHybrid (ternary): 176 bits\nQuantum: 117 bits\nEffective: 176 bits (MEETS CLAIM)" }), findings: [PrimeField { prime: 998244353, bits: 30 }, PrimeField { prime: 985661441, bits: 30 }, PrimeField { prime: 754974721, bits: 30 }, PrimeField { prime: 469762049, bits: 29 }], total_log_q: 119, widest_lane_bits: 30, distinct_lane_count: 4, claimed_security: 128, cost_model: MATZOV, analysis: "STRUCTURAL SCREEN (engineering filter, NOT a lattice-estimator run)\nn=8192, lanes=4, total log2(Q)=119, widest lane=30 bits\nverdict: SCREENED — every lane is a prime field >= 24 bits\nbinding estimate (min over full width and each CRT lane): 176 bits\nRing-LWE n=8192, log(q)=119, secret=Ternary\nn/log(q) ratio: 68.8\nCost model: MATZOV (BKZ-712, 3041664 iters)\nClassical: 208 bits\nHybrid (ternary): 176 bits\nQuantum: 117 bits\nEffective: 176 bits (MEETS CLAIM)" }, binding_bits: Some(176), meets_both: true }
+Source security: external sparse-secret assessment required; dense screen inapplicable.
+Outer deterministic engineering screen (not joint-key proof): FactoredDualEstimate { core_svp: FactoredSecurityEstimate { verdict: Screened(SecurityEstimate { classical_bits: 169, quantum_bits: 95, hybrid_bits: 143, effective_bits: 143, bkz_block_size: 578, bkz_iterations: 2672672, meets_claim: true, analysis: "Ring-LWE n=32768, log(q)=650, secret=Ternary\nn/log(q) ratio: 50.4\nCost model: Core-SVP (BKZ-578, 2672672 iters)\nClassical: 169 bits\nHybrid (ternary): 143 bits\nQuantum: 95 bits\nEffective: 143 bits (MEETS CLAIM)" }), findings: [PrimeField { prime: 998244353, bits: 30 }, PrimeField { prime: 985661441, bits: 30 }, PrimeField { prime: 754974721, bits: 30 }, PrimeField { prime: 469762049, bits: 29 }, PrimeField { prime: 576460752301785089, bits: 59 }, PrimeField { prime: 576460752301391873, bits: 59 }, PrimeField { prime: 576460752300015617, bits: 59 }, PrimeField { prime: 576460752298835969, bits: 59 }, PrimeField { prime: 576460752298180609, bits: 59 }, PrimeField { prime: 576460752293134337, bits: 59 }, PrimeField { prime: 576460752291954689, bits: 59 }, PrimeField { prime: 576460752290775041, bits: 59 }, PrimeField { prime: 575870995836829697, bits: 59 }], total_log_q: 650, widest_lane_bits: 59, distinct_lane_count: 13, claimed_security: 128, cost_model: CoreSVP, analysis: "STRUCTURAL SCREEN (engineering filter, NOT a lattice-estimator run)\nn=32768, lanes=13, total log2(Q)=650, widest lane=59 bits\nverdict: SCREENED — every lane is a prime field >= 24 bits\nbinding estimate (min over full width and each CRT lane): 143 bits\nRing-LWE n=32768, log(q)=650, secret=Ternary\nn/log(q) ratio: 50.4\nCost model: Core-SVP (BKZ-578, 2672672 iters)\nClassical: 169 bits\nHybrid (ternary): 143 bits\nQuantum: 95 bits\nEffective: 143 bits (MEETS CLAIM)" }, matzov: FactoredSecurityEstimate { verdict: Screened(SecurityEstimate { classical_bits: 152, quantum_bits: 86, hybrid_bits: 129, effective_bits: 129, bkz_block_size: 520, bkz_iterations: 1622400, meets_claim: true, analysis: "Ring-LWE n=32768, log(q)=650, secret=Ternary\nn/log(q) ratio: 50.4\nCost model: MATZOV (BKZ-520, 1622400 iters)\nClassical: 152 bits\nHybrid (ternary): 129 bits\nQuantum: 86 bits\nEffective: 129 bits (MEETS CLAIM)" }), findings: [PrimeField { prime: 998244353, bits: 30 }, PrimeField { prime: 985661441, bits: 30 }, PrimeField { prime: 754974721, bits: 30 }, PrimeField { prime: 469762049, bits: 29 }, PrimeField { prime: 576460752301785089, bits: 59 }, PrimeField { prime: 576460752301391873, bits: 59 }, PrimeField { prime: 576460752300015617, bits: 59 }, PrimeField { prime: 576460752298835969, bits: 59 }, PrimeField { prime: 576460752298180609, bits: 59 }, PrimeField { prime: 576460752293134337, bits: 59 }, PrimeField { prime: 576460752291954689, bits: 59 }, PrimeField { prime: 576460752290775041, bits: 59 }, PrimeField { prime: 575870995836829697, bits: 59 }], total_log_q: 650, widest_lane_bits: 59, distinct_lane_count: 13, claimed_security: 128, cost_model: MATZOV, analysis: "STRUCTURAL SCREEN (engineering filter, NOT a lattice-estimator run)\nn=32768, lanes=13, total log2(Q)=650, widest lane=59 bits\nverdict: SCREENED — every lane is a prime field >= 24 bits\nbinding estimate (min over full width and each CRT lane): 129 bits\nRing-LWE n=32768, log(q)=650, secret=Ternary\nn/log(q) ratio: 50.4\nCost model: MATZOV (BKZ-520, 1622400 iters)\nClassical: 152 bits\nHybrid (ternary): 129 bits\nQuantum: 86 bits\nEffective: 129 bits (MEETS CLAIM)" }, binding_bits: Some(129), meets_both: true }

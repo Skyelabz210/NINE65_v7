@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "scope": "finite exact arithmetic witnesses, not encrypted execution or a universal proof",
+  "results": {
+    "digit_cases": 10684,
+    "slot_quotient_comparisons": 1428,
+    "source_coefficient_cases": 4050,
+    "projection_cases": 729,
+    "drop_cases": 2025,
+    "multiplication_cases": 59049
+  }
+}

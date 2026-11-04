@@ -1,0 +1,22 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+   Compiling serde_core v1.0.228
+   Compiling libc v0.2.178
+   Compiling serde v1.0.228
+   Compiling nine65 v0.1.0 (/workspace/NINE65_v7/crates/nine65)
+   Compiling crc32fast v1.5.0
+   Compiling base64 v0.22.1
+   Compiling private-feedback-core v0.1.0 (/workspace/NINE65_v7/crates/private-feedback-core)
+   Compiling clockwork-core v0.1.0 (/workspace/NINE65_v7/crates/clockwork-core)
+   Compiling cram-core v0.1.0 (/workspace/NINE65_v7/crates/cram-core)
+   Compiling math_utils v0.1.0 (/workspace/NINE65_v7/crates/math_utils)
+   Compiling nexgen_rational v0.1.0 (/workspace/NINE65_v7/crates/nexgen_rational)
+   Compiling nine65-extreme-tests v0.1.0 (/workspace/NINE65_v7/crates/nine65-extreme-tests)
+   Compiling qmnf_crtbigint v3.1.1 (/workspace/NINE65_v7/crates/qmnf-crtbigint)
+   Compiling getrandom v0.2.16
+   Compiling serde_json v1.0.147
+   Compiling bincode v1.3.3
+   Compiling private-feedback-nine65 v0.1.0 (/workspace/NINE65_v7/crates/private-feedback-nine65)
+   Compiling fhe-service v0.1.0 (/workspace/NINE65_v7/crates/fhe-service)
+    Finished `release` profile [optimized] target(s) in 2m 08s

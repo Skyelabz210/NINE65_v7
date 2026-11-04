@@ -1,0 +1,14 @@
+test_all_native_digit_cases_match_shared_factor_lift (test_public_refresh_lift_refinement.PublicRefreshLiftRefinementTests.test_all_native_digit_cases_match_shared_factor_lift) ... ok
+test_direct_and_factorized_anchor_lookups_require_degree_96 (test_public_refresh_lift_refinement.PublicRefreshLiftRefinementTests.test_direct_and_factorized_anchor_lookups_require_degree_96) ... ok
+test_factorized_crt_still_needs_canonical_reduction_in_native_field (test_public_refresh_lift_refinement.PublicRefreshLiftRefinementTests.test_factorized_crt_still_needs_canonical_reduction_in_native_field) ... ok
+test_general_conservative_flows_admit_exact_continuum_lift (test_public_refresh_lift_refinement.PublicRefreshLiftRefinementTests.test_general_conservative_flows_admit_exact_continuum_lift) ... ok
+test_mass_bound_controls_sheet_crossings (test_public_refresh_lift_refinement.PublicRefreshLiftRefinementTests.test_mass_bound_controls_sheet_crossings) ... ok
+test_native_adjacency_difference_has_five_values_and_degree_four_correction (test_public_refresh_lift_refinement.PublicRefreshLiftRefinementTests.test_native_adjacency_difference_has_five_values_and_degree_four_correction) ... ok
+test_native_signed_interval_and_all_residue_transitions (test_public_refresh_lift_refinement.PublicRefreshLiftRefinementTests.test_native_signed_interval_and_all_residue_transitions) ... ok
+test_rejects_invalid_views_and_flow_contracts (test_public_refresh_lift_refinement.PublicRefreshLiftRefinementTests.test_rejects_invalid_views_and_flow_contracts) ... ok
+test_zero_defect_and_worker_reduction_do_not_create_plaintext_views (test_public_refresh_lift_refinement.PublicRefreshLiftRefinementTests.test_zero_defect_and_worker_reduction_do_not_create_plaintext_views) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.630s
+
+OK

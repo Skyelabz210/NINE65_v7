@@ -89,12 +89,9 @@ jobs:
   # numbers" section) before a single test runs. At the time of that
   # historical measurement, CI had not succeeded since 2026-02-27 (#79).
   # Hosted workflows are active again; this old cost observation does not
-  # establish a current warm-cache baseline. GitHub Actions' cache (keyed on
-  # Cargo.lock, see the `Cache cargo registry`/`Cache target directory` steps
-  # elsewhere in this file) will keep that under budget is exactly the kind
-  # of unvalidated CI change this PR was asked not to make blindly. Wiring
-  # `bash scripts/run_tests_fast.sh` in here is the natural next step once
-  # #79 clears and a real run's timing is on record.
+  # establish a current warm-cache baseline. Any future FAST-tier wiring
+  # should measure the current cache behavior rather than infer a runtime
+  # from this historical build. Existing correctness gates remain required.
   fast-gate:
     name: "T1 · Fast Gate (fmt + clippy + deny)"
     runs-on: ubuntu-latest

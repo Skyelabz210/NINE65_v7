@@ -32,9 +32,12 @@ squares: 81,920 coefficient comparisons. It took 56.6 minutes including setup
 and 8.70 GiB peak RSS. This was an identified older snapshot, not a latest-head
 rerun. Later single-cycle, memory and phase-error witnesses have their own
 source commits in the [status guide](docs/PUBLIC_REFRESH_STATUS.md).
-The documented return certificate is 562 error bits below a 633-bit threshold;
-this deterministic certificate is not a probabilistic failure bound or a
-confidentiality proof.
+The outer ideal-grid error after slot return is 562 bits, below its 633-bit
+half-Delta threshold. The final scaled work-ring error after modulus drops and
+key switching is 122782933364666 (47 bits). These are different units and
+stages; see the [written return derivation](docs/proofs/REFRESH_PIPELINE.md).
+These deterministic certificates are not probabilistic failure bounds or
+confidentiality proofs.
 
 Historical named-profile depth and timing measurements are retained in the
 [claim-surface record](docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md) and
@@ -48,6 +51,18 @@ Claims are indexed in `docs/CLAIM_REGISTRY.csv`, interpreted by the
 certification. The [hygiene record](docs/maintenance/HYGIENE_2026-11-04.md)
 states what was checked and what could not be rerun.
 
+## Written proofs
+
+The [proof coverage map](docs/proofs/README.md) links the existing library
+theorems and step-by-step written derivations for interpolation, encoding,
+carry restoration, key return and error bounds. New arguments state their
+premises and remain distinct from machine-checked results. Their exact
+finite witnesses can be run with:
+
+```bash
+python3 scripts/check_refresh_prose_witnesses.py
+```
+
 ## Build and verification
 
 Install the Rust toolchain pinned in `rust-toolchain.toml` (1.89.0).
@@ -56,8 +71,16 @@ Run from the repository root:
 ```bash
 cargo build --locked --release --workspace
 cargo fmt --all -- --check
-cargo test --locked --release --workspace --no-fail-fast
+cargo test --locked --workspace \
+  --config profile.test.package.nine65.opt-level=2 --no-fail-fast
 ```
+
+The test command uses the CI development-test profile, retaining debug
+assertions and overflow checks. A full `--release --workspace` test sweep
+also discovers `coefficient_slot_gate`, whose toy parameter setups are refused
+by the release library's production floor. The
+[verification record](docs/maintenance/VERIFICATION_2026-11-04.md) retains that
+failed diagnostic; production parameter guards were not relaxed.
 
 The workspace excludes the Python, WASM and FFI bindings and `fuzz`;
 those need separate builds. Feature-gated and ignored tests are not covered by

@@ -1,6 +1,6 @@
 # Current public-refresh status and notation
 
-Updated 2026-11-01. Read this before diagnosing public refresh from older
+Updated 2026-11-04. Read this before diagnosing public refresh from older
 handoffs, issue descriptions, parameter predicates or failure artifacts.
 
 **Ref scope:** this guide describes the implementation in this checkout.
@@ -29,7 +29,7 @@ inconclusive observations; it does not close the original measurement finding.
 | Memory-optimized native execution | One N8192 refresh and following square at commit 4fc4328: 16,384 coefficient comparisons, within an 8 GiB environment | [Native memory result](execution/2026-11-01/NATIVE_REFRESH_MEMORY.md) |
 | Native error-renewal observation | At commit 2352435, 24,576 phase-error checks pass alongside the native plaintext checks; measured maximum scaled error contracts from 762490188487606471 to 1043073383 | [Independent phase-error witness](execution/2026-11-01/NATIVE_PHASE_ERROR_OBSERVER.md) |
 | Assessment integration rerun | At source commit 1c553f6, one native refresh and following square pass 16,384 plaintext comparisons and 24,576 phase-error checks in 579.60 seconds | [Assessment acceptance](execution/2026-11-01/ASSESSMENT_REMEDIATION.md) |
-| Current return certificate | 562 error bits after slot return below a 633-bit threshold; next square/source radius 48 within support 49 | [Lift/return proof](execution/2026-10-31/PUBLIC_REFRESH_LIFT_REFINEMENT.md) |
+| Current outer/return certificates | Outer ideal-grid error after slot return: 562 bits below its 633-bit half-Delta threshold. Final scaled work-ring return error: 122782933364666 (47 bits); next square/source radius 48 within support 49 | [Lift/return proof](execution/2026-10-31/PUBLIC_REFRESH_LIFT_REFINEMENT.md) |
 | Canonical plaintext-root binding | Same sealed value-root capability survives refresh; ciphertext lineage advances | [Canonical root](execution/2026-10-31/CANONICAL_PLAINTEXT_ROOT.md) |
 | Legacy/default Clockwork entry points | Still fail closed; their component-rounding path lacks its correction | `ops::bootstrap`; `params::secure_configs` support predicates |
 | Production security | Not admitted for the complete correlated evaluation-key setup | [Key graph](execution/2026-10-31/PUBLIC_REFRESH_KEY_GRAPH.md), [conditional reduction](execution/2026-10-31/PUBLIC_REFRESH_SECURITY_REDUCTION.md) |
@@ -109,3 +109,10 @@ cover the G/H digit identity, bounded native quotient lift, and conditional
 phase-clock return/error model. They do not establish Rust refinement or
 security of the full key setup. They add no new latest-head native execution
 claim and preserve the archived five-cycle snapshot above.
+
+The [written proof packet](proofs/README.md) supplies explicit arithmetic and
+composition derivations before further Lean development. A key-free native
+preflight on 2026-11-04 recomputed the separate outer and final work bounds;
+this is not a new encrypted native run. Existing five-module Lean proofs and
+their ten negative/positive gate controls were rerun successfully after
+installing the pinned tooling. See the [verification continuation](maintenance/VERIFICATION_2026-11-04.md).

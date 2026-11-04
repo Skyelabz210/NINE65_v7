@@ -1,0 +1,91 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/NINE65_v7/crates/nine65)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 13s
+     Running unittests src/lib.rs (target/debug/deps/nine65-5dd4d9097cfbe4f0)
+
+running 34 tests
+test ops::public_refresh_circuit::tests::fused_adjacent_restore_covers_every_native_lift_and_rejects_aliases ... ok
+test ops::public_refresh_circuit::key_graph::tests::breaking_return_cycle_still_leaves_self_key_dependencies ... ok
+test ops::public_refresh_circuit::key_graph::tests::publication_fingerprint_binds_order_and_key_schedule ... ok
+fused lift: 517 bits; after slot return: 562 bits; half-Delta: 633; next-square radius: 48
+test ops::public_refresh_circuit::tests::fused_native_lift_query_funds_slot_return_and_next_refresh ... ok
+test ops::public_refresh_circuit::tests::public_refresh_plan_refuses_invalid_geometry_scale_support_basis_and_resources ... ok
+test ops::public_refresh_circuit::key_graph::tests::native_inventory_is_exact_and_requires_joint_key_review ... ok
+test ops::public_refresh_circuit::tests::public_refresh_refuses_wrong_families_and_exhausted_history_without_counting ... ok
+test ops::public_refresh_circuit::tests::public_refresh_preserves_plaintext_root_across_representation_changes_and_forks ... ok
+test ops::public_refresh_native::native_public_refresh_current_single_cycle_with_dependent_square ... ignored, native encrypted refresh; explicit memory and execution evidence run
+test ops::public_refresh_native::native_public_refresh_returns_all_8192_coefficients_for_five_cycles ... ignored, native encrypted refresh, explicit resource and duration evidence run
+test ops::public_refresh_native::native_public_refresh_returns_all_8192_coefficients_for_three_cycles ... ignored, native encrypted refresh, explicit resource and duration evidence run
+public-refresh N=8 certificate=PublicRefreshCircuitCertificate { key_graph: KeyGraphCertificate { fingerprint: [68, 82, 90, 62, 254, 0, 172, 212, 135, 49, 206, 226, 196, 217, 154, 202, 43, 223, 2, 66, 74, 52, 133, 245, 217, 164, 181, 152, 173, 24, 191, 231], relations: [KeyRelation { purpose: "work public key: zero", message_secret: None, encryption_secret: Work, ciphertexts: 1 }, KeyRelation { purpose: "work relinearization: gadget*W^2", message_secret: Some(Work), encryption_secret: Work, ciphertexts: 12 }, KeyRelation { purpose: "source switch: gadget*embedded W", message_secret: Some(Work), encryption_secret: Source, ciphertexts: 20 }, KeyRelation { purpose: "phase bank: shifted S, independent p^2/p encodings", message_secret: Some(Source), encryption_secret: Outer, ciphertexts: 8 }, KeyRelation { purpose: "outer relinearization: gadget*B^2", message_secret: Some(Outer), encryption_secret: Outer, ciphertexts: 66 }, KeyRelation { purpose: "phase/inverse automorphisms: gadget*sigma(B)", message_secret: Some(Outer), encryption_secret: Outer, ciphertexts: 264 }, KeyRelation { purpose: "return: gadget*B under embedded W", message_secret: Some(Outer), encryption_secret: Work, ciphertexts: 40 }], work_degree: 8, domains: [KeyDomainParameters { domain: Work, ring_degree: 8, primes: [998244353, 985661441, 754974721, 469762049], plaintext_moduli: [65537], cbd_eta: 3, secret_distribution: "dense ternary via next_u64()%3", source_weight: None }, KeyDomainParameters { domain: Source, ring_degree: 8, primes: [998244353, 985661441], plaintext_moduli: [65537], cbd_eta: 3, secret_distribution: "balanced sparse ternary; hidden support", source_weight: Some(4) }, KeyDomainParameters { domain: Outer, ring_degree: 32, primes: [998244353, 985661441, 754974721, 469762049, 576460752301785089, 576460752301391873, 576460752300015617, 576460752298835969, 576460752298180609, 576460752293134337, 576460752291954689, 576460752290775041, 575870995836829697], plaintext_moduli: [65537, 4295098369], cbd_eta: 3, secret_distribution: "dense ternary via FheRng::ternary_vector", source_weight: None }] }, ring_degree: 32, work_degree: 8, carry_radius: 3, phase_value_bound: 163840, signed_carry_radius: 2, ciphertext_products: 9, inverse_ciphertext_babies: 4, inverse_plaintext_diagonals: 32, inverse_galois_calls: 10, phase_error_bound: U1024 { limbs: [7530305, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, carry_error_bound: U1024 { limbs: [16996638155652337202, 7974051860901440217, 67808196343329, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, lift_restoration: AdjacentLiftRestorationCertificate { shift: 2, shifted_upper_bound: 4, capacity: 1332, additional_ciphertext_products: 0, output_error_bound: U1024 { limbs: [16996638155659867507, 7974051860901440217, 67808196343329, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] } }, restored_error_bound: U1024 { limbs: [12932497031556256448, 15463994795526439008, 6315992178621240075, 123, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, returned_scaled_error_bound: U512 { d0: 1762715922, d1: 0, d2: 0, d3: 0 }, next_square_source_radius: 2 }
+public-refresh N=8 key generation started
+public-refresh N=8 key generation complete elapsed=86.268408ms
+public-refresh N=8 cycle=0 high carry phase 2/2 elapsed=87.089212ms
+public-refresh N=8 cycle=0 low carry phase 2/2 elapsed=88.463789ms
+public-refresh N=8 cycle=0 affine phase 2/2 elapsed=89.754309ms
+public-refresh N=8 cycle=0 high digit product 0/4 elapsed=91.368987ms
+public-refresh N=8 cycle=0 high digit product 4/4 elapsed=97.647507ms
+public-refresh N=8 cycle=0 low correction polynomial 0/4 elapsed=97.679294ms
+public-refresh N=8 cycle=0 low correction polynomial 4/4 elapsed=103.671945ms
+public-refresh N=8 cycle=0 quotient product 0/1 elapsed=103.774068ms
+public-refresh N=8 cycle=0 quotient product 1/1 elapsed=105.288485ms
+public-refresh N=8 cycle=0 inverse babies 4/4 elapsed=108.260173ms
+public-refresh N=8 cycle=0 inverse giants 8/8 elapsed=133.733754ms
+phase-bound observer N=8 cycle=0: input=U512 { d0: 281312084000366, d1: 0, d2: 0, d3: 0 }; returned=U512 { d0: 12824073, d1: 0, d2: 0, d3: 0 }; square=U512 { d0: 5327593543886, d1: 0, d2: 0, d3: 0 }; coefficients_per_stage=8
+public-refresh N=8 cycle=0 all coefficients and dependent square passed elapsed=134.870333ms
+public-refresh N=8 cycle=1 high carry phase 2/2 elapsed=135.312658ms
+public-refresh N=8 cycle=1 low carry phase 2/2 elapsed=136.227653ms
+public-refresh N=8 cycle=1 affine phase 2/2 elapsed=137.185864ms
+public-refresh N=8 cycle=1 high digit product 0/4 elapsed=138.285437ms
+public-refresh N=8 cycle=1 high digit product 4/4 elapsed=142.558162ms
+public-refresh N=8 cycle=1 low correction polynomial 0/4 elapsed=142.581236ms
+public-refresh N=8 cycle=1 low correction polynomial 4/4 elapsed=146.920561ms
+public-refresh N=8 cycle=1 quotient product 0/1 elapsed=146.964597ms
+public-refresh N=8 cycle=1 quotient product 1/1 elapsed=147.924911ms
+public-refresh N=8 cycle=1 inverse babies 4/4 elapsed=150.330878ms
+public-refresh N=8 cycle=1 inverse giants 8/8 elapsed=154.978937ms
+phase-bound observer N=8 cycle=1: input=U512 { d0: 5327593543886, d1: 0, d2: 0, d3: 0 }; returned=U512 { d0: 10225899, d1: 0, d2: 0, d3: 0 }; square=U512 { d0: 1230304587143, d1: 0, d2: 0, d3: 0 }; coefficients_per_stage=8
+public-refresh N=8 cycle=1 all coefficients and dependent square passed elapsed=156.10508ms
+public-refresh N=8 cycle=2 high carry phase 2/2 elapsed=156.549939ms
+public-refresh N=8 cycle=2 low carry phase 2/2 elapsed=157.573498ms
+public-refresh N=8 cycle=2 affine phase 2/2 elapsed=158.44636ms
+public-refresh N=8 cycle=2 high digit product 0/4 elapsed=159.749009ms
+public-refresh N=8 cycle=2 high digit product 4/4 elapsed=163.971087ms
+public-refresh N=8 cycle=2 low correction polynomial 0/4 elapsed=163.989755ms
+public-refresh N=8 cycle=2 low correction polynomial 4/4 elapsed=168.563522ms
+public-refresh N=8 cycle=2 quotient product 0/1 elapsed=168.606506ms
+public-refresh N=8 cycle=2 quotient product 1/1 elapsed=169.556615ms
+public-refresh N=8 cycle=2 inverse babies 4/4 elapsed=172.037615ms
+public-refresh N=8 cycle=2 inverse giants 8/8 elapsed=176.97581ms
+phase-bound observer N=8 cycle=2: input=U512 { d0: 1230304587143, d1: 0, d2: 0, d3: 0 }; returned=U512 { d0: 14542327, d1: 0, d2: 0, d3: 0 }; square=U512 { d0: 5156091924035, d1: 0, d2: 0, d3: 0 }; coefficients_per_stage=8
+public-refresh N=8 cycle=2 all coefficients and dependent square passed elapsed=178.235654ms
+test ops::public_refresh_native::complete_public_refresh_returns_original_key_for_three_cycles ... ok
+test ops::public_refresh_return::tests::public_return_rejects_foreign_family_and_stale_source_lineage ... ok
+test ops::public_refresh_return::tests::public_return_rejects_malformed_outputs_and_exhausted_bounds ... ok
+test ops::public_refresh_return::tests::public_return_restores_dense_work_and_preserves_history ... ok
+test ops::public_refresh_slots::auxiliary::tests::native_batch_capacity_matches_closed_form_at_extreme_words ... ok
+test ops::public_refresh_return::tests::public_return_noise_plan_is_key_free_and_checks_geometry ... ok
+test ops::public_refresh_slots::auxiliary::tests::signed_batched_convolution_matches_schoolbook ... ok
+test ops::public_refresh_slots::tests::balanced_inverse_partition_halves_cache_without_more_switches ... ok
+test ops::public_refresh_slots::tests::centered_diagonal_reduces_into_main_primes_smaller_than_plaintext ... ok
+test ops::public_refresh_slots::tests::streamed_slot_return_recovers_embedded_coefficients_with_three_keys ... ok
+test ops::public_refresh_source::tests::direct_phase_quotient_bound_covers_signed_lifts_and_native_endpoints ... ok
+test ops::public_refresh_slots::tests::reduced_cache_partition_preserves_every_coefficient ... ok
+test ops::public_refresh_circuit::tests::public_refresh_conforms_on_full_polynomials_histories_and_forks_across_seeds ... ok
+test ops::public_refresh_source::tests::source_preparation_refuses_exhausted_switch_margin_without_resetting_input ... ok
+test ops::public_refresh_source::tests::source_preparation_rejects_wrong_families_and_invalid_parameters ... ok
+test ops::public_refresh_source::tests::source_preparation_tracks_full_polynomial_history_and_ring_embedding ... ok
+test ops::public_refresh_source::tests::work_error_observer_detects_understated_bound_before_plaintext_failure ... ok
+test params::secure_configs::tests::public_refresh_headroom_screen_is_not_a_name_match ... ok
+test params::secure_configs::tests::public_refresh_refusal_fires_at_the_bootstrap_entry_points ... ok
+test params::secure_configs::tests::public_refresh_support_requires_sound_phase1 ... ok
+public source preparation: denseN8192 -> sparseN8192/H96, base_bits=3, all 8192 coefficients and actual expanded radii checked; certified radius=48; security/refresh admission remains false
+test ops::public_refresh_source::tests::source_preparation_native_same_ring_h96_checks_all_coefficients ... ok
+signed carry radius=48; direct lookup error floor=832 bits; half-Delta=633 bits
+test ops::public_refresh_circuit::tests::native_plan_certifies_signed_carry_separately_from_residual_support ... ok
+public source preparation: denseN8192 -> sparseN32768/H32, base_bits=2, all 32768 coefficients and actual expanded radii checked; certified radius=16; security/refresh admission remains false
+test ops::public_refresh_source::tests::source_preparation_native_embedded_h32_checks_all_coefficients_and_zeros ... ok
+
+test result: ok. 31 passed; 0 failed; 3 ignored; 0 measured; 1224 filtered out; finished in 10.02s
+

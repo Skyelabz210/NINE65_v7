@@ -23,6 +23,19 @@ its test counts, timing tables, deployment status and work lists are historical.
 - Preserve frozen logs, manifests and hashes. Record the actual executed test,
   exact source commit, parameters and limitations for new evidence.
 
+## Verification workflow
+
+Install missing required tooling from its official source at the pinned version
+before running the relevant step; a missing executable is not a reason to defer
+verification. Use isolated tool/cache paths in managed environments. Record
+actual installation or network failures and try the supported installation route.
+
+For proof gaps, first reuse existing library results, then write explicit
+assumptions, derivations, intuition, boundary checks and a second review pass.
+Use the [written proof coverage map](docs/proofs/README.md). New hand-derived
+arguments remain distinct from machine-checked results; existing proof gates
+stay enforced. Do not fabricate closure of open cryptographic assumptions.
+
 ## Build and features
 
 Use the pinned Rust toolchain and the commands in [README.md](README.md).
@@ -35,6 +48,10 @@ release library/example builds reject it.
 
 Run tests with `--no-fail-fast` to collect later targets after a failure.
 Ignored/feature-gated tests and excluded binding crates require separate runs.
+The required workspace suite uses the CI test profile in README. A whole
+workspace release test sweep also discovers toy `coefficient_slot_gate` setups
+that the release library correctly refuses; keep the production parameter floor
+and use the documented development-test mode for those experiments.
 Do not copy old test counts or benchmark values into current capability claims.
 Use [CI lint policy](docs/CI_LINT_POLICY.md) and exact hosted run results.
 

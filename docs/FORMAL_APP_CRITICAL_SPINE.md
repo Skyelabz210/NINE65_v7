@@ -78,6 +78,14 @@ The Lean gate must:
 4. fail when `KElimination.AppBoundary` is absent;
 5. publish the exact Lean, Mathlib, and commit versions.
 
+## Written proof work before new formalization
+
+Use the [proof coverage map](proofs/README.md) for existing library results and
+hand-derived supplements. State assumptions, derive the result, explain its
+meaning and check boundaries in a second pass before attempting new Lean work.
+The written packet is not a new MACHINE_CHECKED result or a substitute for
+existing CI proof gates.
+
 ## Completion labels
 
 - `MACHINE_CHECKED`: Lean builds under the pinned toolchain and CI gate.

@@ -1,0 +1,17 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/NINE65_v7/crates/nine65)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 55s
+     Running unittests src/lib.rs (target/debug/deps/nine65-5dd4d9097cfbe4f0)
+
+running 6 tests
+test ops::direct_slot_phase::tests::batched_signed_weights_match_per_term_modular_oracle_on_wide_lanes ... ok
+test ops::direct_slot_phase::tests::antiperiodic_baby_horner_is_full_negacyclic_convolution ... ok
+test ops::direct_slot_phase::tests::slot_encoding_roundtrips_prime_and_square_and_negacyclic_product ... ok
+test ops::direct_slot_phase::tests::native_plaintext_fast_transform_matches_direct_root_evaluation ... ok
+test ops::direct_slot_phase::tests::coherent_source_phases_extract_all_carries_and_restore_affine_message ... ok
+test ops::direct_slot_phase::tests::native_weighted_bank_parallel_matches_sequential_reference_exactly ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 1252 filtered out; finished in 1.88s
+

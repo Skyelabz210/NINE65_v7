@@ -1,0 +1,8 @@
+{
+  "rustc": "rustc 1.89.0 (29483883e 2025-08-04)",
+  "cargo": "cargo 1.89.0 (c24e10642 2025-06-23)",
+  "rustfmt": "rustfmt 1.8.0-stable (29483883ee 2025-08-04)",
+  "clippy": "clippy 0.1.89 (29483883ee 2025-08-04)",
+  "lean": "Lean (version 4.27.0-rc1, x86_64-unknown-linux-gnu, commit 2fcce7258eeb6e324366bc25f9058293b04b7547, Release)",
+  "lake": "Lake version 5.0.0-src+2fcce72 (Lean version 4.27.0-rc1)"
+}
