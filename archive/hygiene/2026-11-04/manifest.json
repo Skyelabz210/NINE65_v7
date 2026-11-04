@@ -1,0 +1,19 @@
+{
+  "source_commit": "de4c3a8",
+  "scope": "Unmodified superseded documentation snapshots; relative links describe their original locations. Not current guidance.",
+  "sha256": {
+    "README.md": "dc436d3476864f144ce3e2ac9eeb7b7158d62085ea995dbe18def2dc67408a18",
+    "CLAUDE.md": "c1c2fa81260fec678f420e2fbc7db13514563267c96c93b1fe2fefc6536250ca",
+    "QWEN.md": "ef3ec6a998bc1717642b6659f8eb5f554a19de09345556bb534d88a88455ba92",
+    "TODO.md": "2224328002c106a4246d68fbd848abe37721f7e253aeb1f018e502fb7afdd5c1",
+    "CONTRIBUTING.md": "44870b4ead658b788342267ad25abe9934246eb8c467f4722bd76e35d9e86de4",
+    "docs/ARCHITECTURE.md": "97c45f2512ab458e8ba2a7c8d84af76a1f85bd73c0c596c7391939623c66ebd9",
+    "crates/nine65/README.md": "deb4cd8787721e59ba8c942e7a9d18c0463212fc35a22953345291f1d37f73a8",
+    "docs/SECURITY_MODE_MATRIX.md": "67b151138407637a634543008a2b739475c83a27a4020dfe049cf2f2b35fd1a7",
+    "docs/CRAM_RESIDUE_NATIVE_DAG_EXECUTION.md": "8d4f26b55c461ef22bde58fcbc6bd389a7fce9db58af959db945ce26755a6e01",
+    "docs/LINEAGE.md": "c3a92f22113500863b500d471377f268b52b7b2c517207dd346c7f8e43db93c4"
+  },
+  "archive_paths": {
+    "README.md": "ROOT_README.md"
+  }
+}

@@ -49,14 +49,20 @@ Each surface has a distinct key boundary and must use the security mode matrix.
 
 ### Stage E — CRAM residue-native integration
 
-The current integration line adds a canonical CRAM state and hard architecture counters. The production rule is residue-native execution:
+The integration line adds canonical CRAM state and architecture counters.
+The [CRAM integration contract](CRAM_INTEGRATION_CONTRACT.md), incorporating
+the 2026-10-27 policy clarification, governs current residue computation:
 
-- no internal number-line projection;
-- no hidden scalar materialization;
-- no Garner reconstruction;
-- no mixed-radix conversion;
-- exact integer bounds and explicit winding/anchor state;
-- K-Elimination and, when completed in the FHE path, Fused Piggyback Division for exact division routing.
+- reconstruction is permitted under declared semantics and provenance;
+- Garner/mixed-radix synthetic emissions remain prohibited;
+- information loss must not violate the declared reversible operation;
+- compute uses exact integers with explicit range and anchor state;
+- K-Elimination and division retain their operation-specific preconditions.
+
+Reconstruction/projection counts must report actual activity; nonzero counts
+are not automatic policy failures. The general encrypted shared-factor division
+adapter remains unenabled. For working research refresh and notation, use
+[current public-refresh status](PUBLIC_REFRESH_STATUS.md).
 
 ## Authority order
 

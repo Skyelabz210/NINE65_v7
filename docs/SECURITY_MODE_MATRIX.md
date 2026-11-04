@@ -5,6 +5,11 @@
 
 NINE65 exposes several computational modes with different trust boundaries. Applications must select one mode explicitly. No application may infer security properties from the presence of ciphertext alone.
 
+The table describes key boundaries and permitted deployment categories, not
+production admission or availability of every named operation. Default legacy
+Clockwork public refresh remains gated; the separate research path and its
+open security obligations are in [current refresh status](PUBLIC_REFRESH_STATUS.md).
+
 ## Mode matrix
 
 | Mode | Secret-key holder | Encrypts | Evaluates | Decrypts | Evaluator trust | Permitted deployment | Prohibited deployment |
@@ -58,8 +63,8 @@ For DualRNS modes:
 - Ciphertexts remain in DualRNS main and anchor lanes throughout evaluation.
 - K-Elimination is the exact rescale/division path where its coprimality and range preconditions hold.
 - Fused Piggyback Division is the declared route for shared-factor divisors when integrated.
-- Garner reconstruction and mixed-radix conversion are prohibited from production hot paths.
-- Number-line projection is permitted only at explicit encryption ingestion, authorized decryption, or boundary I/O.
+- Garner/mixed-radix synthetic emissions are prohibited in residue computation.
+- Reconstruction and projection are governed by the declared operation semantics, provenance and independence/reversibility requirements in the [CRAM integration contract](CRAM_INTEGRATION_CONTRACT.md); the earlier blanket reconstruction ban is superseded.
 - Main NTT computation moduli remain CLASS-F prime lanes.
 - The current FHE anchor path is CLASS-A: anchor polynomial convolution is field-backed and therefore uses prime NTT-compatible lanes, while K-Elimination extraction itself is CLASS-R and requires coprimality and range validity.
 - Ring-only composite anchors are not yet a live fast path in the FHE multiplier.
@@ -83,6 +88,6 @@ An application may move from prototype to deployment only after:
 - key destruction and session expiry are tested;
 - ciphertext deserialization rejects malformed dimensions and limb counts;
 - exact parameter evidence is pinned;
-- residue-native architecture counters report zero internal reconstruction, scalar materialization, Garner, and mixed-radix activity;
+- residue-native counters accurately report reconstruction/projection activity and report zero prohibited synthetic emissions, forbidden information loss and floating-point compute activity; actual-operation arrow checks separately validate the stated domain;
 - the application-specific structured-signal tests pass at small, large, and endurance scales;
 - any WASM deployment states whether it uses the leveled single-modulus surface or a future separately evidenced DualRNS adapter.

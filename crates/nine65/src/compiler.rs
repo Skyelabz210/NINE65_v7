@@ -1,4 +1,6 @@
-// QMNF Bootstrap-Free FHE Compiler
+//! Heuristic circuit and noise planner; not an encrypted execution or security proof.
+//! Legacy `bootstrap_free` fields report this static model only. They do not
+//! certify actual BFV depth, refresh availability, or parameter security.
 // Phase 3: Static noise analysis and parameter selection
 //
 // Pre-compute modulus chain to support circuit depth WITHOUT bootstrap
@@ -300,6 +302,7 @@ pub struct FHEParameters {
     pub security_bits: usize,
     pub total_modulus_bits: usize,
     pub multiplicative_depth_supported: usize,
+    /// Legacy static-model flag; not an encrypted correctness certificate.
     pub bootstrap_free: bool,
 }
 
@@ -432,6 +435,7 @@ pub struct CompilationResult {
     pub circuit: Circuit,
     pub parameters: FHEParameters,
     pub noise_analysis: NoiseAnalysisResult,
+    /// Legacy model comparison, not a guarantee about executed ciphertexts.
     pub bootstrap_free_guaranteed: bool,
 }
 

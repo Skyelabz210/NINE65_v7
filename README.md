@@ -1,627 +1,135 @@
 # NINE65
-## Exact-Integer BFV/DualRNS Prototype
 
-NINE65 is a Rust BFV/DualRNS computation substrate for exact modular privacy-preserving workloads across public-evaluator, KSK-separated, symmetric protected, service-operator, browser, edge, and accelerator deployments.
+NINE65 is a Rust research prototype for exact-integer BFV/DualRNS encrypted
+computation and CRAM residue arithmetic. Public evaluation, trusted-key-holder
+refresh, service and experimental bindings have different key boundaries;
+see the [security mode matrix](docs/SECURITY_MODE_MATRIX.md).
 
-**Current correction status:** legacy Clockwork public refresh is disabled on every named profile.
-The K-Elimination substrate and finite-depth evaluator have measured tests; the
-recumbent FHE port and encrypted carry transition remain open. `secure_256` is a
-target label with a 240-bit in-tree MATZOV screen, not an independently certified
-256-bit profile. There is no claim of unlimited depth, bootstrap-free FHE,
-library-wide constant time, or production readiness. The supplied correction
-packet has been [reconciled against the current code and arithmetic prerequisites](docs/execution/2026-10-26/STATUS.md).
-The [implementation continuation](docs/execution/2026-10-27/IMPLEMENTATION.md)
-adds the repaired signed substrate, bounded recumbent coefficients, and actual-operation
-arrow checks under the clarified synthetic-emission policy.
-The [system analysis and remediation](docs/execution/2026-10-28/SYSTEM_ANALYSIS.md)
-maps the fixed-basis CRAM goal to the active evaluator paths and records corrections
-to single-modulus admission and decryption-capacity accounting.
-The [public refresh continuation](docs/execution/2026-10-28/PUBLIC_REFRESH_PROGRESS.md)
-adds an encrypted phase-clock producer with stressed-input contraction tests;
-named-profile public refresh remains gated on native integration and admission.
-The [typed roundtrip continuation](docs/execution/2026-10-28/PUBLIC_REFRESH_ROUNDTRIP.md)
-adds full-polynomial assembly, work-key return, and sealed history admission
-for the conditional small-degree construction.
+## Current scope
 
-The repository has moved beyond the historical “v7 Bootstrap Complete” snapshot. The current integration line combines:
+- Finite-depth public addition and multiplication are implemented in `nine65`.
+- The explicit `ops::public_refresh_circuit::PublicRefreshCircuit` research
+  backend implements encrypted correction and original-key return. It requires
+  `allow_insecure`; release library/example builds reject that feature.
+- Legacy/default `ClockworkBootstrap` public refresh remains disabled on all
+  named profiles. Its refusal does not describe the separate research backend.
+- Related-key confidentiality, external parameter attestation, a probabilistic
+  decryption-failure bound and research refresh constant-time posture remain
+  unestablished. There is no production-readiness or unlimited-depth claim.
+- `secure_128` and `secure_128_deep` currently use the same tuple. `secure_256`
+  is an API label: its in-tree MATZOV screen is 240 bits, not certified 256-bit
+  security. All named-security values require independent exact-tuple evidence.
 
-- public DualRNS evaluation and relinearization;
-- gated, currently disabled circular and KSK-separated Clockwork bootstrap paths;
-- automatic pre-operation refresh requests with typed refusal at the public gate;
-- symmetric protected decrypt→re-encrypt refresh;
-- K-Elimination rescaling with explicit anchor/range state;
-- exact large-modulus and noise-budget accounting;
-- CRAM residue-native architecture gates;
-- service, WASM, MANA, and UNHAL deployment surfaces;
-- an evaluator-only private-feedback reference application.
+Read [current public-refresh status and notation](docs/PUBLIC_REFRESH_STATUS.md)
+and the [security pack](docs/security/README.md) before interpreting old reports.
+The status guide scopes legacy `K_0`, native `K_native`, residual `rho` and
+adjacent `kappa` to their actual producers and equations.
 
-> **Evidence state:** named parameter profiles are candidate tuples until independently attested with the exact estimator input and raw output artifact. Per-number provenance, open discrepancies, and the internal engineering assessment are in `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
+## Evidence and limits
 
-For a runnable, correctness-checked demonstration of the current CRAM public
-evaluator, see [the CRAM showcase](docs/CRAM_SHOWCASE.md).
+The archived native research run checked five refreshes and five following
+squares: 81,920 coefficient comparisons. It took 56.6 minutes including setup
+and 8.70 GiB peak RSS. This was an identified older snapshot, not a latest-head
+rerun. Later single-cycle, memory and phase-error witnesses have their own
+source commits in the [status guide](docs/PUBLIC_REFRESH_STATUS.md).
+The documented return certificate is 562 error bits below a 633-bit threshold;
+this deterministic certificate is not a probabilistic failure bound or a
+confidentiality proof.
+
+Historical named-profile depth and timing measurements are retained in the
+[claim-surface record](docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md) and
+[archived README](archive/hygiene/2026-11-04/ROOT_README.md).
+They are not fresh benchmarks of this checkout. Compare exact tuples, features,
+commits and machines rather than profile names across revisions.
+
+Claims are indexed in `docs/CLAIM_REGISTRY.csv`, interpreted by the
+[claim evidence ledger](docs/CLAIM_EVIDENCE_LEDGER.md), and governed by
+`docs/BENCHMARK_PROFILE_POLICY.md`. Registry classification is not security
+certification. The [hygiene record](docs/maintenance/HYGIENE_2026-11-04.md)
+states what was checked and what could not be rerun.
+
+## Build and verification
+
+Install the Rust toolchain pinned in `rust-toolchain.toml` (1.89.0).
+Run from the repository root:
+
+```bash
+cargo build --locked --release --workspace
+cargo fmt --all -- --check
+cargo test --locked --release --workspace --no-fail-fast
+```
+
+The workspace excludes the Python, WASM and FFI bindings and `fuzz`;
+those need separate builds. Feature-gated and ignored tests are not covered by
+the default workspace command. Do not interpret a build or zero matching tests
+as executed encrypted evidence.
+
+Run the documentation and architecture gates:
+
+```bash
+bash scripts/check_claim_registry.sh
+bash scripts/check_stale_claims.sh
+python3 scripts/check_public_refresh_status.py
+python3 scripts/check_public_refresh_security_claims.py
+python3 scripts/check_residue_native_architecture.py
+bash scripts/check_no_floats_runtime.sh
+```
+
+Lean is the formalization of record. With the pinned Lean toolchain installed:
+
+```bash
+python3 scripts/check_public_refresh_proofs.py
+(cd lean4/KElimination && lake build && bash scripts/axiom_audit.sh)
+```
+
+Proof statements have their own assumptions and scope; they do not establish
+Rust refinement or confidentiality of the full related-key setup. Legacy Coq
+explorations are not the maintained verification basis.
 
 ## Public refresh status
 
-Start with the [current status and notation guide](docs/PUBLIC_REFRESH_STATUS.md)
-when reconciling historical diagnoses with the implemented paths.
-
-**A complete public refresh works in the explicit research backend, with
-substantial correctness evidence. Production security admission for its
-complete related-key setup remains open.**
-
-The `ops::public_refresh_circuit` evaluator uses public evaluation keys and
-holds no secret key. Its native configuration uses an N=8192 work ring,
-plaintext modulus 65537, and an N=32768 outer ring with a 650-bit modulus.
-
-| Evidence | Verified result |
-|---|---|
-| Repeated native execution | Five refreshes and five following full-polynomial squares; all 8,192 coefficients checked after each operation: **81,920 comparisons passed** |
-| Usable return budget | **562-bit** error bound after slot return, below the **633-bit** threshold; the following square/source conversion has radius 48 within support 49 |
-| Plaintext-root preservation | The current API retains the same canonical plaintext-root capability through refresh and rejects mismatched-root returns; arithmetic issues new roots |
-
-The measured native run took **56.6 minutes including setup** and peaked at
-**8.70 GiB** resident memory. Its source/binary snapshot predates the later
-root and key-inventory additions, which have separate regression coverage.
-The full native run has not been repeated at the latest commit. See the
-[evidence summary](docs/execution/2026-10-31/PUBLIC_REFRESH_EVIDENCE_SUMMARY.md)
-and [native transcript](artifacts/execution/2026-10-28/public-refresh-circuit/native/five-cycle-run.log).
-
-Parameter-level attack assessments provide supporting security evidence, but
-do not establish confidentiality of the entire correlated evaluation-key
-setup. A pinned authors' attack implementation has been executed; conformity
-to the corrected theorem and full quantum-hybrid coverage remain unverified.
-See the [attack assessment](docs/execution/2026-10-31/HOU_JIANG_ASSESSMENT.md)
-and [conditional security reduction](docs/execution/2026-10-31/PUBLIC_REFRESH_SECURITY_REDUCTION.md).
-
-The [security pack](docs/security/README.md) states the current non-claims: related-key confidentiality is not established, external attestation is not obtained, and constant-time posture is not established.
-
-This backend requires `allow_insecure`. The default named-profile public
-refresh APIs in the table below remain disabled. Independent encrypted S8
-remainder outputs and legacy phase-root interfaces are separate from the
-[canonical plaintext-root binding](docs/execution/2026-10-31/CANONICAL_PLAINTEXT_ROOT.md).
-
-Inspect the native plan, key inventory, and parameter screens without generating keys:
+Inspect the native plan and key inventory without generating keys:
 
 ```bash
 cargo run --locked -p nine65 --features allow_insecure \
   --example public_refresh_circuit -- --describe
 ```
 
-Run the expensive five-cycle encrypted example, using OS randomness and an
-optimized development profile. Release library builds reject `allow_insecure`:
+The expensive encrypted five-cycle example uses OS randomness and an optimized
+**development** profile:
 
 ```bash
 cargo run --locked --config profile.dev.package.nine65.opt-level=2 \
-  -p nine65 --features allow_insecure \
-  --example public_refresh_circuit
+  -p nine65 --features allow_insecure --example public_refresh_circuit
 ```
 
-## Verified Capability
-
-This table covers the shipped named profiles and their dated direct-operation
-measurements. Correctness columns are checked against a decryption oracle.
-The separate research public-refresh evidence is described above.
-
-| Config | N | main lanes | log2(q) | public mul | symmetric mul | public direct-square depth † | default public refresh |
-|---|---|---|---|---|---|---|---|
-| `secure_128` | 8192 | 4 | 119 | 408.66 ms §§ | 93.14 ms §§ | 2 | disabled §§§ |
-| `secure_128_deep` | 8192 | 4 | 119 | 408.66 ms | 93.14 ms | 2 | disabled §§§ |
-| `secure_192` | 16384 | 5 | 146 | 1114.12 ms | 247.21 ms | 3 | disabled §§§ |
-| `secure_256` | 16384 | 6 | 175 | 1017.91 ms | 262.96 ms | 4 ‡ | disabled §§§ |
-
-**`secure_128` was re-cut 2026-08-26** (`docs/OPEN_WORK_2026-08-26.md` §A3;
-constructor comment on `SecureConfig::secure_128` in
-`crates/nine65/src/params/secure_configs.rs`) from three main primes to four.
-It is now the exact same tuple as `secure_128_deep` — same `N`, same ordered
-prime list, same `t`, same `eta` — kept as a separate named entry point rather
-than merged or deprecated (that disposition is still an open call; see
-`docs/OPEN_WORK_2026-08-26.md`). The retired three-lane tuple (`N=8192`,
-3 main primes, `log2(q)=90`, refused for public refresh) is historical only;
-its numbers live in `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`, dated
-before the recut, and must not be quoted as the current `secure_128`.
-
-† Direct squaring **without** refresh — the last depth that still decrypts
-correctly. These depths are seed-sensitive at the boundary, so where a config
-has been surveyed the column states the depth that holds on *every* seed, not
-the modal one. Only `secure_128_deep` has been surveyed so far (12 seeds,
-2026-08-24): 11 reach depth 3 and one fails it by exactly one, so the column
-states 2. `secure_128` inherits this figure because it is the identical tuple
-as of the 2026-08-26 recut. `secure_192` and `secure_256` are single-seed
-measurements and their depths should be read as provisional in the same way.
-See §4 of the claim-surface doc.
-‡ `secure_256`'s direct depth is from the correctness-gated benchmark run.
-The auto-refresh acceptance suite currently fails at the public Phase-1
-soundness gate. Per-number provenance is in
-`docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
-§§ The figures reused here are `secure_128_deep`'s 2026-08-23 measurements
-(`tests/op_timings.rs`), carried over rather than independently sourced under
-quiet conditions, because the two constructors build the identical tuple as
-of 2026-08-26. A same-machine confirmation run backs the reuse; see the § note
-under "Measured performance" below for the numbers and its own caveat.
-§§§ The chain-only headroom screen clears for all four named profiles, but
-`supports_public_refresh` and `supports_public_refresh_with_ksk` return
-`false` while the public Phase-1 soundness gate is closed. The diagnostic
-decryption oracle measured wrong refresh plaintexts on `secure_128`,
-`secure_128_deep`, and `secure_192`; `secure_256` was not measured in that
-pass. See [issue #117](https://github.com/Skyelabz210/NINE65_v7/issues/117)
-for the measured failure and [issue #95](https://github.com/Skyelabz210/NINE65_v7/issues/95)
-for the missing exact Phase-1 transition.
-
-**Timings re-measured 2026-08-23** by `tests/op_timings.rs` — see
-[Measured performance](#measured-performance) for the machine, the method, and
-why the figures that used to sit in this column were replaced.
-
-Before the 2026-08-26 recut, `secure_128`'s three-lane chain left too little
-`Delta` headroom for a public refresh: 42 bits remained after the refresh's
-worst-case noise deposit against the 47 bits one subsequent multiply needs, so
-`ClockworkBootstrap::bootstrap` / `bootstrap_with_ksk` refused that config with
-a typed `Nine65Error`
-(`params::secure_configs::ensure_public_refresh_supported`). The recut chain
-carries the same 71-bit headroom `secure_128_deep` has, so both clear the
-capacity screen. Neither enables public refresh through the default API; the
-separate research backend above supplies the working refresh path.
-
-Screened security levels for the shipped tuples, measured by
-`params::secure_configs::tests::screened_levels_for_named_configs`:
-
-| config | claimed | Core-SVP | MATZOV | binding |
-|---|---|---|---|---|
-| `secure_128` | 128 | 196 | 176 | 176 |
-| `secure_128_deep` | 128 | 196 | 176 | 176 |
-| `secure_192` | 192 | 320 | 288 | 288 |
-| `secure_256` | 256 | 267 | **240** | **240** |
-
-Every name clears its own number under Core-SVP, the model the constructor gates
-on. `secure_256` falls 16 bits short under MATZOV; read the binding number with
-`SecureConfig::screened_security_dual()` rather than inferring it from the
-constructor name. These are screening numbers from an integer heuristic, not
-lattice-security certificates — see "Parameter and Claim Discipline" below.
-
-### Current limits
-
-- **No unbounded-depth capability.** Measured public direct-square depths are
-  2–4 for the named profiles. The research backend has completed five native
-  refresh/square cycles. "Unlimited depth", "depth 50", and "bootstrap-free" are on
-  `docs/LINEAGE.md`'s deprecation list and are not claimed here.
-- **General refreshed circuits are not established.** The research backend
-  demonstrates repeated refresh/square chains; this is not general-circuit or
-  unbounded-depth acceptance for the default APIs.
-- **No external lattice-estimator attestation** exists for the shipped
-  `n = 8192 / 16384` tuples. The numbers above are in-tree screening results.
-- **No public constant-time claim.** Blocked on the CT-NTT/cache gates in
-  `docs/CT_NTT_CACHE_ROADMAP.md`.
-
-## Measured performance
-
-Every figure below was produced by `crates/nine65/tests/op_timings.rs` on
-**2026-08-23**, on the machine described under Method. Nothing here is
-inherited.
-
-| Config | N | main lanes | Encrypt | Add | Public mul | Symmetric mul | Decrypt |
-|---|---|---|---|---|---|---|---|
-| `secure_128` | 8192 | 4 | 6.60 ms § | 1.528 ms § | 408.66 ms § | 93.14 ms § | 2.51 ms § |
-| `secure_128_deep` | 8192 | 4 | 6.60 ms | 1.528 ms | 408.66 ms | 93.14 ms | 2.51 ms |
-| `secure_192` | 16384 | 5 | 23.09 ms | 5.488 ms | 1114.12 ms | 247.21 ms | 7.51 ms |
-| `secure_256` | 16384 | 6 | 22.41 ms | 5.943 ms | 1017.91 ms | 262.96 ms | 7.78 ms |
-
-§ `secure_128` was recut to the four-prime chain 2026-08-26, three days after
-this table was measured. Its row above reuses `secure_128_deep`'s figures
-rather than an independent run, because the two constructors now build the
-identical tuple (`N`, ordered primes, `t`, `eta` all equal) — see "Verified
-Capability" above. Not an inherited number in the sense this table warns
-against elsewhere: it is the *current* tuple's own measurement, just filed
-under its other name. Confirmed by an independent same-machine run of
-`tests/op_timings.rs` under heavy concurrent load (not a clean baseline, so
-not substituted into this table): `secure_128` and `secure_128_deep` measured
-within the run's own noise band of each other on every column (e.g. public
-mul 723.51 ms vs 663.70 ms), consistent with them building the same tuple and
-inconsistent with any residual difference between the two names. Re-run
-`tests/op_timings.rs` under quiet conditions for a fresh, independently
-sourced `secure_128`-labeled artifact.
-
-Reproduce:
-
-```bash
-cargo test -p nine65 --test op_timings --release --features allow_insecure \
-  -- --ignored --nocapture
-```
-
-**Automated regression check.** The command above now also writes an
-integer-nanosecond JSON capture (`bench-results/op_timings.json` by default).
-`scripts/check_benchmark_regression.py` compares it against the committed
-baseline (`docs/benchmarks/op_timings_baseline.json`) and fails if any
-operation's median regressed by more than 25% — see
-`docs/BENCHMARK_REGRESSION_2026-09-03.md` for the design, threshold rationale,
-and a real captured run. Not yet wired into CI: GitHub Actions has not
-executed on this repo since 2026-02-27 (issue #79).
-
-**Method.** Medians over 5 rounds (3 at N=16384), default features — which
-means MANA and UNHAL are active, see below. Every round decrypts both the sum
-and the product and asserts exactness, so a timing figure cannot come from a
-run that computed the wrong answer. Machine: 4 vCPU shared container, Intel
-Xeon 2.80 GHz, load average 1–22 during the runs. Run-to-run spread on
-`secure_128` public mul across four separate invocations was 281–302 ms, so
-treat the third significant figure as noise.
-
-### Why these replaced the previous figures
-
-The previous table quoted 158.994 ms for `secure_128` public mul; `CLAUDE.md`
-quoted 152.13 ms alongside 23.56 ms encrypt, 0.83 ms add and 11.06 ms decrypt.
-
-Rather than guess at the discrepancy, the commit that recorded those numbers —
-`364bd6a`, 2026-02-24 — was checked out in a worktree and measured on **this**
-machine with an equivalent harness:
-
-| | recorded at `364bd6a` | measured at `364bd6a`, here | verdict |
-|---|---|---|---|
-| Encrypt | 23.56 ms | 21.96 ms | reproduces |
-| Add | 0.83 ms | 0.672 ms | reproduces |
-| **Public mul** | **152.13 ms** | **316.54 ms** | **does not reproduce, 2.1× off** |
-| Decrypt | 11.06 ms | 10.14 ms | reproduces |
-
-Three of the four reproduce within 20%, stable over three runs. So this machine
-is comparable to whatever produced them, and the discrepancy is **not**
-hardware. One number was simply wrong, and was already wrong when it was
-written: `secure_128` public mul has never measured ~152 ms on this code.
-
-The `158.994 ms` figure was worse — it was introduced during the 2026-08-22
-session at `877e227`, into a table with no stated source, and never measured at
-all.
-
-### The February figures are not comparable to these, and neither is any
-### cross-time comparison keyed on a config name
-
-`secure_128` was **redefined** between February and August:
-
-| | `364bd6a` (2026-02-24) | as measured 2026-08-23 |
-|---|---|---|
-| ring degree | **N = 4096** | **N = 8192** |
-| lanes | 3 main | 3 main + 5 anchor = 8 |
-
-(The "as measured" column is itself now historical: `secure_128` was recut
-again on 2026-08-26, three main primes to four, so the current shape is 4 main
-+ 5 anchor = 9 lanes at the same `N = 8192`. See "Verified Capability" above.
-That second change does not affect the ratios derived in this section, which
-compare `364bd6a` against the 2026-08-23 measurement run, not against the
-present.)
-
-The constructor's own comment records why — "Increased from 4096 to maintain
-security with larger Q". `add`, `encrypt` and `decrypt` are all O(N × lanes), so
-the current `secure_128` does roughly **3.2× the work** of February's under the
-same name.
-
-That makes every February-to-now delta meaningless as stated, and an earlier
-revision of this section published one anyway — including a claimed "~2× `add`
-regression" (0.672 ms → 1.405 ms). **There is no such regression.** Measured
-with a tight-loop probe, `add` is 0.207 ms at `364bd6a` and 1.04 ms now, a 5.0×
-ratio against a ~3.2× work ratio; the remainder is memory and allocation
-scaling, not a defect. The claim has been withdrawn rather than rescaled,
-because dividing measurements by an estimated work ratio produces an estimate,
-not a measurement.
-
-Two things were checked and eliminated before the shape change was found: the
-release profile (`lto = "fat"`, `codegen-units = 1` versus cargo's defaults
-measures 1.03 ms against 0.85–1.01 ms at `HEAD` — overlapping, nowhere near
-5×), and a `git bisect` across all 274 commits in the range, which converged on
-a commit whose tree is a divergent re-import rather than a behavioural change.
-
-What survives, because it was measured at a single commit with a single config:
-the `152.13 ms` public-mul figure recorded at `364bd6a` does not reproduce **at
-`364bd6a` itself**, where the same N=4096 `secure_128` measures 316.54 ms over
-three runs. That figure was wrong when written.
-
-And the session-scope conclusion is unaffected, because it compares two commits
-that share a config definition: `b03aa4a` built in a separate worktree measured
-301.55 ms for `secure_128` public mul against 281–302 ms at `HEAD`, with every
-config matching within noise.
-
-### MANA and UNHAL are the default, and are verified to engage
-
-`nine65`'s default feature set is
-`["exact_transcendentals_backend", "accelerated"]`, and `accelerated = ["mana",
-"unhal"]`. Rayon is not in any default graph: `unhal` is consumed with
-`default-features = false` specifically so its own `parallel` default cannot
-pull rayon in behind the acceleration flag.
-
-Declared-by-default is not the same as active, so the dispatch path was traced
-end to end: `RNSFHEContext::run_limb_lanes` → `unhal::accelerator::Accelerator::auto()`
-→ `mana::executor::run_lanes`. On this machine `available_parallelism` reports
-4, `lane_parallel_threshold` is 2, and `secure_128` (as it stood 2026-08-23,
-three main primes) dispatched 8 lanes (3 main + 5 anchor), so the parallel path
-was taken rather than the sequential fallback. After the 2026-08-26 recut,
-`secure_128` dispatches 9 lanes (4 main + 5 anchor) — still above the
-threshold of 2, so the parallel path is still taken; this was not re-traced,
-only recomputed from the lane count.
-`accelerated_dual_poly_mul_is_bit_identical_to_sequential_reference` pins that
-the accelerated result equals the sequential one bit for bit, so the
-accelerator is a wall-clock choice and never a numerical one.
-
-To measure without it: `--no-default-features --features exact_transcendentals_backend`.
-
-### Constant-time status: 9 of 9 blocking gates pass, 2 findings remain open
-
-Re-measured 2026-08-23 with the interleaved two-class dudect harness, run
-serially — concurrent timing tests contend for the CPU and invalidate each
-other.
-
-| gate | t_signal | t_control | verdict |
-|---|---|---|---|
-| `montgomery_pow_exponent_hamming_weight` | 1.54 | 0.75 | constant-time |
-| `montgomery_reduce_operand_magnitude` | 1.62 | 1.81 | constant-time |
-| `montgomery_mul_operand_magnitude` | 1.81 | 0.48 | constant-time |
-| `barrett_reduce_operand_magnitude` | 3.37 | 3.09 | constant-time |
-| `mod_switch_rescale_sign_classes` | 0.34 | 0.22 | constant-time |
-| `exact_prime_drop_fixed_vs_random` | 0.77 | 1.26 | constant-time |
-| `exact_prime_drop_small_vs_large_residues` | 0.23 | 1.56 | constant-time |
-| `adjacency_k_elim_operand_magnitude` | 1.38 | 0.47 | constant-time |
-| `adjacency_k_elim_operand_order` | 1.17 | 0.52 | constant-time |
-
-All nine sit below the `t < 5` threshold with clean control arms. **This is not
-a claim that the system is constant-time**, and the two tests that say so are
-run on the same schedule rather than hidden:
-
-| open finding | measured | gap |
-|---|---|---|
-| `mod_switch_down_dual` (F-2) | 18.05 ms vs 53.50 ms, t = 616.3 | **2.96×** |
-| `KElimination::extract_k` (F-3) | 2,083,963 ns vs 2,071,605 ns, t = 34.1 | 0.60% |
-
-F-2's cause is `U256::div_mod_u64`, a long division over the reconstructed
-coefficient. F-3 has a measured structural answer that is built but not adopted
-— see `AdjacencyKElim` and `docs/CT_VERIFICATION_PLAN.md` §4.6. Beyond these,
-source-level constant-time paths do not close hardware channels; see
-`docs/CT_NTT_CACHE_ROADMAP.md`.
-
-## Execution Contract
-
-NINE65 applications follow the Recumbent CRAM rule:
-
-```text
-ingest once -> declared residue operations and lift contracts -> authorized output
-```
-
-Production residue compute prohibits:
-
-- synthetic emissions from Garner or mixed-radix conversions;
-- discarding information required by the declared reversible operation;
-- floating-point arithmetic.
-
-Reconstruction itself is permitted. Its use must preserve the operation's
-declared semantics, provenance and independence/reversibility contract. IID
-refers to the declared driving variables; carry-process reversibility uses
-detailed balance when the Holte model applies. Arrow checks evaluate the actual
-operation on a stated domain; structural emission
-checks remain separate because reversible uniform maps can still use a forbidden
-conversion algorithm.
-
-K-Elimination is used only under its coprimality, exact-divisibility,
-anchor-capacity, and uniqueness-range preconditions. The main-Q evaluator
-already uses remainder-adjusted FPD for its fixed-divisor BFV rescaling.
-This is separate from `CramPublicEvaluator::exact_divide`, which still rejects
-divisors sharing a factor with any main or anchor lane; the general encrypted
-division adapter is not enabled. Exact-rational API availability does not
-change that restriction.
-
-The public [`feat/enable-fpd-stack` branch](https://github.com/Skyelabz210/NINE65_v7/tree/feat/enable-fpd-stack)
-([PR #204](https://github.com/Skyelabz210/NINE65_v7/pull/204))
-contains prepared-key acceleration, default-feature activation, and
-[reproducible benchmark evidence](https://github.com/Skyelabz210/NINE65_v7/blob/feat/enable-fpd-stack/docs/FEATURE_ACTIVATION_2026-11-02.md).
-Its [division scope note and coefficient-level vectors](https://github.com/Skyelabz210/NINE65_v7/blob/feat/enable-fpd-stack/docs/FPD_DIVISION_SCOPE_2026-11-02.md)
-distinguish working shared-factor kernels from the missing encrypted adapter.
-This branch link does not assert that its feature defaults have merged into
-`main`.
-
-Normative contracts:
-
-- `docs/SECURITY_MODE_MATRIX.md`
-- `docs/CRAM_INTEGRATION_CONTRACT.md`
-- `docs/ENTROPY_MODEL.md`
-- `docs/LINEAGE.md`
-
-## Current Components
-
-| Component | Current role |
-|---|---|
-| `nine65` | BFV/DualRNS key generation, encryption, decryption, evaluation, K-Elimination, key switching, bootstrap, batching, Galois operations, exact bounds, and noise accounting |
-| `cram-core` | canonical residue-native CRAM state, validated basis, topology, anchor state, exact bounds, and prohibited-path counters |
-| `clockwork-core` | RNS/GRO/bound-tracking and key-lifecycle support |
-| `fhe-service` | internal server-key-holder HTTP boundary; decrypt route disabled by default |
-| `nine65-wasm` | browser/device boundary with capacity checks and disabled secret-key export |
-| `mana` / `unhal` | lane-parallel acceleration and hardware abstraction |
-| `private-feedback-core` | bounded feedback signals, strict-turn next-question selection, safe-basis residues, and lane-wise aggregation |
-| `private-feedback-nine65` | public-evaluator encryption and homomorphic slot aggregation with no public decrypt capability |
-| Lean 4 | formalization of record for K-Elimination and application-boundary properties |
-
-## Security Modes
-
-### Public evaluator
-
-```text
-client/owner: key generation, encryption, authorized decryption
-evaluator:    add, multiply, key switch, bootstrap, aggregate
-```
-
-The evaluator receives public/evaluation/bootstrap material but no secret key or plaintext projection capability.
-
-### KSK-separated public evaluator
-
-The work key and bootstrap key are distinct. The bootstrap phase returns the ciphertext to the work key through the declared KSK path.
-
-### Symmetric protected
-
-A trusted key-holder boundary performs immediate decrypt→re-encrypt refresh. This mode is appropriate for a local device, HSM, TEE, private edge gateway, or isolated operator. It is not evaluator-blind public FHE.
-
-### Service operator
-
-`fhe-service` owns session keys. It is an internal operator mode, not consumer-side key ownership.
-
-The production decrypt route is concealed unless all of the following are present:
-
-```bash
-FHE_ENABLE_DECRYPT=1
-FHE_DECRYPT_TOKEN='<operator secret>'
-```
-
-and the request supplies:
-
-```text
-x-fhe-decrypt-token: <operator secret>
-```
-
-The token is hashed to a fixed-size digest before constant-time comparison. mTLS, workload identity, tenant authorization, and network isolation remain required for non-loopback deployment.
-
-### WASM / edge client
-
-The browser or device can own key generation and decryption. Secret-key byte export remains disabled. Browser memory and hardware side channels remain part of the deployment threat model.
-
-## Direct Public Evaluation Example
-
-Public multiplication works within the measured direct depth of the chosen
-profile. Default-profile public refresh remains disabled; check
-`supports_public_refresh` before adding a refresh call. The working research
-backend has its own setup and ciphertext API, described under
-[Public refresh status](#public-refresh-status).
-
-```rust
-use nine65::ops::rns_fhe::RNSFHEContext;
-use nine65::params::secure_configs::SecureConfig;
-
-// API profile identifier. External named-security use still requires an
-// independent exact-tuple estimator artifact.
-let config = SecureConfig::secure_128_deep().into_config();
-let context = RNSFHEContext::try_new(&config).expect("valid context");
-let keys = context.generate_keys_dual_full_secure();
-
-// Public evaluation: the evaluator holds only the public and evaluation keys.
-let a = context.encrypt_dual_secure(7, &keys.public_key);
-let squared = context
-    .mul_dual_public(&a, &a, &keys.eval_key)
-    .expect("public multiply");
-
-let result = context.decrypt_dual(&squared, &keys.secret_key);
-println!("result mod t = {result}");
-```
-
-`AutoBootstrapEvaluator::mul_auto` returns an error when its tracked noise
-budget triggers a public refresh. Its budget model does not establish that
-the Phase-1 ciphertext transition is sound.
-
-The depths in the capability table are **direct-square depths without refresh**.
-How far an auto-refreshed chain extends past them is a separate question, tracked
-by the acceptance suite in `ops::auto_bootstrap`, and no unbounded-depth claim
-follows from it — see `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
-
-A software counter reset is not a bootstrap. The auto evaluator must perform a live ciphertext transition and restore usable post-refresh budget.
-
-## Private-Feedback Reference Path
-
-The initial application path operationalizes short adaptive feedback without treating raw text as the encrypted aggregate:
-
-```text
-user answer
-  -> local/declared classifier
-  -> bounded structured signal
-  -> highest-value follow-up class
-  -> fixed exact-integer slots
-  -> DualRNS encryption
-  -> evaluator-only private aggregation
-  -> owner-authorized output boundary
-```
-
-`private-feedback-core` holds no raw response text. `private-feedback-nine65::EncryptedFeedback` accepts only a public key and exposes no decrypt method or secret-key field.
-
-## Entropy Roles
-
-| Mechanism | Approved use |
-|---|---|
-| `SecureRng` / OS CSPRNG | key generation, production encryption randomness, bootstrap-key generation, security-critical sampling |
-| `ShadowHarvester` | deterministic tests, reproducible diagnostics, explicitly reviewed non-secret streams |
-
-Statistical-test success does not establish cryptographic unpredictability.
-
-SBNI (Shadow Butterfly Noise Injection) was retired 2026-08-09: its only
-production call site is gone, and its entropy source was a deterministic,
-publicly recomputable function of the operation index — it never delivered
-the rerandomization or timing-resistance claims made for it. See
-`docs/LADDER_REMOVAL.md` §1 for the record and `docs/RETIRED_MECHANISMS.md`
-for the companion retirement of modulus switching and the noise-exhaustion
-ladder it was paired with.
-
-## Parameter and Claim Discipline
-
-The in-tree estimator is an integer engineering screen, not an independent certificate. The API names `secure_128`, `secure_128_deep`, `secure_192`, and `secure_256` do not by themselves prove those security levels. Read the screened numbers with `SecureConfig::screened_security_bits()` / `screened_security_dual()` rather than inferring them from a constructor name.
-
-External named-security claims require:
-
-- exact ring dimension;
-- ordered main modulus chain;
-- anchor configuration;
-- plaintext modulus;
-- secret and error distributions;
-- key-switch decomposition;
-- attack model and estimator version;
-- raw estimator output;
-- exact source commit.
-
-Disagreement is resolved in favor of the lower reproducible result.
-
-Every public claim is indexed through `docs/CLAIM_REGISTRY.csv` and governed by `docs/BENCHMARK_PROFILE_POLICY.md`. Detailed status is recorded in `docs/CLAIM_EVIDENCE_LEDGER.md`.
-
-`cargo bench` output (`target/criterion/`, used for internal micro-benchmarks such as `barrett_ct`/`ntt_ct`/`k_elimination_ct`, separate from the `op_timings.rs` harness behind the table above) is overwritten by each new run. `scripts/archive_criterion_run.sh` snapshots it to a timestamped, commit-pinned `bench-archive/` directory (gitignored) so a run's raw evidence survives past the next benchmark invocation; see `docs/BENCHMARK_PROFILE_POLICY.md` "Raw Criterion Archival".
-
-## Build and Verification
-
-```bash
-# Format
-cargo fmt --all -- --check
-
-# Core workspace tests
-cargo test --release --workspace \
-  --exclude nine65-python \
-  --exclude nine65-wasm \
-  --exclude nine65-ffi \
-  --no-fail-fast
-
-# Application stack
-cargo test -p private-feedback-core --release
-cargo test -p private-feedback-nine65 --release
-
-# Internal service
-cargo test -p fhe-service --release
-
-# WASM boundary
-rustup target add wasm32-unknown-unknown
-cargo check \
-  --manifest-path crates/nine65-wasm/Cargo.toml \
-  --target wasm32-unknown-unknown \
-  --features wasm
-
-# Exact-integer independent application oracle
-python3 scripts/private_feedback_correctness_harness.py
-
-# CRAM architecture and claim gates
-python3 scripts/check_residue_native_architecture.py
-bash scripts/check_no_floats_runtime.sh
-bash scripts/check_claim_registry.sh
-bash scripts/check_stale_claims.sh
-
-# Lean formalization of record
-cd lean4/KElimination
-lake build
-bash scripts/axiom_audit.sh
-```
-
-## Formal and Side-Channel Status
-
-Lean 4 is the current machine-checked formalization of record. Application-boundary theorems cover evaluator capability separation, default service denial, structured-signal bounds, residue homomorphisms, shared-factor division rejection, ciphertext-shape validity, and the rule that a budget reset alone is not bootstrap.
-
-Constant-time-oriented source paths do not close all hardware leakage channels. Full public constant-time claims remain blocked on the CT-NTT/cache gates in `docs/CT_NTT_CACHE_ROADMAP.md`, including address-trace evidence, compiler/disassembly review, timing experiments, and target-specific deployment assumptions.
-
-## Repository Status
-
-The application-hardening integration is tracked in `docs/APP_PLATFORM_READINESS.md`. Merge and release conditions, open discrepancies, and the internal engineering assessment are in `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
+This research run is resource intensive. Keep its correctness, resource cost,
+root/provenance binding and production security as separate claims.
+
+## Architecture and execution contract
+
+See the [architecture map](docs/ARCHITECTURE.md),
+[CRAM showcase](docs/CRAM_SHOWCASE.md), and
+[CRAM integration contract](docs/CRAM_INTEGRATION_CONTRACT.md).
+Reconstruction is permitted under the declared operation contract;
+Garner/mixed-radix synthetic emissions, prohibited information loss and
+floating-point residue computation remain forbidden. K-Elimination requires
+its divisibility, coprimality, anchor-capacity and uniqueness-range conditions.
+The general shared-factor encrypted division adapter is not enabled.
+
+The [FPD feature branch](https://github.com/Skyelabz210/NINE65_v7/pull/204)
+has separate prepared-key/default-feature work; a branch result is not evidence
+that its defaults are integrated in this checkout.
+
+## Contributing and security
+
+Use [CONTRIBUTING.md](CONTRIBUTING.md) for development checks,
+[AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md) for repository conventions,
+and [SECURITY.md](SECURITY.md) for security policy and reporting.
+Hosted workflows are active; consult runs for the exact commit and workflow.
+No repository-wide green CI claim follows from a passing specialized job.
 
 ## License
 
-Proprietary. See `LICENSE`.
-
-*NINE65 — modular integer privacy infrastructure by Acidlabz210.*
+See [LICENSE](LICENSE) for the current grant. GitHub visibility and the license
+grant are separate; public visibility alone does not grant reuse rights.

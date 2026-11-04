@@ -86,9 +86,10 @@ jobs:
   # codegen-units = 1) makes a from-scratch `cargo test --lib --release`
   # compile take on the order of 10 minutes on shared 4-vCPU hardware
   # (measured while authoring docs/TEST_TIERS.md — see its "Measured
-  # numbers" section) before a single test runs. CI has not executed
-  # successfully since 2026-02-27 (#79), so there is no warm-cache steady
-  # state to measure here, and guessing that GitHub Actions' cache (keyed on
+  # numbers" section) before a single test runs. At the time of that
+  # historical measurement, CI had not succeeded since 2026-02-27 (#79).
+  # Hosted workflows are active again; this old cost observation does not
+  # establish a current warm-cache baseline. GitHub Actions' cache (keyed on
   # Cargo.lock, see the `Cache cargo registry`/`Cache target directory` steps
   # elsewhere in this file) will keep that under budget is exactly the kind
   # of unvalidated CI change this PR was asked not to make blindly. Wiring

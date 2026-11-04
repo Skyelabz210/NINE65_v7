@@ -1,136 +1,45 @@
-# Contributing to NINE65 v7
+# Contributing to NINE65
 
-Thank you for your interest in contributing to NINE65, a fully bootstrapped Fully Homomorphic Encryption system built on exact integer arithmetic. NINE65 v7 achieves unlimited-depth computation via three verified bootstrap paths (circular, non-circular KSK, and auto-triggered).
+NINE65 is an exact-integer BFV/DualRNS research prototype. Start with
+[README.md](README.md), [repository conventions](CLAUDE.md) and
+[current refresh status](docs/PUBLIC_REFRESH_STATUS.md).
+It does not claim unlimited depth or production security.
 
-NINE65 is proprietary software. All contributions require prior written authorization from the copyright holder. By submitting a contribution, you agree that your work becomes the property of the project under the existing license terms.
+Use Rust 1.89.0 as pinned in `rust-toolchain.toml`. Lean tooling is needed only
+for formal proof work; use `lean4/KElimination/lean-toolchain`. Legacy Coq
+experiments are not the maintained proof basis.
 
----
+## Changes and validation
 
-## Getting Started
-
-### Prerequisites
-
-- Rust stable toolchain (edition 2021)
-- Rust nightly toolchain (for fuzz testing only)
-- Coq 8.18+ (for formal proofs)
-- Lean 4.x with Mathlib (for Lean4 proofs)
-
-### Building
+Keep changes scoped and explain the affected API, behavior and assumptions.
+For code changes, run the relevant tests plus formatting and lint checks:
 
 ```bash
-cargo build --release --workspace        # Build all crates
-cargo test --workspace --release --no-fail-fast   # Run all tests; report every failing target
-cargo test -p nine65 --lib --release      # Core crate only
-```
-
-### Workspace Crates
-
-| Crate | Path | Purpose |
-|-------|------|---------|
-| `nine65` | `crates/nine65/` | Core FHE: arithmetic, ring operations, security, entropy, keys, noise, params |
-| `clockwork-core` | `crates/clockwork-core/` | Formal-spec RNS arithmetic: bound tracking, GRO timing, key lifecycle |
-| `mana` | `crates/mana/` | FHE stream accelerator (lane-parallel pipeline engine; Rayon is an optional transport) |
-| `nexgen_rational` | `crates/nexgen_rational/` | Exact i128 rational arithmetic (zero dependencies) |
-| `unhal` | `crates/unhal/` | Hardware abstraction layer |
-
----
-
-## Development Standards
-
-### Integer-Only Mandate
-
-NINE65 enforces a strict **no floating-point at runtime** policy. All cryptographic runtime paths, hot loops, and public APIs must avoid `f32`/`f64`. The only exception is the circuit compiler (`crates/nine65/src/compiler.rs`), which uses `f64` exclusively for offline/static noise analysis.
-
-**Rationale**: Floating-point rounding compounds across FHE operations. Integer-only arithmetic guarantees deterministic, reproducible results across all platforms. Static analysis can use `f64` because it does not execute in production.
-
-#### Integer Representation Conventions
-
-| Concept | Type | Scale | Example |
-|---------|------|-------|---------|
-| Noise budget | `u64` millibits | 1000 = 1 bit | `31500` = 31.5 bits |
-| Ratios | `u32` permille | 1000 = 1.0 | `28500` = 28.5 |
-| Error sigma | `u32` millibits | 1000 = 1.0 | `3200` = sigma 3.2 |
-| Trig values | Q15 fixed-point LUT | >> 15 | 256-entry cos/sin table |
-
-Reference `crates/nine65/src/arithmetic/integer_math.rs` for utility functions.
-
-```rust
-// WRONG (runtime)
-let noise_bits: f64 = 31.5;
-
-// CORRECT (runtime)
-let noise_millibits: u64 = 31_500;
-
-// Allowed (compiler.rs static analysis)
-let noise_bits: f64 = 31.5;
-```
-
----
-
-## Code Quality
-
-All of the following must pass before submitting:
-
-```bash
-cargo test --workspace --release
-cargo clippy --workspace -- -D warnings
 cargo fmt --all -- --check
-grep -rn "f64\|f32" crates/ --include="*.rs"   # runtime must be clean; compiler.rs is the sole exception
+cargo clippy --locked --workspace -- -D warnings
+cargo test --locked --release --workspace --no-fail-fast
 ```
 
-- Use `thiserror` for error types.
-- Sensitive data types must derive `Zeroize` and use `subtle` crate for constant-time comparisons.
+For documentation and claim changes, run the claim/status checks listed in
+[README.md](README.md). Record missing tooling, failing checks, ignored tests
+and unexecuted resource-intensive targets explicitly. Workspace tests do not
+include excluded bindings or every feature-gated integration test.
 
----
+Keep crypto/residue computation integer-only, unsupported operations fail-closed,
+secret material zeroized and production randomness CSPRNG-backed. Follow the
+[CRAM integration contract](docs/CRAM_INTEGRATION_CONTRACT.md) and identify the
+[security mode](docs/SECURITY_MODE_MATRIX.md) affected by each change.
 
-## Feature Flags
+## Evidence and reporting
 
-| Flag | Purpose | Production? |
-|------|---------|-------------|
-| `ntt_fft` (default) | Number Theoretic Transform | Yes |
-| `parallel` | Opt-in Rayon parallelism (MANA is the canonical accelerator) | Yes |
-| `accelerated` | Links mana/unhal | Yes |
-| `allow_insecure` | Test-only configs | **Never** |
-| `exact_rational` | NexGen rational bridge | Yes |
-| `clockwork` | Clockwork-Core integration | Yes |
-| `deterministic_rng` | Reproducible RNG | Testing only |
-| `serde` | Serialization support | Yes |
-
----
-
-## Testing
-
-```bash
-cargo test --workspace --release                    # Full suite
-cargo test -p nine65 security::tests -- --nocapture # Security tests
-cargo +nightly fuzz run fuzz_encrypt_decrypt         # Fuzz testing
-```
-
-Depth benchmarks (ignored by default): `cargo test -p nine65 --lib --release -- --include-ignored --nocapture`
-
-Add fuzz targets for new public API surfaces or serialization formats.
-
----
-
-## Formal Proofs
-
-Changes to proven algorithms require updated proofs.
-
-- **Coq** (`proofs/coq/`, Coq 8.18+): 14 verified proofs
-- **Lean4** (`lean4/KElimination/`, Lean 4.x + Mathlib)
-
----
-
-## Pull Request Process
-
-1. Branch from `main` with descriptive name
-2. Follow all standards above
-3. Validate: `cargo fmt && cargo clippy && cargo test --workspace --release --no-fail-fast`
-4. Prefix commits: `fix:`, `feat:`, `refactor:`, `test:`, `proof:`, `docs:`
-5. Open PR with description and validation confirmation
-
----
+Name the exact source commit, tuple, command, tested domain and raw artifact
+for new measurements. Preserve historical evidence and distinguish functional
+correctness, performance, proof scope, confidentiality and side-channel posture.
+Do not cite a heuristic planner or noise-counter reset as encrypted execution.
+Report vulnerabilities according to [SECURITY.md](SECURITY.md).
 
 ## License
 
-NINE65 is proprietary software. All rights reserved. See [LICENSE](LICENSE).
+The repository [LICENSE](LICENSE) defines the current grant. This guide does
+not impose a separate copyright assignment or invent additional permissions.
+The superseded contribution guide is [archived](archive/hygiene/2026-11-04/CONTRIBUTING.md).

@@ -1456,7 +1456,7 @@ fn mod_inverse_u128(a: u128, m: u128) -> Option<u128> {
 }
 
 // ============================================================================
-// Dual-RNS Architecture for Bootstrap-Free FHE
+// Dual-RNS Architecture for Finite-Depth BFV Evaluation
 // ============================================================================
 //
 // The key insight from the QMNF papers:
@@ -1475,7 +1475,7 @@ fn mod_inverse_u128(a: u128, m: u128) -> Option<u128> {
 // Then exact division by q_last (the prime being dropped):
 //   result = v / q_last  (exact because q_last | v in valid FHE)
 
-/// Dual-RNS Context for Bootstrap-Free FHE with K-Elimination
+/// Dual-RNS Context for BFV Evaluation with K-Elimination
 ///
 /// Maintains two independent RNS systems that together enable exact
 /// reconstruction of values larger than either system's modulus product.
@@ -2427,8 +2427,8 @@ pub struct DualRNSValue {
 
 /// Dual-RNS Polynomial: coefficients tracked in both RNS systems
 ///
-/// This is the fundamental data structure for Bootstrap-Free FHE.
-/// Every coefficient exists in 5 limbs: 3 main + 2 anchor.
+/// This is the dual-residue data structure used by the BFV evaluator.
+/// Each coefficient has main and anchor residues; lane counts follow the context.
 #[derive(Clone, Debug, Zeroize)]
 pub struct DualRNSPolynomial {
     /// Main RNS limbs: main_limbs[prime_idx][coeff_idx]
@@ -2727,7 +2727,8 @@ impl DualRNSPolynomial {
 
     /// K-Elimination rescaling: exact division by q_last
     ///
-    /// This is the CRITICAL operation that enables Bootstrap-Free FHE.
+    /// This operation performs K-Elimination under its range and anchor preconditions;
+    /// it does not establish unlimited encrypted depth.
     /// After tensor product, divide each coefficient exactly by q_last
     /// and return result in reduced RNS (without q_last).
     ///
