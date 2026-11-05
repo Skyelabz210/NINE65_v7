@@ -193,6 +193,51 @@ lattice-security certificates — see "Parameter and Claim Discipline" below.
 
 ## Measured performance
 
+### Current FPD stack (enabled 2026-11-02)
+
+`CramMainEvaluator`, including the service's evaluator, uses the main-Q
+remainder-adjusted FPD route with persistent Montgomery and prepared hybrid
+relinearization keys. Public key transforms are prepared once at setup and
+reused across multiplications. The default build also enables `exact_rational`,
+`clockwork` integrity helpers and `adaptive-threading` (including
+`shadow-entropy`), alongside MANA/UNHAL and exact transcendentals. These flags
+make their APIs available; they do not imply that every evaluator invokes them.
+
+Two release runs on 2026-11-02 measured **2.10–2.53× faster FPD multiplication**
+with prepared keys versus raw keys on identical ciphertext inputs across the
+three parameter profiles. Each run used one warmup and five samples per
+profile; all ciphertext-equality and decryption checks passed. This is the
+prepared-key comparison, not a speedup attributed to every enabled feature.
+See [current measurements and provenance](docs/FEATURE_ACTIVATION_2026-11-02.md#measured-fpd-comparison)
+for per-profile medians, service API timings and setup costs.
+
+Measure the current service path and a same-input unprepared/prepared FPD
+comparison with OS randomness and a release build:
+
+```bash
+cargo run --locked -p nine65 --release --features serde \
+  --example fpd_stack_timings
+```
+
+The capture at `bench-results/fpd_stack_timings.json` records raw samples,
+integer medians, exact parameter tuples, compiled features and separate key
+preparation/setup costs. All prepared/unprepared ciphertext limbs must match,
+and every sample must decrypt correctly. `NINE65_BENCH_CONFIG=secure_128`
+selects one profile; `NINE65_BENCH_JSON_OUT` selects an output file. The
+`secure_128_deep` tuple is identical to `secure_128` and is not measured twice.
+Run without concurrent tests or builds. The dated DualRNS measurements below
+remain historical evidence of their own route.
+
+Public research refresh is available through the explicit
+[`public_refresh_circuit` example](#public-refresh-status), using
+`--features allow_insecure` in an optimized development build. It already uses
+prepared outer-ring keys and the fused lift restoration. Default feature
+activation does not enable the incorrect legacy Clockwork refresh path.
+See [the activation inventory](docs/FEATURE_ACTIVATION_2026-11-02.md) for the
+remaining feature choices and validation commands.
+
+### Historical DualRNS operation timings
+
 Every figure below was produced by `crates/nine65/tests/op_timings.rs` on
 **2026-08-23**, on the machine described under Method. Nothing here is
 inherited.
@@ -317,9 +362,10 @@ config matching within noise.
 
 ### MANA and UNHAL are the default, and are verified to engage
 
-`nine65`'s default feature set is
-`["exact_transcendentals_backend", "accelerated"]`, and `accelerated = ["mana",
-"unhal"]`. Rayon is not in any default graph: `unhal` is consumed with
+The August measurements used the then-default feature set
+`["exact_transcendentals_backend", "accelerated"]`; the current default also
+enables the extensions listed above. `accelerated = ["mana", "unhal"]`.
+Rayon is not in any default graph: `unhal` is consumed with
 `default-features = false` specifically so its own `parallel` default cannot
 pull rayon in behind the acceleration flag.
 
@@ -373,6 +419,26 @@ source-level constant-time paths do not close hardware channels; see
 
 ## Execution Contract
 
+### Encrypted integer quotient and remainder
+
+The current checkout provides `CramPublicEvaluator::divide_integer` and
+`CramMainEvaluator::divide_integer` for sealed encrypted unsigned words.
+Both operands, quotient, remainder and divide-by-zero status are encrypted.
+The circuit uses Boolean arithmetic and needs no inverse of the divisor.
+Native N=8192/t=3 four-bit execution and a reduced-ring shared-lane divisor-17
+case have passed end-to-end checks. Wider words remain subject to the existing
+noise budget; this is not unrestricted 64-bit or unlimited-depth execution.
+
+```bash
+cargo run --locked -p nine65 --release --example encrypted_integer_division
+```
+
+See [the integer-division contract, evidence and limits](docs/ENCRYPTED_INTEGER_DIVISION_2026-11-02.md).
+This explicit bit-word ingress is separate from the older scalar ciphertext
+representation and its lane-wise `exact_divide` operation.
+
+### Residue operation contracts
+
 NINE65 applications follow the Recumbent CRAM rule:
 
 ```text
@@ -397,18 +463,19 @@ K-Elimination is used only under its coprimality, exact-divisibility,
 anchor-capacity, and uniqueness-range preconditions. The main-Q evaluator
 already uses remainder-adjusted FPD for its fixed-divisor BFV rescaling.
 This is separate from `CramPublicEvaluator::exact_divide`, which still rejects
-divisors sharing a factor with any main or anchor lane; the general encrypted
-division adapter is not enabled. Exact-rational API availability does not
-change that restriction.
+divisors sharing a factor with any main or anchor lane. That legacy component
+operation does not implement the integer contract above. Exact-rational API
+availability does not change its restriction, and arbitrary scalar ciphertexts
+cannot be cast into bit words without a valid conversion.
 
-The public [`feat/enable-fpd-stack` branch](https://github.com/Skyelabz210/NINE65_v7/tree/feat/enable-fpd-stack)
-([PR #204](https://github.com/Skyelabz210/NINE65_v7/pull/204))
-contains prepared-key acceleration, default-feature activation, and
-[reproducible benchmark evidence](https://github.com/Skyelabz210/NINE65_v7/blob/feat/enable-fpd-stack/docs/FEATURE_ACTIVATION_2026-11-02.md).
-Its [division scope note and coefficient-level vectors](https://github.com/Skyelabz210/NINE65_v7/blob/feat/enable-fpd-stack/docs/FPD_DIVISION_SCOPE_2026-11-02.md)
-distinguish working shared-factor kernels from the missing encrypted adapter.
-This branch link does not assert that its feature defaults have merged into
-`main`.
+Prepared-key acceleration and default-feature activation have
+[reproducible multiplication benchmark evidence](docs/FEATURE_ACTIVATION_2026-11-02.md).
+The [original division scope note](docs/FPD_DIVISION_SCOPE_2026-11-02.md)
+records the earlier coefficient-kernel boundary; the
+[encrypted integer division note](docs/ENCRYPTED_INTEGER_DIVISION_2026-11-02.md)
+documents the added typed API and its finite noise limits. Public implementation
+reviews are [PR #204](https://github.com/Skyelabz210/NINE65_v7/pull/204) and
+[PR #206](https://github.com/Skyelabz210/NINE65_v7/pull/206).
 
 Normative contracts:
 

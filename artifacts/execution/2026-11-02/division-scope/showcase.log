@@ -1,0 +1,16 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/NINE65_v7/crates/nine65)
+    Finished `release` profile [optimized] target(s) in 29.36s
+     Running `target/release/examples/cram_public_showcase`
+BFV coefficient kernel: floor((3*X+824)/1649) = [-3, -2, -1, -1, 0, 1, 1, 2, 3] [all main residues verified; Q shares both lane factors]
+S8 witness kernel: [612, -3006, 4200, 0, 66, -12, 6] / 6 = [102, -501, 700, 0, 11, -2, 1] [all eight lane residues verified; gcd(6, S8 product)=6; no encrypted payload]
+NINE65 CRAM public evaluator
+Config: secure_128_deep, N=8192
+encrypted 6 + 7 = 13 [verified by client decryption]
+encrypted 6 × 7 = 42 [verified by client decryption]
+encrypted (6 × 97) ÷ 97 = 6 [verified by client decryption]
+CramPublicEvaluator::exact_divide by non-unit 998244353 was refused [verified; the general encrypted division adapter is not enabled]
+cram-public emission ledger: 4 ops (3 lane-local, 1 R8 materialization, 0 elimination-first) — R8 materialization on the hot path (gate-qualified: order-invariant, metered discard, no cascade; see docs/CRAM_PUBLIC_MODE.md M2/M3)
+Refresh was not exercised here. PublicRefreshCircuit is a separate research opt-in; legacy Clockwork bootstrap remains disabled.

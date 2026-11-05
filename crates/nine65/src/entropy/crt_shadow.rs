@@ -1370,47 +1370,84 @@ mod tests {
         assert!(huge.is_large(1_000_000));
     }
 
+    // Paired ratios prevent a faster baseline in one round from being compared
+    // with a preempted signature batch in a different round. The median limits
+    // isolated scheduling outliers while still rejecting a sustained slowdown.
+    fn signature_time_ratio_permille(samples: &[(u128, u128); 9]) -> u128 {
+        assert!(samples
+            .iter()
+            .all(|&(plain, signed)| plain > 0 && signed > 0));
+        let mut ratios = samples.map(|(plain, signed)| signed * 1000 / plain);
+        ratios.sort_unstable();
+        ratios[ratios.len() / 2]
+    }
+
+    #[test]
+    fn signature_overhead_budget_rejects_sustained_regressions() {
+        let mut samples = [(100, 120); 9];
+        samples[0] = (100, 1_000); // One preempted measurement, not a slowdown.
+        assert_eq!(signature_time_ratio_permille(&samples), 1200);
+        assert!(signature_time_ratio_permille(&[(100, 199); 9]) < 2000);
+        assert!(signature_time_ratio_permille(&[(100, 200); 9]) >= 2000);
+        for sample in &mut samples[..5] {
+            *sample = (100, 250);
+        }
+        assert!(signature_time_ratio_permille(&samples) >= 2000);
+    }
+
     #[test]
     fn test_benchmark_signature_overhead() {
+        use std::hint::black_box;
         use std::time::Instant;
 
         let ctx = CRTShadowContext::large();
         let a = ctx.from_u128(123456789012345u128);
         let b = ctx.from_u128(987654321098765u128);
+        let (product, shadows, signature) = ctx.mul_with_signature(&a, &b);
+        assert_eq!(product, ctx.mul(&a, &b));
+        assert_eq!(signature, QuotientSignature::from_shadows(&shadows));
 
-        let ops = 100_000;
-
-        // Benchmark mul without signature
-        let start = Instant::now();
-        for _ in 0..ops {
-            let _ = ctx.mul(&a, &b);
+        // The former single 100k-op batch lasted only a few milliseconds and
+        // routinely failed when unrelated libtest workers preempted one half.
+        // Larger batches span scheduler quanta; alternate order and keep all
+        // nine paired measurements. Neither operation may be optimized away.
+        const OPS: usize = 1_000_000;
+        for _ in 0..1_000 {
+            black_box(ctx.mul(black_box(&a), black_box(&b)));
+            black_box(ctx.mul_with_signature(black_box(&a), black_box(&b)));
         }
-        let time_no_sig = start.elapsed();
-
-        // Benchmark mul with signature
-        let start = Instant::now();
-        for _ in 0..ops {
-            let _ = ctx.mul_with_signature(&a, &b);
-        }
-        let time_with_sig = start.elapsed();
-
-        println!("\n=== Signature Overhead Benchmark ({} ops) ===", ops);
-        println!("  Without signature: {:?}", time_no_sig);
-        println!("  With signature: {:?}", time_with_sig);
-        // Integer-only: overhead_pct = ((with - without) * 100) / without
-        let ns_no = time_no_sig.as_nanos().max(1);
-        let ns_with = time_with_sig.as_nanos();
-        let overhead_x10 = if ns_with > ns_no {
-            ((ns_with - ns_no) * 1000 / ns_no) as u64
-        } else {
-            0
+        let without_signature = || {
+            let start = Instant::now();
+            for _ in 0..OPS {
+                black_box(ctx.mul(black_box(&a), black_box(&b)));
+            }
+            start.elapsed().as_nanos()
         };
-        println!("  Overhead: {}.{}%", overhead_x10 / 10, overhead_x10 % 10);
-
-        // Signature creation should be cheap (<50% overhead)
-        assert!(
-            time_with_sig.as_nanos() < time_no_sig.as_nanos() * 2,
-            "Signature overhead should be < 100%"
+        let with_signature = || {
+            let start = Instant::now();
+            for _ in 0..OPS {
+                black_box(ctx.mul_with_signature(black_box(&a), black_box(&b)));
+            }
+            start.elapsed().as_nanos()
+        };
+        let mut samples = [(0u128, 0u128); 9];
+        for (round, sample) in samples.iter_mut().enumerate() {
+            *sample = if round % 2 == 0 {
+                (without_signature(), with_signature())
+            } else {
+                let signed = with_signature();
+                (without_signature(), signed)
+            };
+        }
+        let ratio_permille = signature_time_ratio_permille(&samples);
+        let overhead_x10 = ratio_permille.saturating_sub(1000);
+        println!("\n=== Signature Overhead Benchmark (9 pairs, {OPS} ops/batch) ===");
+        println!("  Samples (without_ns, with_ns): {samples:?}");
+        println!(
+            "  Median overhead: {}.{}%",
+            overhead_x10 / 10,
+            overhead_x10 % 10
         );
+        assert!(ratio_permille < 2000, "Signature overhead should be < 100%");
     }
 }

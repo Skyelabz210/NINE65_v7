@@ -1,0 +1,41 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+   Compiling syn v2.0.111
+   Compiling regex-syntax v0.8.8
+   Compiling regex-automata v0.4.13
+   Compiling regex v1.12.2
+   Compiling zerocopy-derive v0.8.31
+   Compiling serde_derive v1.0.228
+   Compiling zerocopy v0.8.31
+   Compiling serde v1.0.228
+   Compiling half v2.7.1
+   Compiling tinytemplate v1.2.1
+   Compiling ciborium-ll v0.2.2
+   Compiling ciborium v0.2.2
+   Compiling criterion v0.5.1
+   Compiling exact_transcendentals v1.0.0 (/workspace/NINE65_v7/crates/exact_transcendentals)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.82s
+     Running unittests src/lib.rs (target/debug/deps/exact_transcendentals-bef068adeabbd3e0)
+
+running 17 tests
+test cram_ct::tests::direct_crt_fpd_refuses_a_fusion_product_outside_i128 ... ok
+test cram_ct::tests::fpd_carries_aux_residues_to_output_for_chained_division ... ok
+test cram_ct::tests::fpd_divides_by_six_recovers_exact_quotient ... ok
+test cram_ct::tests::direct_crt_fpd_large_fusion_product_has_no_intermediate_overflow ... ok
+test cram_ct::tests::fpd_divides_by_thirty_recovers_exact_quotient ... ok
+test cram_ct::tests::fpd_handles_negative_divisor ... ok
+test cram_ct::tests::fpd_inclusive_bound_accepts_boundary_and_zero_only_corridor ... ok
+test cram_ct::tests::fpd_rejects_coprime_divisor_without_exactness_witness ... ok
+test cram_ct::tests::fpd_rejects_inexact_numerator_instead_of_returning_garbage ... ok
+test cram_ct::tests::fpd_rejects_quotient_outside_declared_bound ... ok
+test cram_ct::tests::fpd_refuses_malformed_or_mutated_auxiliary_evidence_without_panicking ... ok
+test cram_ct::tests::fpd_rejects_unwitnessed_divisor_multiplicity_or_factor ... ok
+test cram_ct::tests::fpd_rejects_when_aux_residues_missing ... ok
+test cram_ct::tests::fpd_rejects_when_aux_set_shares_factor_with_divisor ... ok
+test cram_ct::tests::fpd_rejects_when_quotient_bound_exceeds_fusion_product ... ok
+test k_elim::tests::fpd_basic ... ok
+test cram_ct::tests::fpd_supports_tautological_unit_divisors ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 581 filtered out; finished in 0.00s
+

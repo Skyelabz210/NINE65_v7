@@ -752,6 +752,39 @@ fn explicit_gadget_radices_bind_keys_and_keep_exact_multiplication() {
 }
 
 #[test]
+fn prepared_hybrid_worker_policy_preserves_sequential_feature() {
+    // Cross the native scheduling threshold: small-ring tests always select
+    // one worker and cannot detect a missing `sequential` feature check.
+    let cfg = small_ring_config(vec![998244353, 985661441, 754974721, 469762049], 1024);
+    let ctx = RNSFHEContext::new(&cfg);
+    let ev = ctx.try_exact_evaluator().unwrap();
+    let mut rng = ShadowHarvester::with_seed(0x5E01_1024);
+    let keys = ctx.generate_keys(&mut rng);
+    let raw = ev.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
+    let prepared = ev.prepare_hybrid_gadget_key(&raw).unwrap();
+    if cfg!(feature = "sequential") {
+        assert_eq!(
+            prepared.workers, 1,
+            "sequential must not spawn lane workers"
+        );
+    } else {
+        assert_eq!(
+            prepared.workers,
+            std::thread::available_parallelism()
+                .map_or(1, usize::from)
+                .min(4)
+        );
+    }
+    let a = ctx.encrypt(7, &keys.public_key, &mut rng);
+    let b = ctx.encrypt(11, &keys.public_key, &mut rng);
+    let expected = ev.try_mul_exact(&a, &b, &raw).unwrap();
+    let actual = ev.try_mul_exact_prepared(&a, &b, &prepared).unwrap();
+    assert_eq!(actual.c0.limbs, expected.c0.limbs);
+    assert_eq!(actual.c1.limbs, expected.c1.limbs);
+    assert_eq!(ev.try_decrypt_exact(&actual, &keys.secret_key).unwrap(), 77);
+}
+
+#[test]
 fn prepared_hybrid_switch_is_bit_identical_across_radices_and_plaintext_trays() {
     let cfg = small_ring_config(WIDE_TEST_MAIN.to_vec(), 8);
     let ctx = RNSFHEContext::new(&cfg);
@@ -796,8 +829,9 @@ fn prepared_hybrid_switch_is_bit_identical_across_radices_and_plaintext_trays() 
             };
             let expected = ev.relinearize_tensor(&tensor, &raw).unwrap();
             let actual = ev.relinearize_tensor_prepared(&tensor, &prepared).unwrap();
-            // Force both schedules even on the reduced ring, where the
-            // public prepared path intentionally defaults to one worker.
+            // Request both schedules even on the reduced ring, where the
+            // public path defaults to one worker. The sequential feature
+            // takes precedence over an explicit multi-worker request.
             let serial = ev.hybrid_relinearize_prepared_with_workers(&tensor.e2, &prepared, 1);
             let parallel = ev.hybrid_relinearize_prepared_with_workers(&tensor.e2, &prepared, 4);
             assert_eq!(serial.0.limbs, parallel.0.limbs);

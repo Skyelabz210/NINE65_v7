@@ -1,0 +1,12 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/NINE65_v7/crates/nine65)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.49s
+   Doc-tests nine65
+
+running 1 test
+test crates/nine65/src/ops/cram_main_division.rs - ops::rns_fhe::cram_main::division::EncryptedUint (line 30) - compile fail ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 43 filtered out; finished in 0.04s
+

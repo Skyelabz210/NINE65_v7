@@ -104,7 +104,8 @@ impl ShadowEntropyMonitor {
         0
     }
 
-    /// Measure computational entropy from ciphertext operations (constant-time implementation)
+    /// Sample every Nth ciphertext. Callers invoke this once per ciphertext;
+    /// this method alone advances the counter and applies the sampling gate.
     #[cfg(feature = "adaptive-threading")]
     pub fn measure_entropy_from_ciphertext(&self, ct: &Ciphertext) -> u64 {
         // Only measure entropy every Nth operation to reduce overhead
@@ -364,9 +365,10 @@ impl AdaptiveFHEContext {
         {
             if self
                 .entropy_monitor
-                .update_workload_and_check_adaptation(batch_size)
+                .update_workload_and_check_adaptation(_batch_size)
             {
-                let recommended_threads = self.entropy_monitor.adapt_threading(batch_size) as usize;
+                let recommended_threads =
+                    self.entropy_monitor.adapt_threading(_batch_size) as usize;
                 let cached_threads = self
                     .last_recommended_threads
                     .load(std::sync::atomic::Ordering::Relaxed);
@@ -409,13 +411,7 @@ impl AdaptiveFHEContext {
                         BFVEncryptor::new(&self.keys.public_key, &encoder, &ntt, self.config.eta);
                     let mut harvester = ShadowHarvester::with_seed(seed.wrapping_add(i as u64));
                     let ct = encryptor.encrypt(msg, &mut harvester);
-                    let counter = self
-                        .entropy_monitor
-                        .measurement_counter
-                        .fetch_add(1, Ordering::Relaxed);
-                    if counter % self.entropy_monitor.measurement_interval == 0 {
-                        self.entropy_monitor.measure_entropy_from_ciphertext(&ct);
-                    }
+                    self.entropy_monitor.measure_entropy_from_ciphertext(&ct);
                     ct
                 })
                 .collect();
@@ -455,13 +451,7 @@ impl AdaptiveFHEContext {
                             let mut harvester =
                                 ShadowHarvester::with_seed(seed.wrapping_add(i as u64));
                             let ct = encryptor.encrypt(msg, &mut harvester);
-                            let counter = self
-                                .entropy_monitor
-                                .measurement_counter
-                                .load(Ordering::Relaxed);
-                            if counter % self.entropy_monitor.measurement_interval == 0 {
-                                self.entropy_monitor.measure_entropy_from_ciphertext(&ct);
-                            }
+                            self.entropy_monitor.measure_entropy_from_ciphertext(&ct);
                             ct
                         },
                     )
@@ -483,13 +473,7 @@ impl AdaptiveFHEContext {
             let result = ciphertexts
                 .iter()
                 .map(|ct| {
-                    let counter = self
-                        .entropy_monitor
-                        .measurement_counter
-                        .fetch_add(1, Ordering::Relaxed);
-                    if counter % self.entropy_monitor.measurement_interval == 0 {
-                        self.entropy_monitor.measure_entropy_from_ciphertext(ct);
-                    }
+                    self.entropy_monitor.measure_entropy_from_ciphertext(ct);
                     let ntt = crate::arithmetic::NTTEngine::new(self.config.q, self.config.n);
                     let encoder = BFVEncoder::new(&self.config);
                     let decryptor = BFVDecryptor::new(&self.keys.secret_key, &encoder, &ntt);
@@ -522,13 +506,7 @@ impl AdaptiveFHEContext {
                             (ntt, encoder)
                         },
                         |(ntt, encoder), ct| {
-                            let counter = self
-                                .entropy_monitor
-                                .measurement_counter
-                                .load(Ordering::Relaxed);
-                            if counter % self.entropy_monitor.measurement_interval == 0 {
-                                self.entropy_monitor.measure_entropy_from_ciphertext(ct);
-                            }
+                            self.entropy_monitor.measure_entropy_from_ciphertext(ct);
                             let decryptor = BFVDecryptor::new(&self.keys.secret_key, encoder, ntt);
                             decryptor.decrypt(ct)
                         },
@@ -560,14 +538,8 @@ impl AdaptiveFHEContext {
                     let ntt = crate::arithmetic::NTTEngine::new(self.config.q, self.config.n);
                     let encoder = BFVEncoder::new(&self.config);
                     let evaluator = BFVEvaluator::new(&ntt, &encoder, Some(&self.keys.eval_key));
-                    let counter = self
-                        .entropy_monitor
-                        .measurement_counter
-                        .fetch_add(1, Ordering::Relaxed);
-                    if counter % self.entropy_monitor.measurement_interval == 0 {
-                        self.entropy_monitor.measure_entropy_from_ciphertext(ct1);
-                        self.entropy_monitor.measure_entropy_from_ciphertext(ct2);
-                    }
+                    self.entropy_monitor.measure_entropy_from_ciphertext(ct1);
+                    self.entropy_monitor.measure_entropy_from_ciphertext(ct2);
                     evaluator.add(ct1, ct2)
                 })
                 .collect();
@@ -598,14 +570,8 @@ impl AdaptiveFHEContext {
                             (ntt, encoder)
                         },
                         |(ntt, encoder), (ct1, ct2)| {
-                            let counter = self
-                                .entropy_monitor
-                                .measurement_counter
-                                .load(Ordering::Relaxed);
-                            if counter % self.entropy_monitor.measurement_interval == 0 {
-                                self.entropy_monitor.measure_entropy_from_ciphertext(ct1);
-                                self.entropy_monitor.measure_entropy_from_ciphertext(ct2);
-                            }
+                            self.entropy_monitor.measure_entropy_from_ciphertext(ct1);
+                            self.entropy_monitor.measure_entropy_from_ciphertext(ct2);
                             let evaluator =
                                 BFVEvaluator::new(ntt, encoder, Some(&self.keys.eval_key));
                             evaluator.add(ct1, ct2)
@@ -642,14 +608,8 @@ impl AdaptiveFHEContext {
                     let ntt = crate::arithmetic::NTTEngine::new(self.config.q, self.config.n);
                     let encoder = BFVEncoder::new(&self.config);
                     let evaluator = BFVEvaluator::new(&ntt, &encoder, Some(&self.keys.eval_key));
-                    let counter = self
-                        .entropy_monitor
-                        .measurement_counter
-                        .fetch_add(1, Ordering::Relaxed);
-                    if counter % self.entropy_monitor.measurement_interval == 0 {
-                        self.entropy_monitor.measure_entropy_from_ciphertext(ct1);
-                        self.entropy_monitor.measure_entropy_from_ciphertext(ct2);
-                    }
+                    self.entropy_monitor.measure_entropy_from_ciphertext(ct1);
+                    self.entropy_monitor.measure_entropy_from_ciphertext(ct2);
                     evaluator.mul(ct1, ct2)
                 })
                 .collect::<Nine65Result<Vec<_>>>()?;
@@ -680,14 +640,8 @@ impl AdaptiveFHEContext {
                             (ntt, encoder)
                         },
                         |(ntt, encoder), (ct1, ct2)| {
-                            let counter = self
-                                .entropy_monitor
-                                .measurement_counter
-                                .load(Ordering::Relaxed);
-                            if counter % self.entropy_monitor.measurement_interval == 0 {
-                                self.entropy_monitor.measure_entropy_from_ciphertext(ct1);
-                                self.entropy_monitor.measure_entropy_from_ciphertext(ct2);
-                            }
+                            self.entropy_monitor.measure_entropy_from_ciphertext(ct1);
+                            self.entropy_monitor.measure_entropy_from_ciphertext(ct2);
                             let evaluator =
                                 BFVEvaluator::new(ntt, encoder, Some(&self.keys.eval_key));
                             evaluator.mul(ct1, ct2)
@@ -1037,7 +991,16 @@ mod tests {
 
         // Entropy should be non-zero after encryption
         let messages: Vec<u64> = (0..5).map(|i| i * 3).collect();
-        let _cts = context.adaptive_encrypt(&messages, 800);
+        let cts = context.adaptive_encrypt(&messages, 800);
+
+        assert_eq!(
+            context
+                .entropy_monitor
+                .measurement_counter
+                .load(Ordering::Relaxed),
+            messages.len() as u64,
+            "each ciphertext must advance the sampling schedule exactly once"
+        );
 
         let entropy = context
             .entropy_monitor
@@ -1047,6 +1010,16 @@ mod tests {
             entropy > 0,
             "Entropy should evolve during encryption operations"
         );
+        // Five inputs at interval five produce one sample. Parallel worker
+        // order need not match input order, but the sample must be real.
+        assert!(cts.iter().any(|ct| {
+            entropy
+                == ct.c0.coeffs.iter().fold(0, |acc, c| acc ^ c.rotate_left(7))
+                    ^ ct.c1
+                        .coeffs
+                        .iter()
+                        .fold(0, |acc, c| acc ^ c.rotate_left(19))
+        }));
     }
 
     #[test]

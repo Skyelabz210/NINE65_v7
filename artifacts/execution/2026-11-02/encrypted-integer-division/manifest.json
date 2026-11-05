@@ -1,0 +1,120 @@
+{
+  "source_commit": "7740e6169199214610e00e9fe30c8d0de28a3e41",
+  "source_tree_clean": true,
+  "toolchain": "rustc 1.89.0 (29483883e 2025-08-04)",
+  "scope": "Unsigned encrypted words; explicit quotient/remainder and encrypted zero predicate. No scalar lift conversion, unlimited depth, general 64-bit native admission, refresh repair, or external attestation claim.",
+  "commands": [
+    "cargo test --offline --locked -p nine65 --lib --config profile.test.package.nine65.opt-level=2 -- --test-threads=4",
+    "cargo test --offline --locked -p fhe-service --release",
+    "cargo test --offline --locked -p nine65 --doc cram_main::division",
+    "cargo check --offline --locked -p nine65 --lib --no-default-features",
+    "cargo clippy --offline --locked -p nine65 --lib --example encrypted_integer_division -- -D warnings",
+    "cargo run --offline --locked -p nine65 --release --example encrypted_integer_division"
+  ],
+  "results": {
+    "core_passed": 1209,
+    "core_ignored": 139,
+    "service_passed": 54,
+    "service_ignored": 27,
+    "word_seal_doctest_passed": 1,
+    "clippy": "passed",
+    "minimal_build": "passed"
+  },
+  "service_environment": "Initial run refused 12 loopback socket binds under network sandbox. Repeated with network access enabled; all 54 active tests passed. No service code was changed.",
+  "native_tuple": {
+    "n": 8192,
+    "primes": [
+      998244353,
+      985661441,
+      754974721,
+      469762049
+    ],
+    "t": 3,
+    "eta": 3,
+    "word_width": 4
+  },
+  "native_plaintext_coefficient_comparisons": 147456,
+  "shared_ciphertext_lane_test": {
+    "n": 2,
+    "t": 3,
+    "eta": 5,
+    "primes": [
+      17,
+      998244353,
+      985661441,
+      754974721,
+      469762049,
+      167772161,
+      1811939329,
+      595591169
+    ],
+    "divisor": 17,
+    "word_width": 5,
+    "key_seeds": [
+      16434945,
+      16434946,
+      16434947
+    ],
+    "coefficient_comparisons": 264,
+    "security_scope": "reduced-ring correctness only"
+  },
+  "native_example": {
+    "cases": [
+      [
+        15,
+        3,
+        5,
+        0,
+        false
+      ],
+      [
+        14,
+        3,
+        4,
+        2,
+        false
+      ],
+      [
+        2,
+        3,
+        0,
+        2,
+        false
+      ],
+      [
+        15,
+        0,
+        0,
+        15,
+        true
+      ]
+    ],
+    "ciphertext_products_per_case": 287,
+    "gates_per_case": 761,
+    "output_budget_millibits": 10000,
+    "timing_scope": "Diagnostic execution with concurrent task activity, not isolated benchmark.",
+    "evaluation_ns": [
+      20969207596,
+      18152791139,
+      21498576177,
+      18223485271
+    ]
+  },
+  "source_sha256": {
+    "crates/nine65/src/ops/integer_division_circuit.rs": "cad679ede21e85689d6a1febcfab2ae5aff7c08988261d07e59a96a1f5625bd9",
+    "crates/nine65/src/ops/cram_main_division.rs": "d7543e3014668ca9b070d77cd67fa80c81268876e42538df4fa5d505f2f21568",
+    "crates/nine65/src/ops/cram_main_division_tests.rs": "3d061b3df2491159758ecc0fe6e35ac8f9e9417985ad71ee165e27d903b29bca",
+    "crates/nine65/src/ops/cram_main.rs": "000f0fc1432aac4f646c47ccf6c03eb149ab81905b0c276da34f4557612f0aed",
+    "crates/nine65/src/ops/cram_public.rs": "242e4edafa691ba8cf2a8f4a92cb45d270310289c7cbf093ab440c771d7c3e22",
+    "crates/nine65/examples/encrypted_integer_division.rs": "1cfd173f67a8e5efc94ebb97be88c2fb1d8c9e01ce965d223b74b614e541395c"
+  },
+  "artifact_sha256": {
+    "core-tests.log": "5ef5df130340697a01f6f01dc04cef17ae855acdaecabbcd151f086a5e98317b",
+    "service-tests.log": "210e961a22dceb04b754002e82dd49bee667c47fa162aa836f21a6b7fba9cac3",
+    "service-sandbox-refusal.log": "1b97b066b12a82223caa087c3ff62b3ca4d75f403858a390df528c779e1e3564",
+    "native-example.log": "049e41daa4185e94d8d02238eeee26a67c607c7ffcdf9dfef30cf25b35611c20",
+    "word-seal-doctest.log": "3455354dce8f1a74bef04586c7ea48b4990c9640d73dde37870f6c4250304e61",
+    "clippy.log": "237a0ed9b1dcecc4a131ef6f33f0015a1c708363719054fd950c7786bccf0f8f",
+    "minimal-build.log": "62c71794ec81c03c31f171695efa319dabb9ed2a85debc01cdb26e61f2329280"
+  }
+}

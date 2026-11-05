@@ -1,0 +1,16 @@
+diff --git a/crates/nine65/src/entropy/shadow_entropy_monitor.rs b/crates/nine65/src/entropy/shadow_entropy_monitor.rs
+index f752a0a..4e87bb8 100644
+--- a/crates/nine65/src/entropy/shadow_entropy_monitor.rs
++++ b/crates/nine65/src/entropy/shadow_entropy_monitor.rs
+@@ -364,9 +365,9 @@ impl AdaptiveFHEContext {
+         {
+             if self
+                 .entropy_monitor
+-                .update_workload_and_check_adaptation(batch_size)
++                .update_workload_and_check_adaptation(_batch_size)
+             {
+-                let recommended_threads = self.entropy_monitor.adapt_threading(batch_size) as usize;
++                let recommended_threads = self.entropy_monitor.adapt_threading(_batch_size) as usize;
+                 let cached_threads = self
+                     .last_recommended_threads
+                     .load(std::sync::atomic::Ordering::Relaxed);

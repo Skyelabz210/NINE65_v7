@@ -1,0 +1,21 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/NINE65_v7/crates/nine65)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 41.09s
+     Running unittests src/lib.rs (target/debug/deps/nine65-7d39435c44844b81)
+
+running 10 tests
+test arithmetic::exact_scale_round::tests::even_auxiliary_lane_is_refused_before_modular_halving ... ok
+test arithmetic::exact_scale_round::tests::full_u64_auxiliary_lane_matches_signed_integer_oracle ... ok
+test arithmetic::exact_scale_round::tests::insufficient_aux_capacity_is_refused ... ok
+test arithmetic::exact_scale_round::tests::corners_and_rounding_ties_are_exact ... ok
+test arithmetic::exact_scale_round::tests::output_shift_is_a_multiple_of_q ... ok
+test arithmetic::exact_scale_round::tests::typed_rejections ... ok
+test arithmetic::exact_scale_round::tests::under_capacity_bases_are_unreachable ... ok
+test arithmetic::exact_scale_round::tests::production_primes_full_range_against_u512_oracle ... ok
+test arithmetic::exact_scale_round::tests::small_basis_matches_reference_over_full_operand_range ... ok
+test arithmetic::exact_scale_round::tests::production_main_primes_match_reference ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 1330 filtered out; finished in 0.02s
+
