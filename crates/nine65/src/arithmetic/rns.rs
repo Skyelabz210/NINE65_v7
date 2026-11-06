@@ -1400,6 +1400,78 @@ pub(crate) fn crt_reconstruct_u256(residues: &[u64], primes: &[u64]) -> U256 {
     sum.mod_u256(m.to_u256_truncated())
 }
 
+/// Precomputed, public-only constants for reconstructing a value from its
+/// residues over a FIXED prime set, with fixed work per call.
+///
+/// [`crt_reconstruct_u256`] recomputes everything per call: the modulus
+/// product, one extended-Euclid inverse and one wide division per prime, and
+/// a 512-iteration bit-serial reduction. All of that depends only on the
+/// (public) prime set, so it is built once here. Per call this does one
+/// persistent-Montgomery REDC per prime, one wide multiply-accumulate per
+/// prime, and exactly `k - 1` masked conditional subtracts of `M` -- no
+/// division, no data-dependent branch, no secret-dependent iteration count.
+///
+/// Why `k - 1` subtracts suffice: each `y_i = r_i * (M_i^-1) mod p_i` is
+/// canonical (`< p_i`), so `y_i * M_i < p_i * M_i = M` and the sum is `< k*M`.
+/// Each masked subtract removes at most one `M`, so `k - 1` of them leave a
+/// value in `[0, M)`, equal to the CRT value.
+#[derive(Clone, Debug)]
+pub(crate) struct CrtU256Plan {
+    pm: Vec<super::persistent_montgomery::PersistentMontgomery>,
+    /// `(M_i^-1 mod p_i)` in Montgomery form, so `REDC(r * inv_mont) = r * M_i^-1 mod p_i`.
+    inv_mont: Vec<u64>,
+    mi: Vec<U512>,
+    m: U512,
+}
+
+impl CrtU256Plan {
+    pub(crate) fn new(primes: &[u64]) -> Self {
+        assert!(!primes.is_empty(), "need primes");
+        let m = U512::product_u64s(primes);
+        assert!(
+            m.d2 == 0 && m.d3 == 0,
+            "CrtU256Plan: product of the prime set must fit in 256 bits"
+        );
+        let mut pm = Vec::with_capacity(primes.len());
+        let mut inv_mont = Vec::with_capacity(primes.len());
+        let mut mi_all = Vec::with_capacity(primes.len());
+        for &p in primes {
+            let ctx = super::persistent_montgomery::PersistentMontgomery::new(p);
+            let mi = m.div_u64(p);
+            let inv = mod_inverse(mi.mod_u64(p), p);
+            inv_mont.push(ctx.enter(inv));
+            pm.push(ctx);
+            mi_all.push(mi);
+        }
+        Self {
+            pm,
+            inv_mont,
+            mi: mi_all,
+            m,
+        }
+    }
+
+    /// CRT value of `residues` over this plan's primes. `residues[i]` may be
+    /// any `u64` (it need not be reduced mod `p_i`), matching
+    /// [`crt_reconstruct_u256`].
+    pub(crate) fn reconstruct(&self, residues: &[u64]) -> U256 {
+        let k = self.pm.len();
+        assert!(residues.len() >= k, "residue length mismatch");
+        let mut sum = U512::zero();
+        for i in 0..k {
+            // t = r * inv_mont < 2^64 * p_i, the REDC input bound.
+            let t = residues[i] as u128 * self.inv_mont[i] as u128;
+            let y = self.pm[i].redc(t as u64, (t >> 64) as u64);
+            sum = sum.add(self.mi[i].mul_u128(y as u128));
+        }
+        for _ in 1..k {
+            let (difference, borrow) = sum.sub_borrow_mask_ct(self.m);
+            sum = U512::select_mask_ct(sum, difference, borrow ^ 1);
+        }
+        sum.to_u256_truncated()
+    }
+}
+
 pub(crate) fn mod_inverse(a: u64, m: u64) -> u64 {
     let mut mn = (m as i128, a as i128);
     let mut xy = (0i128, 1i128);
@@ -1510,6 +1582,9 @@ pub struct DualRNSContext {
     pub main_inv_anchor_rns: Vec<u64>,
     /// Polynomial degree
     pub n: usize,
+    /// Lazily built CRT reconstruction constants for the K-Elimination
+    /// anchor set; see [`CrtU256Plan`].
+    pub(crate) k_crt: std::sync::OnceLock<CrtU256Plan>,
 }
 
 #[cfg(test)]
@@ -1626,7 +1701,16 @@ impl DualRNSContext {
             main_inv_anchor,
             main_inv_anchor_rns,
             n,
+            k_crt: std::sync::OnceLock::new(),
         }
+    }
+
+    /// CRT reconstruction plan over the K-Elimination anchor primes, built
+    /// once on first use (public constants only).
+    pub(crate) fn k_crt_plan(&self) -> &CrtU256Plan {
+        self.k_crt.get_or_init(|| {
+            CrtU256Plan::new(&self.anchor.primes[..self.k_reconstruction_anchor_count()])
+        })
     }
 
     /// Canonical anchor primes for a given polynomial degree N.
@@ -2199,7 +2283,7 @@ impl DualRNSContext {
         }
 
         // Reconstruct k from the first k_primes anchors via parallel summation CRT.
-        let k_u = crt_reconstruct_u256(&k_rns[..k_primes], &self.anchor.primes[..k_primes]);
+        let k_u = self.k_crt_plan().reconstruct(&k_rns[..k_primes]);
 
         // Capacity check: k should be far from A/2 to avoid wrap-around.
         let a_recon = U256::product_u64s(&self.anchor.primes[..k_primes]);
@@ -4569,6 +4653,56 @@ mod tests {
         let result_u256 = crt_reconstruct_u256(&residues, primes);
         assert_eq!(result_u256.lo, test_val as u128);
         assert_eq!(result_u256.hi, 0);
+    }
+
+    /// The precomputed, multiply-only plan must agree exactly with the
+    /// recompute-everything reference on every residue shape, over the
+    /// canonical anchor prime sets actually used for K-Elimination (the
+    /// first `min(len, 8)` primes, as `k_reconstruction_anchor_count` picks)
+    /// and over small and unreduced-residue cases.
+    #[test]
+    fn test_crt_u256_plan_matches_reference_reconstruction() {
+        let mut prime_sets: Vec<Vec<u64>> = vec![
+            vec![998244353, 985661441, 754974721, 469762049, 167772161],
+            vec![998244353, 985661441, 754974721],
+        ];
+        for n in [8192usize, 16384] {
+            let anchors = DualRNSContext::canonical_anchor_primes_for_n(n);
+            let k = anchors.len().min(8);
+            prime_sets.push(anchors[..k].to_vec());
+        }
+        let mut state = 0x9E37_79B9_7F4A_7C15u64;
+        let mut next = || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        for primes in &prime_sets {
+            let plan = CrtU256Plan::new(primes);
+            let k = primes.len();
+            let mut cases: Vec<Vec<u64>> = vec![
+                vec![0; k],
+                vec![u64::MAX; k],
+                primes.iter().map(|&p| p - 1).collect(),
+                primes.iter().map(|&p| p).collect(), // unreduced: == p
+                primes.iter().map(|&p| p + 1).collect(),
+                (0..k).map(|i| if i == 0 { 1 } else { 0 }).collect(),
+            ];
+            for _ in 0..400 {
+                cases.push(primes.iter().map(|&p| next() % p).collect());
+            }
+            for _ in 0..200 {
+                cases.push((0..k).map(|_| next()).collect()); // arbitrary u64
+            }
+            for residues in &cases {
+                assert_eq!(
+                    plan.reconstruct(residues),
+                    crt_reconstruct_u256(residues, primes),
+                    "plan disagreed with reference for primes={primes:?} residues={residues:?}"
+                );
+            }
+        }
     }
 
     /// Regression test for removing `crt_reconstruct_u256`'s secret-dependent

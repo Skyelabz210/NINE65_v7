@@ -35,7 +35,18 @@ fixed-iteration bit-serial loops:
 - 02653a5: `mod_u64_word_ct` (64 iterations) in CRT residue reduction and a
   512-iteration constant-time `U512::mod_u256`.
 
-## Not done (blocked pending owner permission)
+## Update 2026-11-06: fixed on the hot path
+
+Sampling the slow build showed ~64% of public mul in `crt_reconstruct_u256` and
+its 512-step reduction, recomputing public-prime constants per coefficient (see
+`SILENT_FALLBACK_AUDIT_2026-11-06.md`). `CrtU256Plan` (persistent Montgomery +
+k-1 masked subtracts, built once per context) replaces it on the K-Elimination
+path. Same box, same method: `secure_128_deep` public mul 3620 -> 959 ms,
+symmetric mul ~305 -> 158 ms. Lib suite 1122 passed / 0 failed / 142 ignored;
+dudect `mod_switch_down_dual` all-zero vs uniform t_signal 1.12 (threshold 5).
+The constant-time loops in `mod_u64_ct` / `div_mod_u64_ct` were left unchanged.
+
+## Not done (earlier plan, superseded by the update above)
 
 Fixes considered, none applied, none measured:
 1. Barrett reduction for the u64-modulus cases. The modulus is a public
