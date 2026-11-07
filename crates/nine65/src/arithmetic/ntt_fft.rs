@@ -24,7 +24,10 @@ pub struct NTTEngineFFT {
     n_inv_mont: u64,
     twiddles_fwd: Vec<u64>,
     twiddles_inv: Vec<u64>,
+    // Only the textbook reference multiply in the tests reads these.
+    #[cfg_attr(not(test), allow(dead_code))]
     psi_powers_mont: Vec<u64>,
+    #[cfg_attr(not(test), allow(dead_code))]
     psi_inv_powers_mont: Vec<u64>,
     /// `psi^bitrev(k)` in Montgomery form: twiddles for the fused negacyclic
     /// transform (no data bit-reversal, no separate psi twist passes).
