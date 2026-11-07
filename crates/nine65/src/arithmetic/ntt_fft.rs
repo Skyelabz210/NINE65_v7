@@ -26,6 +26,11 @@ pub struct NTTEngineFFT {
     twiddles_inv: Vec<u64>,
     psi_powers_mont: Vec<u64>,
     psi_inv_powers_mont: Vec<u64>,
+    /// `psi^bitrev(k)` in Montgomery form: twiddles for the fused negacyclic
+    /// transform (no data bit-reversal, no separate psi twist passes).
+    psi_br_mont: Vec<u64>,
+    /// `psi^-bitrev(k)` in Montgomery form, for the fused inverse.
+    psi_inv_br_mont: Vec<u64>,
     pub psi_inv: u64,
     pub omega_inv: u64,
     pub n_inv: u64,
@@ -82,11 +87,22 @@ impl NTTEngineFFT {
         let n_inv_mont = mont.to_montgomery(n_inv);
         let twiddles_fwd = Self::compute_twiddles(&mont, omega, n);
         let twiddles_inv = Self::compute_twiddles(&mont, omega_inv, n);
-        let psi_powers_mont = (0..n)
-            .map(|index| mont.to_montgomery(mod_pow(psi, index as u64, q)))
+        // Setup over public values: one iterative pass per table (O(n)),
+        // not a square-and-multiply `mod_pow` per entry.
+        let psi_pows = power_table(psi, n, q);
+        let psi_inv_pows = power_table(psi_inv, n, q);
+        let omega_pows = power_table(omega, n, q);
+        let omega_inv_pows = power_table(omega_inv, n, q);
+        let psi_powers_mont: Vec<u64> = psi_pows.iter().map(|&v| mont.to_montgomery(v)).collect();
+        let psi_inv_powers_mont: Vec<u64> = psi_inv_pows
+            .iter()
+            .map(|&v| mont.to_montgomery(v))
             .collect();
-        let psi_inv_powers_mont = (0..n)
-            .map(|index| mont.to_montgomery(mod_pow(psi_inv, index as u64, q)))
+        let psi_br_mont: Vec<u64> = (0..n)
+            .map(|k| mont.to_montgomery(psi_pows[Self::bit_reverse(k, log_n)]))
+            .collect();
+        let psi_inv_br_mont: Vec<u64> = (0..n)
+            .map(|k| mont.to_montgomery(psi_inv_pows[Self::bit_reverse(k, log_n)]))
             .collect();
 
         Ok(Self {
@@ -102,19 +118,15 @@ impl NTTEngineFFT {
             twiddles_inv,
             psi_powers_mont,
             psi_inv_powers_mont,
+            psi_br_mont,
+            psi_inv_br_mont,
             psi_inv,
             omega_inv,
             n_inv,
-            psi_powers: (0..n).map(|index| mod_pow(psi, index as u64, q)).collect(),
-            psi_inv_powers: (0..n)
-                .map(|index| mod_pow(psi_inv, index as u64, q))
-                .collect(),
-            omega_powers: (0..n)
-                .map(|index| mod_pow(omega, index as u64, q))
-                .collect(),
-            omega_inv_powers: (0..n)
-                .map(|index| mod_pow(omega_inv, index as u64, q))
-                .collect(),
+            psi_powers: psi_pows,
+            psi_inv_powers: psi_inv_pows,
+            omega_powers: omega_pows,
+            omega_inv_powers: omega_inv_pows,
         })
     }
 
@@ -265,33 +277,59 @@ impl NTTEngineFFT {
 
         output.clear();
         output.reserve(self.n.saturating_sub(output.capacity()));
-        let mut right_work = Vec::with_capacity(self.n);
+        output.extend(left.iter().map(|&v| self.mont.to_montgomery(v)));
+        let mut right_work: Vec<u64> = right.iter().map(|&v| self.mont.to_montgomery(v)).collect();
+        self.negacyclic_product_mont(output, &mut right_work);
+        for value in output.iter_mut() {
+            *value = self.mont.from_montgomery(*value);
+        }
+    }
 
-        for index in 0..self.n {
-            let left_twisted = self.mont.montgomery_mul(
-                self.mont.to_montgomery(left[index]),
-                self.psi_powers_mont[index],
-            );
-            let right_twisted = self.mont.montgomery_mul(
-                self.mont.to_montgomery(right[index]),
-                self.psi_powers_mont[index],
-            );
-            output.push(left_twisted);
-            right_work.push(right_twisted);
+    /// `(sum_i left[i] * right_a[i], sum_i left[i] * right_b[i])` in the
+    /// negacyclic ring, plain-domain in and out, bit-identical to summing the
+    /// individual [`Self::multiply`] results mod `q`.
+    ///
+    /// The transform is linear, so each `left[i]` is transformed ONCE (and
+    /// shared by both right operands), the products accumulate pointwise in
+    /// the transform domain, and only two inverse transforms run at the end:
+    /// `3k + 2` transforms for `k` terms instead of `6k` for `2k` separate
+    /// products. This is the shape of gadget relinearization
+    /// (`sum_i digit_i * rlk0_i`, `sum_i digit_i * rlk1_i`). All addresses and
+    /// twiddle indices are public.
+    pub fn multiply_sum_pair(
+        &self,
+        left: &[&[u64]],
+        right_a: &[&[u64]],
+        right_b: &[&[u64]],
+    ) -> (Vec<u64>, Vec<u64>) {
+        assert_eq!(left.len(), right_a.len(), "term count mismatch");
+        assert_eq!(left.len(), right_b.len(), "term count mismatch");
+        let mut acc_a = vec![0_u64; self.n];
+        let mut acc_b = vec![0_u64; self.n];
+        let mut work_l = Vec::with_capacity(self.n);
+        let mut work_r = Vec::with_capacity(self.n);
+        for ((l, ra), rb) in left.iter().zip(right_a).zip(right_b) {
+            debug_assert_eq!(l.len(), self.n);
+            work_l.clear();
+            work_l.extend(l.iter().map(|&v| self.mont.to_montgomery(v)));
+            self.negacyclic_forward_br(&mut work_l);
+            for (right, acc) in [(*ra, &mut acc_a), (*rb, &mut acc_b)] {
+                debug_assert_eq!(right.len(), self.n);
+                work_r.clear();
+                work_r.extend(right.iter().map(|&v| self.mont.to_montgomery(v)));
+                self.negacyclic_forward_br(&mut work_r);
+                for ((a, &x), &y) in acc.iter_mut().zip(&work_l).zip(&work_r) {
+                    *a = self.mont.montgomery_add(*a, self.mont.montgomery_mul(x, y));
+                }
+            }
         }
-
-        self.ntt_inplace(output);
-        self.ntt_inplace(&mut right_work);
-        for index in 0..self.n {
-            output[index] = self.mont.montgomery_mul(output[index], right_work[index]);
+        for acc in [&mut acc_a, &mut acc_b] {
+            self.negacyclic_inverse_br(acc);
+            for value in acc.iter_mut() {
+                *value = self.mont.from_montgomery(*value);
+            }
         }
-        self.intt_inplace(output);
-        for index in 0..self.n {
-            let untwisted = self
-                .mont
-                .montgomery_mul(output[index], self.psi_inv_powers_mont[index]);
-            output[index] = self.mont.from_montgomery(untwisted);
-        }
+        (acc_a, acc_b)
     }
 
     pub fn multiply_ct(&self, left: &[u64], right: &[u64]) -> Vec<u64> {
@@ -310,29 +348,76 @@ impl NTTEngineFFT {
 
         output.clear();
         output.reserve(self.n.saturating_sub(output.capacity()));
-        output.extend(left.iter().enumerate().map(|(index, value)| {
-            self.mont
-                .montgomery_mul(*value, self.psi_powers_mont[index])
-        }));
-        let mut right_work: Vec<u64> = right
-            .iter()
-            .enumerate()
-            .map(|(index, value)| {
-                self.mont
-                    .montgomery_mul(*value, self.psi_powers_mont[index])
-            })
-            .collect();
+        output.extend_from_slice(left);
+        let mut right_work = right.to_vec();
+        self.negacyclic_product_mont(output, &mut right_work);
+    }
 
-        self.ntt_inplace(output);
-        self.ntt_inplace(&mut right_work);
-        for index in 0..self.n {
-            output[index] = self.mont.montgomery_mul(output[index], right_work[index]);
+    /// Negacyclic product of two Montgomery-form polynomials, result left in
+    /// `left` (also Montgomery form): fused forward transforms (input in
+    /// natural order, output bit-reversed), pointwise product, fused inverse
+    /// (input bit-reversed, output natural). The psi twists live inside the
+    /// twiddle tables, so there is no data bit-reversal pass and no separate
+    /// pre/post-twist loop. All addresses and twiddle indices are public.
+    fn negacyclic_product_mont(&self, left: &mut [u64], right: &mut [u64]) {
+        self.negacyclic_forward_br(left);
+        self.negacyclic_forward_br(right);
+        for (l, r) in left.iter_mut().zip(right.iter()) {
+            *l = self.mont.montgomery_mul(*l, *r);
         }
-        self.intt_inplace(output);
-        for index in 0..self.n {
-            output[index] = self
-                .mont
-                .montgomery_mul(output[index], self.psi_inv_powers_mont[index]);
+        self.negacyclic_inverse_br(left);
+    }
+
+    /// Cooley-Tukey negacyclic forward transform (Longa-Naehrig): natural
+    /// order in, bit-reversed order out, twiddles `psi^bitrev(k)`.
+    fn negacyclic_forward_br(&self, values: &mut [u64]) {
+        debug_assert_eq!(values.len(), self.n);
+        let mut t = self.n;
+        let mut m = 1_usize;
+        while m < self.n {
+            t >>= 1;
+            for i in 0..m {
+                let twiddle = self.psi_br_mont[m + i];
+                let start = 2 * i * t;
+                let (low, high) = values[start..start + 2 * t].split_at_mut(t);
+                for (u_ref, v_ref) in low.iter_mut().zip(high.iter_mut()) {
+                    let u = *u_ref;
+                    let v = self.mont.montgomery_mul(*v_ref, twiddle);
+                    *u_ref = self.mont.montgomery_add(u, v);
+                    *v_ref = self.mont.montgomery_sub(u, v);
+                }
+            }
+            m <<= 1;
+        }
+    }
+
+    /// Gentleman-Sande negacyclic inverse transform: bit-reversed order in,
+    /// natural order out, twiddles `psi^-bitrev(k)`, then the `n^-1` scale.
+    fn negacyclic_inverse_br(&self, values: &mut [u64]) {
+        debug_assert_eq!(values.len(), self.n);
+        let mut t = 1_usize;
+        let mut m = self.n;
+        while m > 1 {
+            let half = m >> 1;
+            let mut start = 0_usize;
+            for i in 0..half {
+                let twiddle = self.psi_inv_br_mont[half + i];
+                let (low, high) = values[start..start + 2 * t].split_at_mut(t);
+                for (u_ref, v_ref) in low.iter_mut().zip(high.iter_mut()) {
+                    let u = *u_ref;
+                    let v = *v_ref;
+                    *u_ref = self.mont.montgomery_add(u, v);
+                    *v_ref = self
+                        .mont
+                        .montgomery_mul(self.mont.montgomery_sub(u, v), twiddle);
+                }
+                start += 2 * t;
+            }
+            t <<= 1;
+            m = half;
+        }
+        for value in values.iter_mut() {
+            *value = self.mont.montgomery_mul(*value, self.n_inv_mont);
         }
     }
 
@@ -376,6 +461,18 @@ impl NTTEngineFFT {
             })
             .collect()
     }
+}
+
+/// `[1, base, base^2, ..., base^(n-1)] mod q`, one multiply per entry.
+/// Variable-time setup helper over public values.
+fn power_table(base: u64, n: usize, q: u64) -> Vec<u64> {
+    let mut table = Vec::with_capacity(n);
+    let mut power = 1_u64 % q;
+    for _ in 0..n {
+        table.push(power);
+        power = ((power as u128 * base as u128) % q as u128) as u64;
+    }
+    table
 }
 
 /// Variable-time setup helper over public values.
@@ -444,6 +541,204 @@ mod tests {
             engine.multiply(&left, &right),
             vec![TEST_PRIME - 1, 0, 0, 0]
         );
+    }
+
+    /// The previous textbook multiply (bit-reversal permutation inside every
+    /// transform, separate psi pre/post-twist passes), kept here as the
+    /// reference the fused negacyclic path must reproduce exactly.
+    fn textbook_multiply_persistent(
+        engine: &NTTEngineFFT,
+        left: &[u64],
+        right: &[u64],
+    ) -> Vec<u64> {
+        let n = engine.n;
+        let mut a: Vec<u64> = (0..n)
+            .map(|i| {
+                engine
+                    .mont
+                    .montgomery_mul(left[i], engine.psi_powers_mont[i])
+            })
+            .collect();
+        let mut b: Vec<u64> = (0..n)
+            .map(|i| {
+                engine
+                    .mont
+                    .montgomery_mul(right[i], engine.psi_powers_mont[i])
+            })
+            .collect();
+        engine.ntt_inplace(&mut a);
+        engine.ntt_inplace(&mut b);
+        for i in 0..n {
+            a[i] = engine.mont.montgomery_mul(a[i], b[i]);
+        }
+        engine.intt_inplace(&mut a);
+        (0..n)
+            .map(|i| {
+                engine
+                    .mont
+                    .montgomery_mul(a[i], engine.psi_inv_powers_mont[i])
+            })
+            .collect()
+    }
+
+    /// Fused negacyclic multiply == textbook multiply, bit for bit, on random,
+    /// extreme and sparse inputs, for small rings and the real secure-config
+    /// ring sizes and primes; and the plain-domain `multiply_into` agrees too.
+    #[test]
+    fn fused_negacyclic_multiply_matches_textbook_reference() {
+        let mut cases: Vec<(u64, usize)> = vec![
+            (TEST_PRIME, 8),
+            (TEST_PRIME, 64),
+            (TEST_PRIME, 1024),
+            (TEST_PRIME, 2),
+        ];
+        let cfg = crate::params::SecureConfig::secure_128().into_config();
+        for &p in &cfg.primes {
+            cases.push((p, cfg.n));
+        }
+        let cfg = crate::params::SecureConfig::secure_256().into_config();
+        for &p in cfg.primes.iter().take(2) {
+            cases.push((p, cfg.n));
+        }
+        let mut state = 0xC2B2_AE3D_27D4_EB4Fu64;
+        let mut next = || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        for (q, n) in cases {
+            let engine = NTTEngineFFT::new(q, n);
+            let shapes: [Box<dyn Fn(&mut dyn FnMut() -> u64) -> Vec<u64>>; 4] = [
+                Box::new(move |r| (0..n).map(|_| r() % q).collect()),
+                Box::new(move |_| vec![q - 1; n]),
+                Box::new(move |_| vec![0; n]),
+                Box::new(move |r| {
+                    (0..n)
+                        .map(|i| if i % 7 == 0 { r() % q } else { 0 })
+                        .collect()
+                }),
+            ];
+            for sa in &shapes {
+                for sb in &shapes {
+                    let a_plain = sa(&mut next);
+                    let b_plain = sb(&mut next);
+                    let a_mont: Vec<u64> = a_plain
+                        .iter()
+                        .map(|&v| engine.mont.to_montgomery(v))
+                        .collect();
+                    let b_mont: Vec<u64> = b_plain
+                        .iter()
+                        .map(|&v| engine.mont.to_montgomery(v))
+                        .collect();
+                    let want = textbook_multiply_persistent(&engine, &a_mont, &b_mont);
+                    assert_eq!(
+                        engine.multiply_persistent(&a_mont, &b_mont),
+                        want,
+                        "persistent q={q} n={n}"
+                    );
+                    let want_plain: Vec<u64> = want
+                        .iter()
+                        .map(|&v| engine.mont.from_montgomery(v))
+                        .collect();
+                    assert_eq!(
+                        engine.multiply(&a_plain, &b_plain),
+                        want_plain,
+                        "plain q={q} n={n}"
+                    );
+                }
+            }
+        }
+    }
+
+    /// Direct A/B of the textbook and fused multiply on the real secure_128
+    /// ring (n=8192, first main prime). Run with:
+    /// `cargo test -p nine65 --lib --release -- --ignored --nocapture ntt_multiply_ab_timing`
+    #[test]
+    #[ignore = "timing measurement, not a correctness test"]
+    fn ntt_multiply_ab_timing() {
+        let cfg = crate::params::SecureConfig::secure_128().into_config();
+        let engine = NTTEngineFFT::new(cfg.primes[0], cfg.n);
+        let q = engine.q;
+        let a: Vec<u64> = (0..engine.n as u64).map(|i| (i * 2654435761) % q).collect();
+        let b: Vec<u64> = (0..engine.n as u64).map(|i| (i * 40503 + 17) % q).collect();
+        let am: Vec<u64> = a.iter().map(|&v| engine.mont.to_montgomery(v)).collect();
+        let bm: Vec<u64> = b.iter().map(|&v| engine.mont.to_montgomery(v)).collect();
+        let reps = 300;
+        let mut best_old = u128::MAX;
+        let mut best_new = u128::MAX;
+        for _ in 0..7 {
+            let t = std::time::Instant::now();
+            for _ in 0..reps {
+                std::hint::black_box(textbook_multiply_persistent(&engine, &am, &bm));
+            }
+            best_old = best_old.min(t.elapsed().as_nanos() / reps as u128);
+            let t = std::time::Instant::now();
+            for _ in 0..reps {
+                std::hint::black_box(engine.multiply_persistent(&am, &bm));
+            }
+            best_new = best_new.min(t.elapsed().as_nanos() / reps as u128);
+        }
+        println!(
+            "textbook {best_old} ns/mult, fused {best_new} ns/mult (n={}, best of 7)",
+            engine.n
+        );
+    }
+
+    /// `multiply_sum_pair` must equal the per-term products summed mod q,
+    /// exactly, for several term counts including zero and one.
+    #[test]
+    fn multiply_sum_pair_matches_summed_products() {
+        let cfg = crate::params::SecureConfig::secure_128().into_config();
+        let mut cases = vec![(TEST_PRIME, 64usize)];
+        cases.push((cfg.primes[0], cfg.n));
+        let mut state = 0x1234_5678_9ABC_DEF1u64;
+        let mut next = || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        for (q, n) in cases {
+            let engine = NTTEngineFFT::new(q, n);
+            for terms in [0usize, 1, 2, 5, 11] {
+                let mk = |next: &mut dyn FnMut() -> u64| -> Vec<Vec<u64>> {
+                    (0..terms)
+                        .map(|_| (0..n).map(|_| next() % q).collect())
+                        .collect()
+                };
+                let l = mk(&mut next);
+                let ra = mk(&mut next);
+                let rb = mk(&mut next);
+                fn refs(v: &[Vec<u64>]) -> Vec<&[u64]> {
+                    v.iter().map(|x| x.as_slice()).collect()
+                }
+                let (got_a, got_b) = engine.multiply_sum_pair(&refs(&l), &refs(&ra), &refs(&rb));
+                let mut want_a = vec![0u64; n];
+                let mut want_b = vec![0u64; n];
+                for t in 0..terms {
+                    let pa = engine.multiply(&l[t], &ra[t]);
+                    let pb = engine.multiply(&l[t], &rb[t]);
+                    for j in 0..n {
+                        want_a[j] = ((want_a[j] as u128 + pa[j] as u128) % q as u128) as u64;
+                        want_b[j] = ((want_b[j] as u128 + pb[j] as u128) % q as u128) as u64;
+                    }
+                }
+                assert_eq!(got_a, want_a, "A q={q} n={n} terms={terms}");
+                assert_eq!(got_b, want_b, "B q={q} n={n} terms={terms}");
+            }
+        }
+    }
+
+    /// The iterative power tables must equal square-and-multiply exactly.
+    #[test]
+    fn power_table_matches_mod_pow() {
+        for &(base, q) in &[(3u64, TEST_PRIME), (TEST_PRIME - 1, TEST_PRIME), (7, 65537)] {
+            let table = power_table(base, 300, q);
+            for (i, &v) in table.iter().enumerate() {
+                assert_eq!(v, mod_pow(base, i as u64, q), "base={base} q={q} i={i}");
+            }
+        }
     }
 
     #[test]

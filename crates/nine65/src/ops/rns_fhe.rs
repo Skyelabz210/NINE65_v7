@@ -4062,20 +4062,82 @@ impl RNSFHEContext {
         let mut result_c0 = self.dual_poly_zero();
         let mut result_c1 = self.dual_poly_zero();
 
-        // For each digit of the decomposition
-        for (digit_idx, (rlk0, rlk1)) in evk.rlk.iter().enumerate() {
-            // Extract digit from each coefficient
-            let digit_poly =
-                self.extract_digit_dual(poly, digit_idx, evk.decomp_base, evk.num_digits)?;
+        // Digits first, in the same order and with the same first-error
+        // behaviour as the former per-digit loop.
+        let mut digit_polys = Vec::with_capacity(evk.rlk.len());
+        for digit_idx in 0..evk.rlk.len() {
+            digit_polys.push(self.extract_digit_dual(
+                poly,
+                digit_idx,
+                evk.decomp_base,
+                evk.num_digits,
+            )?);
+        }
 
-            // Multiply digit by both rlk components
-            // rlk0_i = -a_i*s - e_i + power_i * s²
-            // rlk1_i = a_i
-            let c0_contrib = self.dual_poly_mul(&digit_poly, rlk0);
-            let c1_contrib = self.dual_poly_mul(&digit_poly, rlk1);
+        if !digit_polys.is_empty() {
+            // result_c0 = sum_i digit_i * rlk0_i,  result_c1 = sum_i digit_i * rlk1_i
+            // (rlk0_i = -a_i*s - e_i + power_i * s^2, rlk1_i = a_i).
+            //
+            // Per lane the NTT is linear, so each digit is transformed once
+            // for both products, the sums accumulate in the transform domain,
+            // and two inverse transforms finish the lane -- instead of two
+            // full polynomial products (six transforms) per digit. The result
+            // is bit-identical to the per-digit dual_poly_mul + add loop.
+            let anchor_engines = &self.dual_rns.anchor.ntt_engines;
+            let main_count = digit_polys
+                .iter()
+                .map(|d| d.main.len())
+                .chain(
+                    evk.rlk
+                        .iter()
+                        .flat_map(|(a, b)| [a.main.len(), b.main.len()]),
+                )
+                .min()
+                .unwrap_or(0)
+                .min(self.ntt_engines.len());
+            let anchor_count = digit_polys
+                .iter()
+                .map(|d| d.anchor.len())
+                .chain(
+                    evk.rlk
+                        .iter()
+                        .flat_map(|(a, b)| [a.anchor.len(), b.anchor.len()]),
+                )
+                .min()
+                .unwrap_or(0)
+                .min(anchor_engines.len());
 
-            self.dual_poly_add_assign(&mut result_c0, &c0_contrib);
-            self.dual_poly_add_assign(&mut result_c1, &c1_contrib);
+            let sums = Self::run_limb_lanes(main_count + anchor_count, |lane| {
+                let on_main = lane < main_count;
+                let j = if on_main { lane } else { lane - main_count };
+                fn pick(p: &DualRNSPoly, on_main: bool, j: usize) -> &[u64] {
+                    if on_main {
+                        p.main[j].as_slice()
+                    } else {
+                        p.anchor[j].as_slice()
+                    }
+                }
+                let left: Vec<&[u64]> = digit_polys.iter().map(|p| pick(p, on_main, j)).collect();
+                let right_a: Vec<&[u64]> =
+                    evk.rlk.iter().map(|(r0, _)| pick(r0, on_main, j)).collect();
+                let right_b: Vec<&[u64]> =
+                    evk.rlk.iter().map(|(_, r1)| pick(r1, on_main, j)).collect();
+                let engine = if on_main {
+                    &self.ntt_engines[j]
+                } else {
+                    &anchor_engines[j]
+                };
+                engine.multiply_sum_pair(&left, &right_a, &right_b)
+            });
+            for (lane, (sum0, sum1)) in sums.into_iter().enumerate() {
+                if lane < main_count {
+                    result_c0.main[lane] = sum0;
+                    result_c1.main[lane] = sum1;
+                } else {
+                    result_c0.anchor[lane - main_count] = sum0;
+                    result_c1.anchor[lane - main_count] = sum1;
+                }
+            }
         }
 
         Ok((result_c0, result_c1))

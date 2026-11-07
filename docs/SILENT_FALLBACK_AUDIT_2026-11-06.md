@@ -123,3 +123,16 @@ error path); class B now uses witness-consistent residues with both signs of
 `secure_128_deep` public mul on this 2-core box: 3620 ms (before) -> 959 ->
 343 -> 97 ms. `secure_256`: 10803 -> 352 ms. Symmetric mul 305 -> 53 ms.
 Lib 1124 passed / 0 failed; 58 test targets, 1410 passed, 0 failed.
+
+## Follow-up 2026-11-07: NTT and relinearization
+
+- `NTTEngineFFT::multiply` / `multiply_persistent` now run a fused negacyclic
+  transform (twists merged into the butterflies, no data bit-reversal, Montgomery
+  twiddle tables, iterative power tables). Per n=8192 multiply: ~461us -> ~341us.
+  Bit-exact against the textbook reference in `fused_negacyclic_multiply_matches_textbook_reference`.
+- `relinearize_dual` accumulates `sum digit_i * rlk_i` in the transform domain
+  per lane (`multiply_sum_pair`: 3k+2 transforms instead of 6k). Bit-exact
+  against summed products in `multiply_sum_pair_matches_summed_products`.
+- Measured (`op_timings`, debug-assertions on, secure_128): public mul 97 -> ~76 ms,
+  symmetric mul 53 -> ~41 ms; secure_256 public mul ~256 ms.
+- Lib suite: 1127 passed, 0 failed, 144 ignored.
