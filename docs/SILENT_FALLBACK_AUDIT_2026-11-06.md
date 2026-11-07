@@ -39,14 +39,24 @@ depend only on the public prime set.
    10.8 s -> 1.4 s. A level with no U256 CRT value (empty, or product wider
    than 256 bits) keeps the reference function's semantics. The ~15 other
    callers (bootstrap, phase clocks, base_ext) still recompute per call.
-3. READ: `U256::mod_u64_ct` (256 iterations), `div_mod_u64_ct` (256) and
-   `mod_u64_word_ct` (64) are still bit-serial. `extract_k_rns_level_cached`
+3. MEASURED, FIXED (third pass, 2026-11-07): after items 1-2 a re-profile put
+   about half the samples in `extract_k_rns_level_cached`'s own frames, i.e.
+   its inlined reductions. They now run on `PrimeReducer` (per anchor prime:
+   four persistent-Montgomery REDCs against precomputed `2^(64k)*R mod p`
+   constants for the 256-bit reduction, and a Montgomery multiply for
+   `diff * inv mod a_i`, which also closes the variable-time `u128 %` gap
+   noted in item 4). `secure_128_deep` public mul 343 -> 97 ms; `secure_256`
+   1400 -> 352 ms. `mod_u64_ct`, `div_mod_u64_ct` and `mod_u64_word_ct`
+   themselves are unchanged and still bit-serial for their remaining callers
+   (rescale output lanes, other ops), which were not re-profiled.
+   (Original note:) `U256::mod_u64_ct` (256 iterations), `div_mod_u64_ct` (256)
+   and `mod_u64_word_ct` (64) are bit-serial. `extract_k_rns_level_cached`
    calls `mod_u64_ct` once per anchor prime per coefficient; the rescale in
    `ops/rns_fhe.rs` calls it once per output lane. A persistent-Montgomery
    reduction per prime (limb constants `2^(64k)*R mod p`, four REDCs) and an
    exact quotient via the inverse of the odd divisor mod 2^256 would remove
    them with the same fixed-work property. Not done yet.
-4. READ: `(diff * inv) % a_i` in `extract_k_rns_level_cached` is a variable-
+4. FIXED with item 3: `(diff * inv) % a_i` in `extract_k_rns_level_cached` was a variable-
    time u128 modulo; the source comment flags it as a known gap and names
    the fix (a per-anchor-prime reduction context). The same Montgomery
    context closes it.
@@ -80,3 +90,36 @@ depend only on the public prime set.
 NTT-FFT versus the reference DFT: `ntt_fft` is the default (`reference_ntt`
 is off), so that selection is correct. Everything marked READ above is
 unprofiled; rankings come from the sampled profile only.
+
+## New finding from the direct timing gate (2026-11-07)
+
+`test_ct_dudect_production_extract_k_cached_operand_magnitude` (new, blocking
+in CI) times the production K-Elimination path directly, zero versus uniform
+operands, on secure_128 and secure_192 (witness lanes live). Its first run
+failed with a ~2% effect (t_signal 7-84 against control ~0.5) after the
+arithmetic had already been made fixed-work. Two causes, both secret-
+dependent control flow on the winding number `k_u`:
+
+1. The capacity guard tested `k_u.ge(A/2 - margin) && k_u.le(A/2 + margin)`:
+   early-exit limb comparators plus a short-circuiting `&&`. Now two
+   borrow-based `ge_mask_ct` masks combined with `&`; only the error exit
+   branches on the result.
+2. The 10-anchor witness check branched on the sign of `k_u`
+   (`if is_neg { a_recon.sub(k_u) } else { k_u }` and
+   `if is_neg && mag_mod != 0`). Now a masked select.
+
+A test-only `k_probe` block also computed the sign unconditionally; it now
+runs only while a measurement is recording.
+
+After the fix: medians equal to the nanosecond across both configs (e.g.
+34513 vs 34508 ns per 128 calls), t_signal 0.09-0.80 over repeated runs.
+A first attempt at the secure_192 case measured t_signal ~200, which was a
+test-design error (random witness residues made class B return the allocating
+error path); class B now uses witness-consistent residues with both signs of
+`k`, and the test asserts every pool operand returns Ok.
+
+## Result summary
+
+`secure_128_deep` public mul on this 2-core box: 3620 ms (before) -> 959 ->
+343 -> 97 ms. `secure_256`: 10803 -> 352 ms. Symmetric mul 305 -> 53 ms.
+Lib 1124 passed / 0 failed; 58 test targets, 1410 passed, 0 failed.

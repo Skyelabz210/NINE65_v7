@@ -1498,6 +1498,61 @@ impl CrtU256Plan {
     }
 }
 
+/// Fixed-work reduction of a 256-bit value (and of a product of two reduced
+/// words) modulo one public odd prime `p < 2^63`, on the persistent-Montgomery
+/// engine. Replaces the 256-iteration bit-serial `U256::mod_u64_ct` and the
+/// variable-time u128 `%` on the K-Elimination hot path.
+///
+/// `v mod p` is the sum of four terms `limb_k * 2^(64k)`. With the per-prime
+/// constants `c_k = (2^(64k) mod p) * R mod p` precomputed here,
+/// `REDC(limb_k * c_k) = limb_k * 2^(64k) mod p` (input `< 2^64 * p`, the REDC
+/// bound), and four canonical values add with the branchless modular `add`.
+/// No division, no data-dependent branch or iteration count; `p` is public,
+/// only the dividend is secret-correlated.
+#[derive(Clone, Debug)]
+pub(crate) struct PrimeReducer {
+    pm: super::persistent_montgomery::PersistentMontgomery,
+    limb_const: [u64; 4],
+}
+
+impl PrimeReducer {
+    pub(crate) fn new(p: u64) -> Self {
+        let pm = super::persistent_montgomery::PersistentMontgomery::new(p);
+        // Public-modulus setup only (runs once per prime).
+        let two64 = ((1u128 << 64) % p as u128) as u64;
+        let mut pow = 1u64 % p;
+        let mut limb_const = [0u64; 4];
+        for c in &mut limb_const {
+            *c = pm.enter(pow);
+            pow = ((pow as u128 * two64 as u128) % p as u128) as u64;
+        }
+        Self { pm, limb_const }
+    }
+
+    /// `v mod p`.
+    #[inline]
+    pub(crate) fn reduce_u256(&self, v: U256) -> u64 {
+        let limbs = [
+            v.lo as u64,
+            (v.lo >> 64) as u64,
+            v.hi as u64,
+            (v.hi >> 64) as u64,
+        ];
+        let mut acc = 0u64;
+        for (limb, c) in limbs.iter().zip(&self.limb_const) {
+            let t = *limb as u128 * *c as u128;
+            acc = self.pm.add(acc, self.pm.redc(t as u64, (t >> 64) as u64));
+        }
+        acc
+    }
+
+    /// `a * b mod p` for plain (non-Montgomery) `a, b < p`.
+    #[inline]
+    pub(crate) fn mul_plain(&self, a: u64, b: u64) -> u64 {
+        self.pm.mul(a, self.pm.enter(b))
+    }
+}
+
 pub(crate) fn mod_inverse(a: u64, m: u64) -> u64 {
     let mut mn = (m as i128, a as i128);
     let mut xy = (0i128, 1i128);
@@ -1611,6 +1666,8 @@ pub struct DualRNSContext {
     /// Lazily built CRT reconstruction constants for the K-Elimination
     /// anchor set; see [`CrtU256Plan`].
     pub(crate) k_crt: std::sync::OnceLock<CrtU256Plan>,
+    /// Lazily built per-anchor-prime reducers; see [`PrimeReducer`].
+    pub(crate) anchor_reducers: std::sync::OnceLock<Vec<PrimeReducer>>,
 }
 
 #[cfg(test)]
@@ -1634,6 +1691,13 @@ pub(crate) mod k_probe {
     pub fn stop() -> Vec<(bool, u32)> {
         RECORDING.store(false, Ordering::SeqCst);
         samples().lock().unwrap().clone()
+    }
+    /// Whether a measurement is in progress. Callers gate the (data-dependent)
+    /// sign/bit-length computation on this, so test builds that are NOT
+    /// recording -- notably the dudect timing tests -- run the same
+    /// branch-free body as production instead of timing the instrumentation.
+    pub(crate) fn is_recording() -> bool {
+        RECORDING.load(Ordering::Relaxed)
     }
     pub(crate) fn record(is_neg: bool, bits: u32) {
         if RECORDING.load(Ordering::SeqCst) {
@@ -1728,7 +1792,19 @@ impl DualRNSContext {
             main_inv_anchor_rns,
             n,
             k_crt: std::sync::OnceLock::new(),
+            anchor_reducers: std::sync::OnceLock::new(),
         }
+    }
+
+    /// One [`PrimeReducer`] per anchor prime, built once on first use.
+    pub(crate) fn anchor_reducers(&self) -> &[PrimeReducer] {
+        self.anchor_reducers.get_or_init(|| {
+            self.anchor
+                .primes
+                .iter()
+                .map(|&p| PrimeReducer::new(p))
+                .collect()
+        })
     }
 
     /// CRT reconstruction plan over the K-Elimination anchor primes, built
@@ -2277,10 +2353,14 @@ impl DualRNSContext {
         // K-Elimination-shaped code, just not previously measured on THIS,
         // the production `extract_k_rns_level` path. `mod_u64_ct` below is
         // the fixed-256-iteration constant-time replacement.
+        let reducers = self.anchor_reducers();
         let mut k_rns = vec![0u64; self.anchor.primes.len()];
         for (i, &a_i) in self.anchor.primes.iter().enumerate() {
             let inv = inverses.inv[i];
-            let v_m_mod_ai = v_main.mod_u64_ct(a_i);
+            // Fixed-work persistent-Montgomery reduction (see `PrimeReducer`);
+            // same F-2 constant-time property as `mod_u64_ct`, without its
+            // 256 bit-serial iterations per call.
+            let v_m_mod_ai = reducers[i].reduce_u256(v_main);
             // diff = (v_anchor_rns[i] + a_i - v_m_mod_ai) mod a_i, as a single
             // masked conditional subtract rather than `%`: both operands are
             // already reduced mod a_i, so the raw sum lies in [1, 2*a_i - 1]
@@ -2295,17 +2375,11 @@ impl DualRNSContext {
                 core::hint::black_box(((raw as u128).wrapping_sub(a_i as u128) >> 127) as u64);
             let geq_mask = !borrow.wrapping_neg(); // all-ones iff raw >= a_i
             let diff = raw.wrapping_sub(a_i & geq_mask);
-            // NOTE: the reduction below, `(diff * inv) % a_i`, is a u128
-            // product mod a runtime (non-secret, per-lane) divisor and
-            // remains variable-time -- the same `__umodti3` defect class,
-            // unaddressed in this pass. `diff` and `inv` are each already
-            // reduced mod `a_i`, so a per-anchor-prime CT reduction context
-            // (Barrett- or Montgomery-style, as `RNSContext::mont_contexts`
-            // already precomputes for the main primes) is the fix; building
-            // and threading one through `DualRNSContext` is out of scope
-            // here. Left as a documented, flagged gap rather than a silent
-            // one.
-            k_rns[i] = ((diff as u128) * (inv as u128) % (a_i as u128)) as u64;
+            // `diff * inv mod a_i` with both operands already reduced: a
+            // persistent-Montgomery multiply, not the u128 `%` (`__umodti3`)
+            // this used to be, which was variable-time (the F-2/F-3 defect
+            // class) and was flagged here as an open gap.
+            k_rns[i] = reducers[i].mul_plain(diff, inv);
         }
 
         // Reconstruct k from the first k_primes anchors via parallel summation CRT.
@@ -2318,15 +2392,26 @@ impl DualRNSContext {
         {
             // Balanced magnitude, mirroring SignedK256::from_unsigned, for
             // the k_probe measurement -- not used by the live check below.
-            let (neg, mag) = if k_u.gt(a_recon_half) {
-                (true, a_recon.sub(k_u))
-            } else {
-                (false, k_u)
-            };
-            k_probe::record(neg, mag.bitlen());
+            // Only computed while recording: the sign branch is data-dependent.
+            if k_probe::is_recording() {
+                let (neg, mag) = if k_u.gt(a_recon_half) {
+                    (true, a_recon.sub(k_u))
+                } else {
+                    (false, k_u)
+                };
+                k_probe::record(neg, mag.bitlen());
+            }
         }
         let safety_margin = U256::from_u64(1_000_000);
-        if k_u.ge(a_recon_half.sub(safety_margin)) && k_u.le(a_recon_half.add(safety_margin)) {
+        // `k_u` is the secret-correlated winding number. The window test uses
+        // the borrow-based masks and a non-short-circuiting `&`, not the
+        // early-exit `ge`/`le` and `&&`, whose branch pattern tracked
+        // `k_u`'s high limbs (measured by
+        // `test_ct_dudect_production_extract_k_cached_operand_magnitude`).
+        // Only the error exit below branches on the result.
+        let in_window = k_u.ge_mask_ct(a_recon_half.sub(safety_margin))
+            & a_recon_half.add(safety_margin).ge_mask_ct(k_u);
+        if in_window != 0 {
             return Err(Nine65Error::InvalidParameter {
                 message: format!(
                     "CAPACITY ERROR: Winding number k reached the anchor boundary A/2. \
@@ -2341,8 +2426,10 @@ impl DualRNSContext {
         // subset must agree with the reconstructed k under the SAME signed
         // interpretation the consumers apply (k > A_recon/2 means negative).
         if k_primes < self.anchor.primes.len() {
-            let is_neg = k_u.gt(a_recon_half);
-            let magnitude = if is_neg { a_recon.sub(k_u) } else { k_u };
+            // is_neg <=> k_u > A_recon/2 <=> k_u >= A_recon/2 + 1, as masks.
+            let neg_mask = k_u.ge_mask_ct(a_recon_half.add(U256::from_u64(1)));
+            let neg_word = neg_mask as u64; // all-ones iff negative
+            let magnitude = U256::select_mask_ct(k_u, a_recon.sub(k_u), neg_mask);
             for (i, &a_w) in self.anchor.primes.iter().enumerate().skip(k_primes) {
                 // `magnitude` is derived from the secret winding number `k_u`;
                 // see the `mod_u64_ct` swap above for why the plain `%`-based
@@ -2352,12 +2439,12 @@ impl DualRNSContext {
                 // which is the n=16384 configs (secure_192, secure_256; 10
                 // anchor primes, ceiling 8) -- i.e. it is not the cold path
                 // `mod_switch_down_dual` is.
-                let mag_mod = magnitude.mod_u64_ct(a_w);
-                let expected = if is_neg && mag_mod != 0 {
-                    a_w - mag_mod
-                } else {
-                    mag_mod
-                };
+                let mag_mod = reducers[i].reduce_u256(magnitude);
+                // expected = (is_neg && mag_mod != 0) ? a_w - mag_mod : mag_mod,
+                // selected by mask instead of branching on the sign of `k_u`.
+                let nonzero = (mag_mod | mag_mod.wrapping_neg()) >> 63;
+                let flip = neg_word & 0u64.wrapping_sub(nonzero);
+                let expected = (a_w.wrapping_sub(mag_mod) & flip) | (mag_mod & !flip);
                 if expected != k_rns[i] {
                     return Err(Nine65Error::InvalidParameter {
                         message: format!(
@@ -4728,6 +4815,80 @@ mod tests {
                     "plan disagreed with reference for primes={primes:?} residues={residues:?}"
                 );
             }
+        }
+    }
+
+    /// `PrimeReducer` must agree exactly with plain `%` reduction: on 256-bit
+    /// values (zero, maximum, limb boundaries, powers of two, random) and on
+    /// products of reduced words, across the real anchor primes, tiny primes
+    /// and primes at the top of the supported range (just under 2^63).
+    #[test]
+    fn test_prime_reducer_matches_plain_reduction() {
+        let mut primes: Vec<u64> = vec![
+            3,
+            5,
+            7,
+            65537,
+            998244353,
+            (1u64 << 62) - 57,
+            (1u64 << 63) - 25,
+        ];
+        for n in [8192usize, 16384] {
+            primes.extend(DualRNSContext::canonical_anchor_primes_for_n(n));
+        }
+        let mut state = 0xA076_1D64_78BD_642Fu64;
+        let mut next = || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        for &p in &primes {
+            let red = PrimeReducer::new(p);
+            let mut values = vec![
+                U256::zero(),
+                U256::from_u64(1),
+                U256::from_u64(p),
+                U256::from_u64(p - 1),
+                U256::from_u128(u128::MAX),
+                U256 {
+                    hi: u128::MAX,
+                    lo: u128::MAX,
+                },
+                U256 { hi: 1, lo: 0 },
+                U256 {
+                    hi: 0,
+                    lo: 1u128 << 64,
+                },
+            ];
+            for bit in 0..256usize {
+                let mut v = U256::zero();
+                if bit < 128 {
+                    v.lo = 1u128 << bit;
+                } else {
+                    v.hi = 1u128 << (bit - 128);
+                }
+                values.push(v);
+            }
+            for _ in 0..300 {
+                values.push(U256 {
+                    hi: (next() as u128) << 64 | next() as u128,
+                    lo: (next() as u128) << 64 | next() as u128,
+                });
+            }
+            for v in &values {
+                assert_eq!(red.reduce_u256(*v), v.mod_u64(p), "reduce p={p} v={v:?}");
+            }
+            for _ in 0..300 {
+                let (a, b) = (next() % p, next() % p);
+                assert_eq!(
+                    red.mul_plain(a, b),
+                    ((a as u128 * b as u128) % p as u128) as u64,
+                    "mul p={p} a={a} b={b}"
+                );
+            }
+            assert_eq!(red.mul_plain(p - 1, p - 1), 1 % p);
+            assert_eq!(red.mul_plain(0, p - 1), 0);
         }
     }
 

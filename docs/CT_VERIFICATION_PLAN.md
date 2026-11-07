@@ -66,11 +66,14 @@ noise floor exceeded the decision threshold, not that the author hedged.
 ## 3. Two families of test, and why only one of them can gate a PR
 
 **Current inventory note (2026-10-07):** the counts in the historical analysis
-below were captured earlier. The current harness contains 21 ignored timing
-tests: 9 robust-CV tests and 12 dudect two-class tests. Of the latter, 10 run
-in the blocking job, one known leak is a scheduled state tripwire, and one
+below were captured earlier. The current harness contains 22 ignored timing
+tests: 9 robust-CV tests and 13 dudect two-class tests. Of the latter, 11 run
+in the blocking job (2026-11-07: added
+`test_ct_dudect_production_extract_k_cached_operand_magnitude`, the direct gate
+for the production `extract_k_rns_level_cached` path on secure_128 and
+secure_192), one known leak is a scheduled state tripwire, and one
 unstable verdict is recorded by the scheduled findings job. The workflow's
-test-name lists and its 21-test inventory check are the current source of truth.
+test-name lists and its 22-test inventory check are the current source of truth.
 
 ### (a) Robust-CV tests — 8 tests, diagnostics only
 

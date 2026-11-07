@@ -1960,6 +1960,132 @@ See docs/CT_VERIFICATION_PLAN.md."]
         );
     }
 
+    /// Direct gate for the PRODUCTION K-Elimination path,
+    /// `DualRNSContext::extract_k_rns_level_cached`, whose reductions now run
+    /// on `CrtU256Plan` (persistent-Montgomery CRT with a fixed number of
+    /// masked subtracts) and `PrimeReducer` (four REDCs per prime) instead of
+    /// the per-call recomputation, the 256-iteration bit-serial loops and the
+    /// variable-time `u128 %`. Until this test existed the path was covered
+    /// only indirectly, through `mod_switch_down_dual`.
+    ///
+    /// Class A: all-zero `v_main` and anchor residues. Class B: uniform
+    /// `v_main < M` with a consistent winding number `k = +/-j`, `j < 2^20`,
+    /// both signs, so every anchor lane agrees and both classes take the Ok
+    /// path (a dissenting witness lane returns an allocated error, whose cost
+    /// would be measured instead of the arithmetic).
+    #[test]
+    #[ignore = "Statistical timing test - run in a controlled environment only. Regression gate \
+for the production extract_k_rns_level_cached path after its move to CrtU256Plan / PrimeReducer."]
+    fn test_ct_dudect_production_extract_k_cached_operand_magnitude() {
+        print_environment_info();
+        warmup();
+        // secure_128: 4 main primes, every anchor feeds the CRT plan.
+        // secure_192: 10 anchor primes, so the witness-lane check (signed
+        // magnitude + masked residue flip) is live as well.
+        for (label, named_config) in [
+            ("secure_128", SecureConfig::secure_128()),
+            (
+                "secure_192 (witness lanes live)",
+                SecureConfig::secure_192(),
+            ),
+        ] {
+            let config = named_config.into_config();
+            let ctx = RNSFHEContext::new(&config);
+            let dual = &ctx.dual_rns;
+            // Reduce class-B operands below M when M fits u128; for wider main
+            // products a uniform 128-bit value is already below M.
+            let m128: Option<u128> = ctx
+                .config
+                .primes
+                .iter()
+                .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128));
+            let m_level = U256::product_u64s(&ctx.config.primes);
+            let inverses = dual.precompute_m_level_inverses(m_level);
+            let anchors = dual.anchor.primes.clone();
+            const CALLS: usize = 128;
+            type Item = (U256, Vec<u64>);
+
+            let mut r = ShadowHarvester::with_seed(501);
+            let (pool_a, pool_a2, pool_b) = interleaved_pools(
+                DUDECT_POOLS_BATCHED,
+                || {
+                    (0..CALLS)
+                        .map(|_| (U256::zero(), vec![0u64; anchors.len()]))
+                        .collect::<Vec<Item>>()
+                },
+                || {
+                    (0..CALLS)
+                        .map(|_| {
+                            let raw = ((r.next_u64() as u128) << 64) | r.next_u64() as u128;
+                            let x = m128.map_or(raw, |m| raw % m);
+                            let v_main = U256::from_u128(x);
+                            // A real input of winding number k = +/-j, so every
+                            // anchor lane (including witness lanes past the CRT
+                            // subset) is consistent and the call returns Ok in
+                            // both classes: residue_i = (v + k*M) mod a_i.
+                            let j = r.next_u64() & ((1 << 20) - 1);
+                            let negative = r.next_u64() & 1 == 1;
+                            let residues: Vec<u64> = anchors
+                                .iter()
+                                .map(|&a| {
+                                    let v_a = v_main.mod_u64(a);
+                                    let term = ((j % a) as u128 * m_level.mod_u64(a) as u128
+                                        % a as u128)
+                                        as u64;
+                                    if negative {
+                                        (v_a + a - term) % a
+                                    } else {
+                                        (v_a + term) % a
+                                    }
+                                })
+                                .collect();
+                            (v_main, residues)
+                        })
+                        .collect::<Vec<Item>>()
+                },
+            );
+
+            // Both classes must be valid inputs that SUCCEED: otherwise the
+            // test would be timing the (allocating) error path, not the
+            // arithmetic.
+            for pool in [&pool_a, &pool_a2, &pool_b] {
+                for batch in pool.iter() {
+                    for (v_main, residues) in batch.iter() {
+                        dual.extract_k_rns_level_cached(*v_main, residues, m_level, &inverses)
+                            .unwrap_or_else(|e| {
+                                panic!("{label}: pool operand must succeed: {e:?}")
+                            });
+                    }
+                }
+            }
+
+            let mut rng = ShadowHarvester::with_seed(502);
+            let result = dudect_two_class(
+                &mut rng,
+                &pool_a,
+                &pool_a2,
+                &pool_b,
+                DUDECT_BATCHED_ROUNDS,
+                |batch| {
+                    for (v_main, residues) in batch.iter() {
+                        let out = dual.extract_k_rns_level_cached(
+                            std::hint::black_box(*v_main),
+                            std::hint::black_box(residues),
+                            m_level,
+                            &inverses,
+                        );
+                        std::hint::black_box(&out);
+                    }
+                },
+            );
+
+            assert_dudect(
+                &format!("DualRNSContext::extract_k_rns_level_cached — zero vs uniform operands (batched), {label}"),
+                &result,
+            );
+        }
+    }
+
     // ========================================================================
     // F-3, structurally: adjacency-anchored K-Elimination
     // ========================================================================

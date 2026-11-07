@@ -47,6 +47,9 @@ dudect `mod_switch_down_dual` all-zero vs uniform t_signal 1.12 (threshold 5).
 Second pass (per-level plan in `RNSContext::to_u256_level`): `secure_128_deep`
 public mul 959 -> 343 ms, symmetric 158 -> 64 ms; lib 1123 passed / 0 failed;
 dudect `mod_switch_down_dual` t_signal 1.42 / 0.98 (threshold 5).
+Third pass (`PrimeReducer` in `extract_k_rns_level_cached`, plus mask-based
+capacity and witness checks found by a new direct dudect gate): public mul
+343 -> 97 ms, symmetric 64 -> 53 ms. 58 test targets, 1410 passed, 0 failed.
 The constant-time loops in `mod_u64_ct` / `div_mod_u64_ct` were left unchanged.
 
 ## Not done (earlier plan, superseded by the update above)
