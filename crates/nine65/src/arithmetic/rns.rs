@@ -880,6 +880,10 @@ pub struct RNSContext {
     /// Precomputed CRT reconstruction values
     /// For each prime q_i: M_i = (product / q_i), M_i_inv = M_i^(-1) mod q_i
     pub crt_values: Vec<(u128, u64)>,
+    /// Lazily built [`CrtU256Plan`] per level (index = number of leading
+    /// primes). `None` inside means that level has no `U256` CRT value
+    /// (empty, or product wider than 256 bits).
+    pub(crate) level_crt: Vec<std::sync::OnceLock<Option<CrtU256Plan>>>,
 }
 
 impl RNSContext {
@@ -923,6 +927,10 @@ impl RNSContext {
             primes.iter().map(|_| (0u128, 0u64)).collect()
         };
 
+        let level_crt = (0..=primes.len())
+            .map(|_| std::sync::OnceLock::new())
+            .collect();
+
         Self {
             primes,
             product,
@@ -930,6 +938,7 @@ impl RNSContext {
             ntt_engines,
             n,
             crt_values,
+            level_crt,
         }
     }
 
@@ -1024,7 +1033,14 @@ impl RNSContext {
         to_u256_level_calls::increment();
         assert!(level <= self.primes.len(), "Level exceeds prime count");
         assert!(rns.len() >= level, "RNS length mismatch");
-        crt_reconstruct_u256(&rns[..level], &self.primes[..level])
+        // Fixed-work plan per level, built once. A level with no U256 CRT
+        // value (empty, or product wider than 256 bits) keeps the reference
+        // semantics of `crt_reconstruct_u256`; that is a property of the
+        // level, not a runtime fallback.
+        match self.level_crt[level].get_or_init(|| CrtU256Plan::try_new(&self.primes[..level])) {
+            Some(plan) => plan.reconstruct(&rns[..level]),
+            None => crt_reconstruct_u256(&rns[..level], &self.primes[..level]),
+        }
     }
 
     /// Compute modular inverse using extended Euclidean algorithm
@@ -1426,12 +1442,22 @@ pub(crate) struct CrtU256Plan {
 
 impl CrtU256Plan {
     pub(crate) fn new(primes: &[u64]) -> Self {
-        assert!(!primes.is_empty(), "need primes");
+        Self::try_new(primes)
+            .expect("CrtU256Plan: need at least one prime and a product that fits in 256 bits")
+    }
+
+    /// `None` when there is nothing to reconstruct (no primes) or the prime
+    /// product is wider than 256 bits, where a `U256` result is not the CRT
+    /// value. Callers decide what that case means; there is no silent
+    /// substitution in here.
+    pub(crate) fn try_new(primes: &[u64]) -> Option<Self> {
+        if primes.is_empty() {
+            return None;
+        }
         let m = U512::product_u64s(primes);
-        assert!(
-            m.d2 == 0 && m.d3 == 0,
-            "CrtU256Plan: product of the prime set must fit in 256 bits"
-        );
+        if m.d2 != 0 || m.d3 != 0 {
+            return None;
+        }
         let mut pm = Vec::with_capacity(primes.len());
         let mut inv_mont = Vec::with_capacity(primes.len());
         let mut mi_all = Vec::with_capacity(primes.len());
@@ -1443,12 +1469,12 @@ impl CrtU256Plan {
             pm.push(ctx);
             mi_all.push(mi);
         }
-        Self {
+        Some(Self {
             pm,
             inv_mont,
             mi: mi_all,
             m,
-        }
+        })
     }
 
     /// CRT value of `residues` over this plan's primes. `residues[i]` may be
@@ -4700,6 +4726,39 @@ mod tests {
                     plan.reconstruct(residues),
                     crt_reconstruct_u256(residues, primes),
                     "plan disagreed with reference for primes={primes:?} residues={residues:?}"
+                );
+            }
+        }
+    }
+
+    /// `RNSContext::to_u256_level` now goes through a per-level plan. It must
+    /// equal the reference reconstruction at every level, on reduced and
+    /// unreduced residues, and repeated calls (cached plan) must not drift.
+    #[test]
+    fn test_to_u256_level_plan_matches_reference_at_every_level() {
+        let primes = vec![998244353u64, 985661441, 754974721, 469762049, 167772161];
+        let ctx = RNSContext::new(primes.clone(), 16);
+        let mut state = 0xD1B5_4A32_D192_ED03u64;
+        let mut next = || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        for level in 1..=primes.len() {
+            for round in 0..300 {
+                let residues: Vec<u64> = primes
+                    .iter()
+                    .map(|&p| match round % 3 {
+                        0 => next() % p,
+                        1 => next(),
+                        _ => p - 1,
+                    })
+                    .collect();
+                assert_eq!(
+                    ctx.to_u256_level(&residues, level),
+                    crt_reconstruct_u256(&residues[..level], &primes[..level]),
+                    "level {level} round {round}"
                 );
             }
         }

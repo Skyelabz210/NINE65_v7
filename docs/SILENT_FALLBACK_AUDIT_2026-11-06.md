@@ -31,10 +31,14 @@ depend only on the public prime set.
    branch. Public mul `secure_128_deep`: 3620 ms -> 959 ms on this box.
    The function was already named `..._cached` and its comments said the
    inverses were precomputed; the reconstruction below it was not.
-2. READ: `crt_reconstruct_u256` still recomputes everything for its other
-   ~20 callers (bootstrap, phase clocks, base_ext, `to_u256_level`). Same
-   fix applies per call site once each has a stable prime set to hang a plan
-   on. `RNSContext::to_u256_level` (rns.rs:1027) is the most likely next one.
+2. MEASURED, FIXED (second pass): re-profiling after item 1 put the remaining
+   `crt_reconstruct_u256` time in `RNSContext::to_u256_level` (rescale, relin,
+   decrypt-side reconstruction), which recomputed per call at every level. It
+   now uses a lazily built `CrtU256Plan` per level. `secure_128_deep` public
+   mul 959 -> 343 ms (3620 ms before either change, ~10.6x); `secure_256`
+   10.8 s -> 1.4 s. A level with no U256 CRT value (empty, or product wider
+   than 256 bits) keeps the reference function's semantics. The ~15 other
+   callers (bootstrap, phase clocks, base_ext) still recompute per call.
 3. READ: `U256::mod_u64_ct` (256 iterations), `div_mod_u64_ct` (256) and
    `mod_u64_word_ct` (64) are still bit-serial. `extract_k_rns_level_cached`
    calls `mod_u64_ct` once per anchor prime per coefficient; the rescale in

@@ -44,6 +44,9 @@ k-1 masked subtracts, built once per context) replaces it on the K-Elimination
 path. Same box, same method: `secure_128_deep` public mul 3620 -> 959 ms,
 symmetric mul ~305 -> 158 ms. Lib suite 1122 passed / 0 failed / 142 ignored;
 dudect `mod_switch_down_dual` all-zero vs uniform t_signal 1.12 (threshold 5).
+Second pass (per-level plan in `RNSContext::to_u256_level`): `secure_128_deep`
+public mul 959 -> 343 ms, symmetric 158 -> 64 ms; lib 1123 passed / 0 failed;
+dudect `mod_switch_down_dual` t_signal 1.42 / 0.98 (threshold 5).
 The constant-time loops in `mod_u64_ct` / `div_mod_u64_ct` were left unchanged.
 
 ## Not done (earlier plan, superseded by the update above)
