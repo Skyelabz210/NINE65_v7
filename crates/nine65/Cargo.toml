@@ -181,6 +181,13 @@ required-features = ["allow_insecure"]
 name = "fpd_stack_timings"
 required-features = ["serde"]
 
+# This target constructs toy rings below the production floor and uses seeded
+# test randomness. It must link the explicit research library in development
+# mode, just like the other research integration targets.
+[[test]]
+name = "coefficient_slot_gate"
+required-features = ["allow_insecure"]
+
 [[test]]
 name = "expanded_phase1"
 required-features = ["allow_insecure"]

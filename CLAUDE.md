@@ -49,10 +49,11 @@ release library/example builds reject it.
 
 Run tests with `--no-fail-fast` to collect later targets after a failure.
 Ignored/feature-gated tests and excluded binding crates require separate runs.
-The required workspace suite uses the CI test profile in README. A whole
-workspace release test sweep also discovers toy `coefficient_slot_gate` setups
-that the release library correctly refuses; keep the production parameter floor
-and use the documented development-test mode for those experiments.
+Use `bash scripts/run_tests_medium.sh` for the local workspace suite plus
+explicit coefficient/slot research tests. Production release discovery now
+excludes that toy target via its required feature. CI and automated diagnostics
+remain disabled during active development; use actual local execution to guide
+repairs. The service can be run with `scripts/run_local_service.py`.
 Do not copy old test counts or benchmark values into current capability claims.
 Use [CI lint policy](docs/CI_LINT_POLICY.md) and exact hosted run results.
 

@@ -17,8 +17,7 @@ For code changes, run the relevant tests plus formatting and lint checks:
 ```bash
 cargo fmt --all -- --check
 cargo clippy --locked --workspace -- -D warnings
-cargo test --locked --workspace \
-  --config profile.test.package.nine65.opt-level=2 --no-fail-fast
+bash scripts/run_tests_medium.sh
 ```
 
 For documentation and claim changes, run the claim/status checks listed in

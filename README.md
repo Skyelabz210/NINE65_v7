@@ -5,6 +5,21 @@ computation and CRAM residue arithmetic. Public evaluation, trusted-key-holder
 refresh, service and experimental bindings have different key boundaries;
 see the [security mode matrix](docs/SECURITY_MODE_MATRIX.md).
 
+## Run locally
+
+Start the authenticated operator service on `127.0.0.1:8080`:
+
+```bash
+python3 scripts/run_local_service.py --allow-decrypt
+```
+
+This enables local owner/operator decryption for complete roundtrips. Omit the
+flag for evaluation-only mode. The launcher generates private development
+credentials under the ignored `work/local-service/` directory and prints the
+client environment setup path. CI, automated diagnostics and operator metrics
+remain disabled. Use the [HTTP SDK quickstart](sdks/python/README.md) to run
+real encryption, multiplication and authorized decryption from Python.
+
 ## Current scope
 
 - Finite-depth public addition and multiplication are implemented in `nine65`.
@@ -71,16 +86,20 @@ Run from the repository root:
 ```bash
 cargo build --locked --release --workspace
 cargo fmt --all -- --check
-cargo test --locked --workspace \
-  --config profile.test.package.nine65.opt-level=2 --no-fail-fast
+cargo test --locked --release --workspace --no-fail-fast
 ```
 
-The test command uses the CI development-test profile, retaining debug
-assertions and overflow checks. A full `--release --workspace` test sweep
-also discovers `coefficient_slot_gate`, whose toy parameter setups are refused
-by the release library's production floor. The
-[verification record](docs/maintenance/VERIFICATION_2026-11-04.md) retains that
-failed diagnostic; production parameter guards were not relaxed.
+The workspace development suite, including the explicitly opted-in toy
+coefficient/slot target, runs locally with:
+
+```bash
+bash scripts/run_tests_medium.sh
+```
+
+The production release sweep excludes research targets whose `allow_insecure`
+feature is incompatible with a release library build. The local runner executes
+the coefficient/slot target separately in optimized development mode, retaining
+debug assertions and overflow checks. No production guard is relaxed.
 
 The workspace excludes the Python, WASM and FFI bindings and `fuzz`;
 those need separate builds. Feature-gated and ignored tests are not covered by
@@ -138,7 +157,9 @@ Reconstruction is permitted under the declared operation contract;
 Garner/mixed-radix synthetic emissions, prohibited information loss and
 floating-point residue computation remain forbidden. K-Elimination requires
 its divisibility, coprimality, anchor-capacity and uniqueness-range conditions.
-The general shared-factor encrypted division adapter is not enabled.
+The scalar shared-factor division adapter remains separate from the
+[encrypted bit-word quotient/remainder API](docs/ENCRYPTED_INTEGER_DIVISION_2026-11-02.md),
+which is integrated and admits its complete Boolean circuit before execution.
 
 The [merged FPD stack](docs/FEATURE_ACTIVATION_2026-11-02.md) supplies the
 main-Q remainder-adjusted multiplication route, persistent Montgomery storage
