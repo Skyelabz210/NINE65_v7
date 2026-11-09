@@ -57,6 +57,8 @@
 //! ```
 
 pub mod accelerator;
+#[cfg(target_arch = "x86_64")]
+pub mod ntt_simd32; // AVX-512 negacyclic NTT for primes < 2^32 (runtime-detected)
 pub mod batch;
 pub mod pipeline;
 

@@ -288,6 +288,31 @@ impl NTTEngineFFT {
         }
     }
 
+    /// Plain-domain `(psi^bitrev, psi^-bitrev, n^-1)` tables for the SIMD kernel.
+    #[cfg(all(test, target_arch = "x86_64"))]
+    pub(crate) fn plain_twiddles_for_simd(&self) -> (Vec<u64>, Vec<u64>, u64) {
+        let f = |v: &Vec<u64>| v.iter().map(|&w| self.mont.from_montgomery(w)).collect();
+        (
+            f(&self.psi_br_mont),
+            f(&self.psi_inv_br_mont),
+            self.mont.from_montgomery(self.n_inv_mont),
+        )
+    }
+
+    /// Scalar fused forward on plain input, plain spectrum out (test reference).
+    #[cfg(all(test, target_arch = "x86_64"))]
+    pub(crate) fn forward_plain_for_simd(&self, a: &[u64]) -> Vec<u64> {
+        let mut w: Vec<u64> = a.iter().map(|&x| self.mont.to_montgomery(x)).collect();
+        self.negacyclic_forward_br(&mut w);
+        w.iter().map(|&x| self.mont.from_montgomery(x)).collect()
+    }
+
+    /// Scalar forward kernel on already-Montgomery data (timing reference).
+    #[cfg(all(test, target_arch = "x86_64"))]
+    pub(crate) fn forward_kernel_only_for_simd(&self, w: &mut [u64]) {
+        self.negacyclic_forward_br(w);
+    }
+
     /// BFV tensor product `(a0*b0, a0*b1 + a1*b0, a1*b1)` in the negacyclic
     /// ring, plain-domain in and out, bit-identical to the three separate
     /// products (the middle sum reduced mod `q`). Each operand is transformed
@@ -1021,5 +1046,95 @@ mod tests {
             let expected_negation = if left == 0 { 0 } else { TEST_PRIME - left };
             assert_eq!(engine.neg(&[left; 8])[0], expected_negation);
         }
+    }
+}
+
+#[cfg(all(test, target_arch = "x86_64", feature = "accelerated"))]
+mod simd32_tests {
+    use super::NTTEngineFFT;
+    use unhal::ntt_simd32::{available, Ntt32};
+
+    fn engine_pair(q: u64, n: usize) -> (NTTEngineFFT, Ntt32) {
+        let e = NTTEngineFFT::new(q, n);
+        let (psi, psi_inv, n_inv) = e.plain_twiddles_for_simd();
+        (e, Ntt32::new(q, &psi, &psi_inv, n_inv))
+    }
+
+    #[test]
+    fn simd32_matches_scalar_engine_forward_and_inverse() {
+        if !available() {
+            eprintln!("avx512f not available; skipping");
+            return;
+        }
+        let cfg = crate::params::SecureConfig::secure_128().into_config();
+        let mut state = 0x0123_4567_89AB_CDEFu64;
+        for &q in &cfg.primes {
+            for &n in &[16usize, 64, 1024, cfg.n] {
+                let (e, s) = engine_pair(q, n);
+                let a: Vec<u64> = (0..n)
+                    .map(|_| {
+                        state ^= state << 13;
+                        state ^= state >> 7;
+                        state ^= state << 17;
+                        state % q
+                    })
+                    .collect();
+                let mut simd = a.clone();
+                s.forward(&mut simd);
+                let want = e.forward_plain_for_simd(&a);
+                assert_eq!(simd, want, "forward q={q} n={n}");
+                s.inverse(&mut simd);
+                assert_eq!(simd, a, "roundtrip q={q} n={n}");
+            }
+        }
+    }
+
+    #[test]
+    #[ignore = "timing probe"]
+    fn simd32_forward_timing() {
+        if !available() {
+            return;
+        }
+        let cfg = crate::params::SecureConfig::secure_128().into_config();
+        let (q, n) = (cfg.primes[0], cfg.n);
+        let (e, s) = engine_pair(q, n);
+        let a: Vec<u64> = (0..n as u64).map(|i| (i * 2654435761) % q).collect();
+        let med = |f: &mut dyn FnMut()| {
+            let mut ts = Vec::new();
+            for _ in 0..200 {
+                let t = std::time::Instant::now();
+                f();
+                ts.push(t.elapsed().as_nanos());
+            }
+            ts.sort();
+            ts[ts.len() / 2]
+        };
+        let mut buf = a.clone();
+        let scalar = med(&mut || {
+            buf.copy_from_slice(&a);
+            e.forward_kernel_only_for_simd(&mut buf);
+        });
+        let simd = med(&mut || {
+            buf.copy_from_slice(&a);
+            s.forward(&mut buf);
+        });
+        let copy = med(&mut || buf.copy_from_slice(&a));
+        let mut best: Vec<(usize, u128)> = Vec::new();
+        for _ in 0..50 {
+            buf.copy_from_slice(&a);
+            let st = s.forward_stage_nanos(&mut buf);
+            if best.is_empty() {
+                best = st;
+            } else {
+                for (b, x) in best.iter_mut().zip(st) {
+                    b.1 = b.1.min(x.1);
+                }
+            }
+        }
+        println!("SIMD32 per-stage min ns (t, ns): {best:?}");
+        println!(
+            "SIMD32 forward n={n}: scalar-kernel {scalar} ns, avx512 {simd} ns, memcpy {copy} ns, speedup {:.2}x",
+            (scalar - copy) as f64 / (simd - copy) as f64
+        );
     }
 }

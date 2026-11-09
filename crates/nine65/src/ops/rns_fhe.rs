@@ -15564,6 +15564,26 @@ mod tests {
         }
     }
 
+    #[test]
+    #[ignore = "probe"]
+    fn prime_width_probe() {
+        use crate::params::secure_configs::SecureConfig;
+        for (name, sc) in [
+            ("secure_128", SecureConfig::secure_128()),
+            ("secure_192", SecureConfig::secure_192()),
+            ("secure_256", SecureConfig::secure_256()),
+        ] {
+            let ctx = RNSFHEContext::new(&sc.config);
+            let bits = |v: &[u64]| -> Vec<u32> { v.iter().map(|p| 64 - p.leading_zeros()).collect() };
+            println!(
+                "WIDTH {name} n={} main={:?} anchor={:?}",
+                sc.config.n,
+                bits(&sc.config.primes),
+                bits(&ctx.dual_rns.anchor.primes)
+            );
+        }
+    }
+
     /// Per-stage wall-clock probe for the public multiply (prints only).
     #[test]
     #[ignore = "timing probe"]

@@ -16,4 +16,8 @@ rayon = { workspace = true, optional = true }
 # and rayon is strictly opt-in (benchmarking comparison only).
 default = []
 parallel = ["rayon", "mana/parallel"]
-simd = []  # Declared but empty - modular arithmetic doesn't benefit from SIMD
+# The AVX-512 negacyclic NTT kernel (`ntt_simd32`, primes < 2^32) is compiled on
+# x86_64 and selected at run time via `available()`; this flag stays empty. The old
+# note here ("modular arithmetic doesn't benefit from SIMD") was measured wrong on
+# 2026-11-09: see docs/PARALLEL_AND_SIMD_VERDICT_2026-11-09.md.
+simd = []
