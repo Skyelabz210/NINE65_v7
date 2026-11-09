@@ -288,6 +288,42 @@ impl NTTEngineFFT {
         }
     }
 
+    /// BFV tensor product `(a0*b0, a0*b1 + a1*b0, a1*b1)` in the negacyclic
+    /// ring, plain-domain in and out, bit-identical to the three separate
+    /// products (the middle sum reduced mod `q`). Each operand is transformed
+    /// once (4 forward + 3 inverse transforms instead of 12). Public work only.
+    pub fn tensor_product(
+        &self,
+        a0: &[u64],
+        a1: &[u64],
+        b0: &[u64],
+        b1: &[u64],
+    ) -> (Vec<u64>, Vec<u64>, Vec<u64>) {
+        let load = |v: &[u64]| -> Vec<u64> {
+            debug_assert_eq!(v.len(), self.n);
+            let mut w: Vec<u64> = v.iter().map(|&x| self.mont.to_montgomery(x)).collect();
+            self.negacyclic_forward_br(&mut w);
+            w
+        };
+        let (fa0, fa1, fb0, fb1) = (load(a0), load(a1), load(b0), load(b1));
+        let m = |x: u64, y: u64| self.mont.montgomery_mul(x, y);
+        let mut d0: Vec<u64> = fa0.iter().zip(&fb0).map(|(&x, &y)| m(x, y)).collect();
+        let mut d1: Vec<u64> = (0..self.n)
+            .map(|i| {
+                self.mont
+                    .montgomery_add(m(fa0[i], fb1[i]), m(fa1[i], fb0[i]))
+            })
+            .collect();
+        let mut d2: Vec<u64> = fa1.iter().zip(&fb1).map(|(&x, &y)| m(x, y)).collect();
+        for d in [&mut d0, &mut d1, &mut d2] {
+            self.negacyclic_inverse_br(d);
+            for v in d.iter_mut() {
+                *v = self.mont.from_montgomery(*v);
+            }
+        }
+        (d0, d1, d2)
+    }
+
     /// `(sum_i left[i] * right_a[i], sum_i left[i] * right_b[i])` in the
     /// negacyclic ring, plain-domain in and out, bit-identical to summing the
     /// individual [`Self::multiply`] results mod `q`.
@@ -731,6 +767,34 @@ mod tests {
                 assert_eq!(got_b, want_b, "B q={q} n={n} terms={terms}");
             }
         }
+    }
+
+    #[test]
+    fn tensor_product_matches_separate_products() {
+        let q = TEST_PRIME;
+        let n = 64usize;
+        let engine = NTTEngineFFT::new(q, n);
+        let mut state = 0xDEAD_BEEF_1234_5679u64;
+        let mut v = || -> Vec<u64> {
+            (0..n)
+                .map(|_| {
+                    state ^= state << 13;
+                    state ^= state >> 7;
+                    state ^= state << 17;
+                    state % q
+                })
+                .collect()
+        };
+        let (a0, a1, b0, b1) = (v(), v(), v(), v());
+        let (d0, d1, d2) = engine.tensor_product(&a0, &a1, &b0, &b1);
+        let p01 = engine.multiply(&a0, &b1);
+        let p10 = engine.multiply(&a1, &b0);
+        let want1: Vec<u64> = (0..n)
+            .map(|i| ((p01[i] as u128 + p10[i] as u128) % q as u128) as u64)
+            .collect();
+        assert_eq!(d0, engine.multiply(&a0, &b0));
+        assert_eq!(d1, want1);
+        assert_eq!(d2, engine.multiply(&a1, &b1));
     }
 
     /// The iterative power tables must equal square-and-multiply exactly.

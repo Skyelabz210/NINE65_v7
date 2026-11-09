@@ -3848,11 +3848,7 @@ impl RNSFHEContext {
         // 4. Reset the winding so the result is canonical for the next multiply
 
         // Step 1: Tensor product (unscaled, at modulus Q²)
-        let d0 = self.dual_poly_mul(&ct1.c0, &ct2.c0);
-        let c0_1_c1_2 = self.dual_poly_mul(&ct1.c0, &ct2.c1);
-        let c1_1_c0_2 = self.dual_poly_mul(&ct1.c1, &ct2.c0);
-        let d1 = self.dual_poly_add(&c0_1_c1_2, &c1_1_c0_2);
-        let d2 = self.dual_poly_mul(&ct1.c1, &ct2.c1);
+        let (d0, d1, d2) = self.dual_poly_tensor((&ct1.c0, &ct1.c1), (&ct2.c0, &ct2.c1));
 
         // Step 2: K-Elimination rescale of every degree-2 component.
         // `should_two_stage_rescale` is retired (always false); the branch is
@@ -6082,6 +6078,77 @@ impl RNSFHEContext {
     }
 
     /// Dual polynomial multiplication using NTT in both systems
+    /// `(c0*d0, c0*d1 + c1*d0, c1*d1)` over the dual RNS, bit-identical to
+    /// three `dual_poly_mul` calls plus one `dual_poly_add`, with each operand
+    /// limb transformed once per lane.
+    fn dual_poly_tensor(
+        &self,
+        c: (&DualRNSPoly, &DualRNSPoly),
+        d: (&DualRNSPoly, &DualRNSPoly),
+    ) -> (DualRNSPoly, DualRNSPoly, DualRNSPoly) {
+        let polys = [c.0, c.1, d.0, d.1];
+        let main_count = polys
+            .iter()
+            .map(|p| p.main.len())
+            .min()
+            .unwrap_or(0)
+            .min(self.ntt_engines.len());
+        let anchor_engines = &self.dual_rns.anchor.ntt_engines;
+        let anchor_count = polys
+            .iter()
+            .map(|p| p.anchor.len())
+            .min()
+            .unwrap_or(0)
+            .min(anchor_engines.len());
+        let lanes = Self::run_limb_lanes(main_count + anchor_count, |i| {
+            if i < main_count {
+                self.ntt_engines[i].tensor_product(
+                    &c.0.main[i],
+                    &c.1.main[i],
+                    &d.0.main[i],
+                    &d.1.main[i],
+                )
+            } else {
+                let j = i - main_count;
+                anchor_engines[j].tensor_product(
+                    &c.0.anchor[j],
+                    &c.1.anchor[j],
+                    &d.0.anchor[j],
+                    &d.1.anchor[j],
+                )
+            }
+        });
+        let mut out = [
+            DualRNSPoly {
+                main: Vec::new(),
+                anchor: Vec::new(),
+                n: self.n,
+            },
+            DualRNSPoly {
+                main: Vec::new(),
+                anchor: Vec::new(),
+                n: self.n,
+            },
+            DualRNSPoly {
+                main: Vec::new(),
+                anchor: Vec::new(),
+                n: self.n,
+            },
+        ];
+        for (i, (x0, x1, x2)) in lanes.into_iter().enumerate() {
+            let on_main = i < main_count;
+            for (poly, limb) in out.iter_mut().zip([x0, x1, x2]) {
+                if on_main {
+                    poly.main.push(limb);
+                } else {
+                    poly.anchor.push(limb);
+                }
+            }
+        }
+        let [o0, o1, o2] = out;
+        (o0, o1, o2)
+    }
+
     fn dual_poly_mul(&self, a: &DualRNSPoly, b: &DualRNSPoly) -> DualRNSPoly {
         // Same effective counts as the original zip chains: the shorter of
         // the two polys and the engine list on each track.

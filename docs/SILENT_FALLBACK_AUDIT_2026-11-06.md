@@ -136,3 +136,8 @@ Lib 1124 passed / 0 failed; 58 test targets, 1410 passed, 0 failed.
 - Measured (`op_timings`, debug-assertions on, secure_128): public mul 97 -> ~76 ms,
   symmetric mul 53 -> ~41 ms; secure_256 public mul ~256 ms.
 - Lib suite: 1127 passed, 0 failed, 144 ignored.
+- `mul_dual_public` tensor product now transforms each operand once per lane
+  (`NTTEngineFFT::tensor_product`, 4 forward + 3 inverse instead of 12 NTTs),
+  bit-exact vs the separate products (`tensor_product_matches_separate_products`).
+  Measured: secure_128 public mul ~76 -> ~68 ms; secure_192 ~233 -> ~193 ms;
+  secure_256 ~256 -> ~218 ms. Lib suite 1128 passed, 0 failed, 144 ignored.
