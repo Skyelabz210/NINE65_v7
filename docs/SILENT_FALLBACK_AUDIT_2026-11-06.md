@@ -141,3 +141,27 @@ Lib 1124 passed / 0 failed; 58 test targets, 1410 passed, 0 failed.
   bit-exact vs the separate products (`tensor_product_matches_separate_products`).
   Measured: secure_128 public mul ~76 -> ~68 ms; secure_192 ~233 -> ~193 ms;
   secure_256 ~256 -> ~218 ms. Lib suite 1128 passed, 0 failed, 144 ignored.
+
+## Follow-up 2026-11-09: relinearization digits, rescale arithmetic, parallel ceiling
+
+- **Redundant work found.** `relinearize_dual` called `extract_digit_dual` once per
+  digit; each call redid the CRT + K-Elimination reconstruction for every
+  coefficient to pull out one 16-bit digit (8x the reconstruction work).
+  `extract_all_digits_dual` now reconstructs once per coefficient and emits every
+  digit; bit-exact vs the per-digit function (`extract_all_digits_matches_per_digit_extraction`).
+  Relinearize 42 -> 28 ms.
+- **Rescale arithmetic.** The per-coefficient `k mod delta` was a 256-step
+  bit-serial remainder (the dominant cost) and the rounded quotient a 17-step
+  data-dependent binary search. Both are now fixed-work Barrett (`FixedDivisor::rem`,
+  `round_div_capped`; four masked correction steps, public shifts only), checked
+  against the old routines (`test_fixed_divisor_matches_bit_serial_remainder`,
+  `test_round_div_capped_matches_binary_search_reference`). Output-lane reductions use
+  `PrimeReducer`. Each rescale 7.4 -> 3.9 ms.
+- **Measured (op_timings, secure_128):** public mul 68 -> ~41 ms; secure_192 193 -> ~146 ms;
+  secure_256 218 -> ~148 ms. Lib suite 1131 passed, 0 failed.
+- **Parallel ceiling (2 vCPU, `ntt_fft::parallel_strategy_probe`):** UNHAL/MANA 2.09x over
+  sequential, persistent worker pool 1.98x, rayon 2.08x. The current dispatch is already
+  at the core count; a different threading layer does not help on this machine.
+- **Not a regression:** the ignored dudect test for the reference `KElimination::extract_k`
+  reads t=5.7-8.2 here, identically at the previous commit; its own note documents it as
+  sign-unstable and unconfirmed outside a quiesced machine.

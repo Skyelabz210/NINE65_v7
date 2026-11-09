@@ -1498,6 +1498,154 @@ impl CrtU256Plan {
     }
 }
 
+/// Fixed-work `x mod d` for a public 256-bit modulus `d` (Barrett, base 2).
+///
+/// Replaces the data-dependent bit-serial `U256::rem_u256` (one shift /
+/// compare / subtract per bit of the dividend) on the rescale hot path. With
+/// `L = bitlen(d)` and the public constant `mu = floor(2^256 / d)`:
+/// `q = ((x >> (L-1)) * mu) >> (257-L)` underestimates `floor(x / d)` by at
+/// most 3 for every `x < 2^256` (error terms: `x/2^256 < 1`, the two floors,
+/// and `2^(L-1)/d <= 1`), so `r = x - q*d < 4d` and four masked conditional
+/// subtracts finish. Every dividend takes the same instruction path; shift
+/// counts and all setup depend only on `d`, which is public.
+#[derive(Clone, Debug)]
+pub(crate) struct FixedDivisor {
+    d: U256,
+    l: u32,
+    mu: U256,
+}
+
+impl FixedDivisor {
+    pub(crate) fn new(d: U256) -> Self {
+        assert!(!d.is_zero(), "FixedDivisor: zero modulus");
+        let l = d.bitlen();
+        assert!(
+            l <= 254,
+            "FixedDivisor: modulus too wide for the Barrett setup"
+        );
+        // Public-modulus setup: mu = floor(2^256 / d) by bit-serial division.
+        let mut rem = U256::zero();
+        let mut mu = U256::zero();
+        for i in (0..=256u32).rev() {
+            rem = rem.shl1();
+            if i == 256 {
+                rem.lo |= 1;
+            }
+            mu = mu.shl1();
+            if rem.ge(d) {
+                rem = rem.sub(d);
+                mu.lo |= 1;
+            }
+        }
+        Self { d, l, mu }
+    }
+
+    /// `x >> n` for a public shift `n` in `0..256`.
+    fn shr_public(x: U256, n: u32) -> U256 {
+        if n == 0 {
+            x
+        } else if n < 128 {
+            U256 {
+                lo: (x.lo >> n) | (x.hi << (128 - n)),
+                hi: x.hi >> n,
+            }
+        } else if n == 128 {
+            U256 { lo: x.hi, hi: 0 }
+        } else {
+            U256 {
+                lo: x.hi >> (n - 128),
+                hi: 0,
+            }
+        }
+    }
+
+    /// Bits `[n, n + 256)` of the 512-bit product `limbs` (public `n < 512`).
+    fn shr_wide_public(limbs: [u128; 4], n: u32) -> U256 {
+        let word = (n / 128) as usize;
+        let bit = n % 128;
+        let at = |i: usize| -> u128 {
+            if i < 4 {
+                limbs[i]
+            } else {
+                0
+            }
+        };
+        let part = |i: usize| -> u128 {
+            if bit == 0 {
+                at(i)
+            } else {
+                (at(i) >> bit) | (at(i + 1) << (128 - bit))
+            }
+        };
+        U256 {
+            lo: part(word),
+            hi: part(word + 1),
+        }
+    }
+
+    /// Full 256x256 -> 512-bit product as little-endian 128-bit limbs.
+    fn mul_wide(a: U256, b: U256) -> [u128; 4] {
+        let (p00_lo, p00_hi) = U256::wide_mul_256(a.lo, b.lo);
+        let (p01_lo, p01_hi) = U256::wide_mul_256(a.lo, b.hi);
+        let (p10_lo, p10_hi) = U256::wide_mul_256(a.hi, b.lo);
+        let (p11_lo, p11_hi) = U256::wide_mul_256(a.hi, b.hi);
+        let mut out = [p00_lo, p00_hi, p11_lo, p11_hi];
+        let mut add_at = |idx: usize, v: u128| {
+            let mut carry = v;
+            // Full-length carry chain (no early exit): fixed work per call.
+            let mut i = idx;
+            while i < 4 {
+                let (s, c) = out[i].overflowing_add(carry);
+                out[i] = s;
+                carry = c as u128;
+                i += 1;
+            }
+        };
+        add_at(1, p01_lo);
+        add_at(2, p01_hi);
+        add_at(1, p10_lo);
+        add_at(2, p10_hi);
+        out
+    }
+
+    /// `min(floor(x / d), upper)` rounded to nearest (`+1` when the remainder
+    /// against the capped quotient is at least `ceil(d/2)`), with exactly the
+    /// semantics of the former binary-search `round_div_u256_small` for every
+    /// input, including quotients above `upper`. Fixed work: one Barrett
+    /// estimate, four masked correction steps, masked cap, masked rounding.
+    pub(crate) fn round_div_capped(&self, x: U256, upper: u64) -> u64 {
+        let x1 = Self::shr_public(x, self.l - 1);
+        let prod = Self::mul_wide(x1, self.mu);
+        let mut q = Self::shr_wide_public(prod, 257 - self.l);
+        let mut r = x.sub_ct(q.mul_low(self.d));
+        for _ in 0..4 {
+            let ge = r.ge_mask_ct(self.d);
+            r = U256::select_mask_ct(r, r.sub_ct(self.d), ge);
+            q = U256::select_mask_ct(q, q.add_ct(U256::one()), ge);
+        }
+        let upper_u = U256::from_u64(upper);
+        let q_in_range = upper_u.ge_mask_ct(q);
+        let qc = U256::select_mask_ct(upper_u, q, q_in_range);
+        let rem = x.sub_ct(qc.mul_low(self.d));
+        let threshold = self.d.sub_ct(self.d.shr1());
+        let bump = (rem.ge_mask_ct(threshold) & 1) as u64;
+        (qc.lo as u64).saturating_add(bump)
+    }
+
+    /// `x mod d`.
+    pub(crate) fn rem(&self, x: U256) -> U256 {
+        let x1 = Self::shr_public(x, self.l - 1);
+        let prod = Self::mul_wide(x1, self.mu);
+        let q = Self::shr_wide_public(prod, 257 - self.l);
+        let mut r = x.sub_ct(q.mul_low(self.d));
+        for _ in 0..4 {
+            let ge = r.ge_mask_ct(self.d);
+            r = U256::select_mask_ct(r, r.sub_ct(self.d), ge);
+        }
+        r
+    }
+}
+
 /// Fixed-work reduction of a 256-bit value (and of a product of two reduced
 /// words) modulo one public odd prime `p < 2^63`, on the persistent-Montgomery
 /// engine. Replaces the 256-iteration bit-serial `U256::mod_u64_ct` and the
@@ -4822,6 +4970,127 @@ mod tests {
     /// values (zero, maximum, limb boundaries, powers of two, random) and on
     /// products of reduced words, across the real anchor primes, tiny primes
     /// and primes at the top of the supported range (just under 2^63).
+    #[test]
+    fn test_fixed_divisor_matches_bit_serial_remainder() {
+        let mut state = 0x9E37_79B9_7F4A_7C15u128;
+        let mut next = || -> u128 {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state.wrapping_mul(0xD134_2543_DE82_EF95_u128)
+        };
+        let mut divisors = vec![
+            U256::from_u64(3),
+            U256::from_u64(65_537),
+            U256 {
+                lo: u128::MAX,
+                hi: 0,
+            },
+            U256 { lo: 1, hi: 1 },
+            U256 {
+                lo: 0,
+                hi: 1u128 << 120,
+            },
+        ];
+        for _ in 0..20 {
+            let bits = 2 + (next() % 200) as u32;
+            let raw = U256 {
+                lo: next(),
+                hi: next(),
+            };
+            let d = FixedDivisor::shr_public(raw, 256 - bits);
+            if !d.is_zero() {
+                divisors.push(d);
+            }
+        }
+        for d in divisors {
+            let fd = FixedDivisor::new(d);
+            let mut xs = vec![
+                U256::zero(),
+                U256::one(),
+                d,
+                d.sub(U256::one()),
+                U256 {
+                    lo: u128::MAX,
+                    hi: u128::MAX,
+                },
+            ];
+            for _ in 0..200 {
+                let shift = (next() % 256) as u32;
+                xs.push(FixedDivisor::shr_public(
+                    U256 {
+                        lo: next(),
+                        hi: next(),
+                    },
+                    shift,
+                ));
+            }
+            for x in xs {
+                assert_eq!(fd.rem(x), x.rem_u256(d), "x={x:?} d={d:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_round_div_capped_matches_binary_search_reference() {
+        fn reference(x: U256, delta: U256, upper: u64) -> u64 {
+            let (mut lo, mut hi) = (0u64, upper);
+            while lo < hi {
+                let mid = lo + ((hi - lo + 1) >> 1);
+                if delta.mul_u64(mid).le(x) {
+                    lo = mid;
+                } else {
+                    hi = mid - 1;
+                }
+            }
+            let rem = x.sub(delta.mul_u64(lo));
+            if rem.ge(delta.sub(delta.shr1())) {
+                lo.saturating_add(1)
+            } else {
+                lo
+            }
+        }
+        let mut state = 0xA5A5_1234_DEAD_BEEFu128;
+        let mut next = || -> u128 {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state.wrapping_mul(0xD134_2543_DE82_EF95_u128)
+        };
+        for _ in 0..30 {
+            let bits = 20 + (next() % 150) as u32;
+            let d = FixedDivisor::shr_public(
+                U256 {
+                    lo: next(),
+                    hi: next(),
+                },
+                256 - bits,
+            );
+            if d.is_zero() {
+                continue;
+            }
+            let fd = FixedDivisor::new(d);
+            for upper in [1u64, 5, 131_076, 1 << 40] {
+                for _ in 0..60 {
+                    let q = (next() as u64) % (upper.saturating_add(3));
+                    let jitter = FixedDivisor::shr_public(
+                        U256 {
+                            lo: next(),
+                            hi: next(),
+                        },
+                        256 - (bits - 1).max(1),
+                    );
+                    let x = d.mul_u64(q).add(jitter);
+                    assert_eq!(
+                        fd.round_div_capped(x, upper),
+                        reference(x, d, upper),
+                        "d={d:?} upper={upper} x={x:?}"
+                    );
+                }
+            }
+        }
+    }
+
     #[test]
     fn test_prime_reducer_matches_plain_reduction() {
         let mut primes: Vec<u64> = vec![

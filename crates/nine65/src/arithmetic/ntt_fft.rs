@@ -797,6 +797,157 @@ mod tests {
         assert_eq!(d2, engine.multiply(&a1, &b1));
     }
 
+    /// Parallel-strategy probe on the real per-multiply lane workload: one
+    /// BFV tensor product (4 fwd + 3 inv NTT) per RNS lane, 8 lanes of n=8192.
+    /// Prints medians; asserts every strategy returns identical output.
+    #[test]
+    #[ignore = "timing probe"]
+    fn parallel_strategy_probe() {
+        use std::sync::{mpsc, Arc, Mutex};
+        use std::time::Instant;
+        let cfg = crate::params::SecureConfig::secure_128().into_config();
+        let n = cfg.n;
+        let engines: Arc<Vec<NTTEngineFFT>> = Arc::new(
+            (0..8)
+                .map(|i| NTTEngineFFT::new(cfg.primes[i % cfg.primes.len()], n))
+                .collect(),
+        );
+        let data: Arc<Vec<Vec<u64>>> = Arc::new(
+            (0..4)
+                .map(|k| {
+                    (0..n as u64)
+                        .map(|i| (i * 2654435761 + k * 977) % 1_000_003)
+                        .collect()
+                })
+                .collect(),
+        );
+        let lane = {
+            let engines = engines.clone();
+            let data = data.clone();
+            move |i: usize| engines[i].tensor_product(&data[0], &data[1], &data[2], &data[3])
+        };
+        let median = |f: &mut dyn FnMut() -> Vec<(Vec<u64>, Vec<u64>, Vec<u64>)>| {
+            let mut ts = Vec::new();
+            let mut last = Vec::new();
+            for _ in 0..15 {
+                let t = Instant::now();
+                last = f();
+                ts.push(t.elapsed().as_micros());
+            }
+            ts.sort();
+            (ts[ts.len() / 2], last)
+        };
+        let (seq_us, reference) = median(&mut || (0..8).map(&lane).collect());
+        println!("sequential            {seq_us:>8} us");
+
+        #[cfg(feature = "accelerated")]
+        {
+            let acc = unhal::accelerator::Accelerator::auto();
+            let (us, out) = median(&mut || acc.run_lanes(8, &lane));
+            assert_eq!(out, reference);
+            println!(
+                "unhal/mana (current)  {us:>8} us  ({:.2}x)",
+                seq_us as f64 / us as f64
+            );
+        }
+
+        let (us, out) = median(&mut || {
+            let lane = &lane;
+            let mut res: Vec<Option<_>> = (0..8).map(|_| None).collect();
+            std::thread::scope(|s| {
+                let (a, b) = res.split_at_mut(4);
+                let h1 = s.spawn(move || {
+                    a.iter_mut()
+                        .enumerate()
+                        .for_each(|(i, r)| *r = Some(lane(i)))
+                });
+                let h2 = s.spawn(move || {
+                    b.iter_mut()
+                        .enumerate()
+                        .for_each(|(i, r)| *r = Some(lane(i + 4)))
+                });
+                h1.join().unwrap();
+                h2.join().unwrap();
+            });
+            res.into_iter().map(|r| r.unwrap()).collect()
+        });
+        assert_eq!(out, reference);
+        println!(
+            "scoped 2-thread split {us:>8} us  ({:.2}x)",
+            seq_us as f64 / us as f64
+        );
+
+        // Persistent worker pool: 1 helper thread + caller, lanes pulled from an atomic counter.
+        {
+            use std::sync::atomic::{AtomicUsize, Ordering};
+            type Job = Arc<dyn Fn() + Send + Sync>;
+            let (tx, rx) = mpsc::channel::<Job>();
+            let rx = Arc::new(Mutex::new(rx));
+            let (done_tx, done_rx) = mpsc::channel::<()>();
+            let rx2 = rx.clone();
+            let h = std::thread::spawn(move || loop {
+                let job = rx2.lock().unwrap().recv();
+                match job {
+                    Ok(j) => {
+                        j();
+                        done_tx.send(()).unwrap();
+                    }
+                    Err(_) => break,
+                }
+            });
+            let lane = &lane;
+            let (us, out) = median(&mut || {
+                let next = Arc::new(AtomicUsize::new(0));
+                let results: Arc<Mutex<Vec<Option<(Vec<u64>, Vec<u64>, Vec<u64>)>>>> =
+                    Arc::new(Mutex::new((0..8).map(|_| None).collect()));
+                let work = {
+                    let next = next.clone();
+                    let results = results.clone();
+                    let engines = engines.clone();
+                    let data = data.clone();
+                    move || loop {
+                        let i = next.fetch_add(1, Ordering::Relaxed);
+                        if i >= 8 {
+                            break;
+                        }
+                        let r = engines[i].tensor_product(&data[0], &data[1], &data[2], &data[3]);
+                        results.lock().unwrap()[i] = Some(r);
+                    }
+                };
+                tx.send(Arc::new(work.clone())).unwrap();
+                work();
+                done_rx.recv().unwrap();
+                let _ = lane;
+                let out = results
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .cloned()
+                    .map(|r| r.unwrap())
+                    .collect();
+                out
+            });
+            assert_eq!(out, reference);
+            println!(
+                "persistent pool (2)   {us:>8} us  ({:.2}x)",
+                seq_us as f64 / us as f64
+            );
+            drop(tx);
+            let _ = h.join();
+        }
+
+        #[cfg(feature = "parallel")]
+        {
+            use rayon::prelude::*;
+            let (us, out) = median(&mut || (0..8).into_par_iter().map(&lane).collect());
+            assert_eq!(out, reference);
+            println!(
+                "rayon par_iter        {us:>8} us  ({:.2}x)",
+                seq_us as f64 / us as f64
+            );
+        }
+    }
+
     /// The iterative power tables must equal square-and-multiply exactly.
     #[test]
     fn power_table_matches_mod_pow() {
