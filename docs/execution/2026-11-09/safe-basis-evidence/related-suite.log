@@ -1,0 +1,45 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/shared/NINE65_public_refresh_review/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/shared/NINE65_public_refresh_review/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/nine65-a291d5d4496c4011)
+
+running 31 tests
+test ops::expanded_bootstrap::safe_basis_composition_tests::distinct_weight_carry_support_hits_state_cap_before_ciphertext_work ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::precharged_pairs_extend_carry_and_refresh_four_term_coefficient ... ignored, expensive native pair-precharge research probe; enable slow_tests or use --include-ignored
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::precharged_pairs_public_support_covers_arbitrary_centered_terms ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::terminal_readout_mixed_differences_recover_every_small_assignment ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::terminal_readout_native_refreshes_non_cancelling_four_term_sources ... ignored, expensive native terminal readout probe; enable slow_tests or use --include-ignored
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::terminal_readout_plans_without_joint_state_and_refuses_before_execution ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::terminal_three_pair_carry_and_additive_211_phase_are_exact ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::terminal_three_pair_carry_and_phase_bounds_preflight ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::terminal_three_pair_native_carry_phase_and_sister_views ... ignored, expensive native three-pair terminal readout; enable slow_tests or use --include-ignored
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::triple_precharge::triple_precharge_bivariate_readouts_match_every_small_assignment ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::triple_precharge::triple_precharge_native_readouts_refresh_and_square ... ignored, expensive native triple-precharge terminal readout and refresh; enable slow_tests or use --include-ignored
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::triple_precharge::triple_precharge_terminal_plan_preflights_all_views_and_limits ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::precharged_composition_profiles_check_security_and_noise_before_keys ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::precharged_composition_uses_packed_selectors_and_updated_encrypted_remainder ... ignored, expensive native research probe; enable slow_tests or run this filter with --include-ignored
+test ops::expanded_bootstrap::safe_basis_composition_tests::precharged_full_refresh_bound_refuses_followup_square_at_four_prime_scale ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::full_bound_root_unscales_encrypted_selector_mod_quotient_period ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::full_bound_sister_runtime_initializes_at_native_degree ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::historical_unbound_second_quotient_winding_claim ... ignored, historical 2026-11-01 unbound quotient claim fails with full-Q masks; preserved for opt-in reproduction
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::one_root_emits_adjacent_residual_at_common_composite_t_and_k_eliminates ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::one_root_projects_bounded_offset_into_composite_pj_tray ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::one_root_projects_pj_from_even_p_plus_one_winding_tray_into_high_t ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::one_root_recovers_ultradiscrete_carry_in_small_phase_locked_composite_t ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::paired_chart_k_elimination_uses_one_root_and_common_encoding ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::safe_basis_root_projects_second_k_elimination_quotient_winding ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::safe_basis_root_projects_second_k_elimination_quotient_winding_at_degree_eight ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::sister_tray_211_phase_transition_carries_the_parity_crossing ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::sister_tray_composite_budget_is_exact_nonmonotone_and_preserves_support ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::sister_tray_one_root_accepts_arbitrary_views_and_refuses_snapshot_rebinding ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::sister_tray_update_plan_is_bound_to_its_parent_and_refuses_before_execution ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::symbolic_scale_jacobian_residual_lifts_through_one_root_into_common_p ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::symbolic_selectors_project_bounded_k_elimination_carry_into_high_mpj_correction ... ok
+
+test result: ok. 25 passed; 0 failed; 6 ignored; 0 measured; 1323 filtered out; finished in 18.77s
+
+
+real	0m18.906s
+user	0m18.708s
+sys	0m0.155s

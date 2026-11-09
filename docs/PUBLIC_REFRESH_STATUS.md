@@ -1,6 +1,6 @@
 # Current public-refresh status and notation
 
-Updated 2026-11-01. Read this before diagnosing public refresh from older
+Updated 2026-11-09. Read this before diagnosing public refresh from older
 handoffs, issue descriptions, parameter predicates or failure artifacts.
 
 **Ref scope:** this guide describes the implementation in this checkout.
@@ -21,6 +21,13 @@ The [November 2 hosted follow-up](execution/2026-11-02/CT_EVIDENCE_CONTINUATION.
 confirms the smoke/audit repairs at `a186dd8`: 13 of 14 workflows pass, with
 the strict comparison still unsupported. Timing-job success includes three
 inconclusive observations; it does not close the original measurement finding.
+
+The [November 9 Safe Basis fixture review](execution/2026-11-09/SAFE_BASIS_FIXTURE_REVIEW.md)
+separates three genuine resource refusals in older fixtures from a three-pair
+test's false bit-length rejection. The exact-threshold repair passed that native
+fixture with 425,984 coefficient/error checks; its following square remains
+refused. This is separate from the `PublicRefreshCircuit` backend, and the
+accompanying integer diagnostics are not encrypted runs.
 
 | Scope | Current result | Implementation / evidence |
 | --- | --- | --- |

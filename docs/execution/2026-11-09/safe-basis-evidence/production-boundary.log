@@ -1,0 +1,27 @@
+Running params::secure_configs::tests::public_refresh_support_requires_sound_phase1
+Log: work/2026-11-09-safe-basis-review/production-boundary/public_refresh_support_requires_sound_phase1.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/shared/NINE65_public_refresh_review/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/shared/NINE65_public_refresh_review/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running unittests src/lib.rs (target/debug/deps/nine65-a291d5d4496c4011)
+
+running 1 test
+test params::secure_configs::tests::public_refresh_support_requires_sound_phase1 ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1353 filtered out; finished in 0.00s
+
+Running ops::bootstrap::tests::public_phase1_is_typed_fail_closed
+Log: work/2026-11-09-safe-basis-review/production-boundary/public_phase1_is_typed_fail_closed.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/shared/NINE65_public_refresh_review/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/shared/NINE65_public_refresh_review/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (target/debug/deps/nine65-a291d5d4496c4011)
+
+running 1 test
+test ops::bootstrap::tests::public_phase1_is_typed_fail_closed ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1353 filtered out; finished in 0.00s
+
+production-boundary: 2 exact regressions passed; no production refresh admission

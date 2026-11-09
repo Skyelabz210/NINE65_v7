@@ -1,0 +1,10 @@
+rustc 1.89.0 (29483883e 2025-08-04)
+binary: rustc
+commit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2
+commit-date: 2025-08-04
+host: x86_64-unknown-linux-gnu
+release: 1.89.0
+LLVM version: 20.1.7
+cargo 1.89.0 (c24e10642 2025-06-23)
+rustfmt 1.8.0-stable (29483883ee 2025-08-04)
+b1c8cb14e30889e7e2999e6b69e62d9e9b9ffc0f4df8180564d306d9680e6c55  /workspace/shared/toolchains/nine65/bootstrap/rustup-init

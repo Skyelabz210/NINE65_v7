@@ -1120,6 +1120,13 @@ fn terminal_three_pair_carry_and_phase_bounds_preflight() {
             Readout::Carry,
         ));
         let bound = cube_error_bound(&runtime, states_ref, &diff).unwrap();
+        // Admission compares the complete integers, not just their bit lengths.
+        // The positive-offset carry and half-scale are both 137 bits, but the
+        // carry is strictly smaller and is already admitted by cube_error_bound.
+        assert!(words(bound) < words(runtime.noise.half));
+        if initial == h {
+            assert_eq!(bits(bound), bits(runtime.noise.half));
+        }
         carry_bound_bits.push(bits(bound));
         carry_cubic_terms.push(diff.nonzero().1);
         let phase = plan_three_pair_phase211(&runtime, states_ref, initial, sign).unwrap();
@@ -1135,6 +1142,21 @@ fn terminal_three_pair_carry_and_phase_bounds_preflight() {
     }
     let large_modulus = plan_three_pair_residue(&runtime, states_ref, h, 1, 20_000);
     assert!(matches!(large_modulus, Err(TerminalRefusal::Noise(_))));
+    let below_half = runtime.noise.half.sub(U512::from_u64(1));
+    assert_eq!(bits(below_half), bits(runtime.noise.half));
+    assert_eq!(
+        runtime.noise.admit(below_half, "threshold regression"),
+        Ok(below_half)
+    );
+    for bound in [
+        runtime.noise.half,
+        runtime.noise.half.add(U512::from_u64(1)),
+    ] {
+        assert!(matches!(
+            runtime.noise.admit(bound, "threshold regression"),
+            Err(Refusal::Noise { .. })
+        ));
+    }
     assert_eq!(runtime.multiplications.get(), 0);
     eprintln!(
         "three-pair preflight: carry bits={carry_bound_bits:?}, cubic terms={carry_cubic_terms:?}, phase211 bits={phase_bound_bits:?}, residue-view bits={residue_bound_bits:?}; modulus 20000 refused without products"
@@ -1243,9 +1265,11 @@ fn terminal_three_pair_native_carry_phase_and_sister_views() {
         .iter()
         .map(|diff| cube_error_bound(&runtime, states_ref, diff).unwrap())
         .collect::<Vec<_>>();
+    // cube_error_bound uses Noise::admit's exact threshold. Equal bit lengths
+    // do not imply exhaustion and must not override that successful preflight.
     assert!(carry_bounds
         .iter()
-        .all(|bound| bits(*bound) < bits(runtime.noise.half)));
+        .all(|bound| words(*bound) < words(runtime.noise.half)));
     let phase_plan = plan_three_pair_phase211(&runtime, states_ref, h, 1).unwrap();
     let moduli: Vec<_> = ROOT.into_iter().chain(TRAYS).collect();
     let residue_plans = moduli

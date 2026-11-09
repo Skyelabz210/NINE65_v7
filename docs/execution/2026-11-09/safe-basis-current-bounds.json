@@ -1,0 +1,65 @@
+{
+  "half_threshold": 117984527272727065037126399264836478558604,
+  "legacy_clockwork_gate_changed": false,
+  "native_tests_executed": 0,
+  "pair_six_term": {
+    "bit_length_admitted": false,
+    "bound": 143487364442685097949665097315220891543597,
+    "bound_bits": 137,
+    "exact_admitted": false,
+    "modulus": 3,
+    "stage": "Safe Basis projection",
+    "threshold": 117984527272727065037126399264836478558604,
+    "threshold_bits": 137
+  },
+  "production_refresh_admitted": false,
+  "projected_selector_bound": 65904671850496,
+  "schema": "nine65-safe-basis-current-bound-diagnostic-v1",
+  "scope": "public integer planning model; no encrypted execution",
+  "sister_third_step": {
+    "bit_length_admitted": false,
+    "bound": 120529386131860840228865404486405906096233,
+    "bound_bits": 137,
+    "exact_admitted": false,
+    "modulus": 21,
+    "stage": "dependent sister view",
+    "step": 3,
+    "threshold": 117984527272727065037126399264836478558604,
+    "threshold_bits": 137
+  },
+  "source_sha256": {
+    "crates/exact_transcendentals/src/chimera.rs": "90796cb939f799bb77c16caf07016969a01b53981676855b76c0ce2a2c42a08e",
+    "crates/nine65/src/ops/exact_mul.rs": "228d23cc8c86eeba566f8d53ced1cc3f7f86445c6bcc4e5828e30df338ea9d2a",
+    "crates/nine65/src/ops/safe_basis_composition_tests.rs": "587beb5b665088a416c599ed08c04d49f489d7ee0ff818f23a4838f3cf31ec14",
+    "crates/nine65/src/ops/safe_basis_pair_tests.rs": "556768a693eb5b57f8d2155163e371f0cfa4ec6168bebbec8c1899f55f45664f",
+    "crates/nine65/src/ops/safe_basis_precharge_tests.rs": "229d94a64276287156276e304d2061e5198498c1d7de03405ec9d77ecb302d1a",
+    "crates/nine65/src/ops/safe_basis_sister_tray_tests.rs": "89a541ee1c8f67fadc37a352ee1596873447df5156627a7f3565d64e779f49b6",
+    "crates/nine65/src/ops/safe_basis_terminal_tests.rs": "e0fbb4f769d40136658fd00f02f563efe0d696c9d7f3f985f0bd337b11149c8f",
+    "crates/nine65/src/ops/safe_basis_triple_precharge_tests.rs": "b4c5c30a434a99b31dfc617b5c35e7c8cb4594e829e5c572b4f44a1c2063e1d9",
+    "crates/nine65/src/params/secure_configs.rs": "38e01b8dc2fd05aaa0bb08f8ddeb7d14f46704e7010ead1761d6e34d7ed05c41",
+    "scripts/safe_basis_pair_probe.py": "79e8ec7e0161187c26f86eb241aab31ae2049b2c772a888069a5bcd28e56a26d",
+    "scripts/safe_basis_three_pair_probe.py": "486c7f43546f467370c60e230597bcc4828d3744f4fe43dd9cca4e7ee842511c",
+    "scripts/safe_basis_triple_precharge_probe.py": "09b53ca1ec502ce505b1624b4f426edd6285cac65c4eb64a257afd57868f9841"
+  },
+  "terminal_three_pair": {
+    "bit_length_admitted": false,
+    "bound": 93745078102582398588188168775782131116281,
+    "bound_bits": 137,
+    "exact_admitted": true,
+    "stage": "three-pair terminal output",
+    "threshold": 117984527272727065037126399264836478558604,
+    "threshold_bits": 137
+  },
+  "trace_safety_margin": 16,
+  "triple_following_square": {
+    "bit_length_admitted": false,
+    "bound": 223202566911318450070487589240156854456321,
+    "bound_bits": 138,
+    "exact_admitted": false,
+    "refreshed_admitted": true,
+    "refreshed_bound": 50737225855277916436110225760,
+    "stage": "selector multiply",
+    "threshold": 117984527272727065037126399264836478558604,
+    "threshold_bits": 137
+  }
+}
