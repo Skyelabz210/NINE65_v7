@@ -39,7 +39,8 @@ A deployment is rejected when any field is omitted.
 
 Every protected `fhe-service` request requires:
 
-- `FHE_API_TOKEN` configured by the operator and supplied as `x-fhe-api-token`;
+- a tenant-specific credential from `FHE_TENANT_TOKENS`, supplied as `x-fhe-api-token`;
+- a separate server-only `FHE_API_TOKEN` used by ingress normalization, never shared as a tenant credential;
 - a bounded `x-fhe-tenant-id` header;
 - passage through the per-tenant integer request window.
 

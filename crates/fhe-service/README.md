@@ -2,6 +2,19 @@
 
 Rust HTTP service exposing an internal, server-key-holder FHE boundary.
 
+## Local development
+
+From the repository root:
+
+```bash
+python3 scripts/run_local_service.py --allow-decrypt
+```
+
+This builds and runs the release service on loopback with generated private
+local credentials, tenant binding and explicit operator decryption. Operator
+metrics remain disabled. Omit `--allow-decrypt` for evaluation-only use.
+See [the HTTP SDK](../../sdks/python/README.md) for the complete Python flow.
+
 ## Endpoints
 
 Public liveness/version routes:
@@ -31,11 +44,17 @@ x-fhe-api-token: <service API secret>
 x-fhe-tenant-id: <bounded tenant identifier>
 ```
 
-The server is configured with:
+The server is configured with a tenant-specific mapping plus a separate
+internal routing token:
 
 ```bash
-export FHE_API_TOKEN='<service API secret>'
+export FHE_TENANT_TOKENS='tenant-a=<tenant-a secret>;tenant-b=<tenant-b secret>'
+export FHE_API_TOKEN='<internal server routing secret>'
 ```
+
+Callers send their tenant's secret, not the internal routing token. The ingress
+checks the tenant/token pair before normalizing the request for internal
+handlers.
 
 The tenant identifier is limited to 64 ASCII alphanumeric, hyphen, underscore, or period characters. Each session is bound to its authenticated tenant at creation. A missing session and a cross-tenant session lookup return the same response.
 
@@ -112,7 +131,8 @@ See `docs/SECURITY_MODE_MATRIX.md` for the complete mode contract.
 Evaluation-only operator service:
 
 ```bash
-FHE_API_TOKEN='<service API secret>' \
+FHE_TENANT_TOKENS='local=<tenant secret>' \
+FHE_API_TOKEN='<internal routing secret>' \
 FHE_OPERATOR_TOKEN='<operator secret>' \
 cargo run -p fhe-service --release
 ```
@@ -120,7 +140,8 @@ cargo run -p fhe-service --release
 Explicit operator decryption mode:
 
 ```bash
-FHE_API_TOKEN='<service API secret>' \
+FHE_TENANT_TOKENS='local=<tenant secret>' \
+FHE_API_TOKEN='<internal routing secret>' \
 FHE_OPERATOR_TOKEN='<operator secret>' \
 FHE_ENABLE_DECRYPT=1 \
 FHE_DECRYPT_TOKEN='<decrypt operator secret>' \

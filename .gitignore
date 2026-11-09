@@ -32,3 +32,7 @@ bench-archive/
 
 # Local Aider session files
 .aider*
+
+# Local scratch, service credentials and development environments.
+/work/
+sdks/python/*.egg-info/

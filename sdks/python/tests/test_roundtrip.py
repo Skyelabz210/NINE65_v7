@@ -8,20 +8,24 @@ Run with::
 All arithmetic is integer-only. No floating-point anywhere.
 """
 
+import os
+
 import pytest
 
-from nine65_sdk import FHEClient, SessionNotFoundError
+from nine65_sdk import FHEClient, Nine65SDKError, SessionNotFoundError
 
 # All tests in this module require the live FHE service.
 pytestmark = pytest.mark.integration
 
-SERVICE_URL = "http://localhost:8080"
+SERVICE_URL = os.environ.get("FHE_SERVICE_URL", "http://localhost:8080")
 
 
 @pytest.fixture(scope="module")
 def client():
     """Shared FHEClient instance for the test module."""
-    return FHEClient(base_url=SERVICE_URL, timeout=30)
+    client = FHEClient(base_url=SERVICE_URL, timeout=120)
+    yield client
+    client._http.close()
 
 
 # ------------------------------------------------------------------
@@ -209,3 +213,32 @@ class TestHomomorphicOps:
             assert isinstance(updated_budget, int)
             # Budget should still be positive after operation
             assert updated_budget > 0
+
+
+@pytest.mark.parametrize("config", ["secure_128", "secure_192", "secure_256"])
+def test_current_main_q_multiply_and_full_range_roundtrip(client, config):
+    with client.create_session(config) as session:
+        t = int(session.params["t"])
+        values = [0, 1, t // 2, t - 1]
+        assert session.decrypt(*session.encrypt(*values)) == values
+        a, b = session.encrypt(7, 6)
+        assert session.decrypt(session.mul(a, b)) == [42]
+
+
+def test_tenant_token_cannot_claim_another_tenant(client):
+    wrong_tenant = FHEClient(base_url=SERVICE_URL, tenant_id="unconfigured-tenant")
+    with pytest.raises(Nine65SDKError) as error:
+        wrong_tenant.create_session()
+    assert error.value.status_code == 401
+    wrong_tenant._http.close()
+
+
+def test_decrypt_capability_is_required_on_live_requests(client):
+    with client.create_session() as session:
+        ciphertext, = session.encrypt(42)
+        blind = FHEClient(base_url=SERVICE_URL, decrypt_token="")
+        with pytest.raises(SessionNotFoundError):
+            blind._request("POST", "/v1/sessions/%s/decrypt" % session.session_id,
+                           {"ciphertexts": [ciphertext.data]})
+        assert session.decrypt(ciphertext) == [42]
+        blind._http.close()

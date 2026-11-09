@@ -1,5 +1,7 @@
 """FHE client for the NINE65 microservice."""
 
+import os
+
 import requests
 
 from .errors import (
@@ -25,10 +27,27 @@ class FHEClient:
     Args:
         base_url: Root URL of the FHE service (no trailing slash).
         timeout: Request timeout in seconds (integer).
+        tenant_id: Tenant identifier; defaults to FHE_TENANT_ID.
+        api_token: Tenant-specific token; defaults to FHE_TENANT_TOKEN. This is
+            the tenant's FHE_TENANT_TOKENS entry, not the internal FHE_API_TOKEN.
+        decrypt_token: Optional operator decrypt capability (FHE_DECRYPT_TOKEN).
+        operator_token: Optional metrics capability (FHE_OPERATOR_TOKEN).
+
+    FHE_SERVICE_URL supplies the default URL. Credentials are sent only on
+    protected routes, with decrypt/metrics capabilities scoped to their routes.
+    HTTP redirects are refused rather than forwarding these credentials.
     """
 
-    def __init__(self, base_url="http://localhost:8080", timeout=30):
-        self._base_url = base_url.rstrip("/")
+    def __init__(self, base_url=None, timeout=30, *, tenant_id=None,
+                 api_token=None, decrypt_token=None, operator_token=None):
+        self._base_url = (base_url if base_url is not None else
+                          os.environ.get("FHE_SERVICE_URL", "http://localhost:8080")).rstrip("/")
+        self._tenant_id = tenant_id if tenant_id is not None else os.environ.get("FHE_TENANT_ID")
+        self._api_token = api_token if api_token is not None else os.environ.get("FHE_TENANT_TOKEN")
+        self._decrypt_token = (decrypt_token if decrypt_token is not None else
+                               os.environ.get("FHE_DECRYPT_TOKEN"))
+        self._operator_token = (operator_token if operator_token is not None else
+                                os.environ.get("FHE_OPERATOR_TOKEN"))
         self._timeout = timeout
         self._http = requests.Session()
         self._http.headers.update({
@@ -47,12 +66,25 @@ class FHEClient:
         """
         url = self._base_url + path
 
+        headers = {}
+        if not (method == "GET" and path in ("/healthz", "/v1/version")):
+            if self._tenant_id:
+                headers["x-fhe-tenant-id"] = self._tenant_id
+            if self._api_token:
+                headers["x-fhe-api-token"] = self._api_token
+            if method == "POST" and path.endswith("/decrypt") and self._decrypt_token:
+                headers["x-fhe-decrypt-token"] = self._decrypt_token
+            if method == "GET" and path == "/v1/metrics" and self._operator_token:
+                headers["x-fhe-operator-token"] = self._operator_token
+
         try:
             resp = self._http.request(
                 method,
                 url,
                 json=json_body,
+                headers=headers,
                 timeout=self._timeout,
+                allow_redirects=False,
             )
         except requests.ConnectionError as exc:
             raise ServiceUnavailableError(
@@ -139,6 +171,10 @@ class FHEClient:
             dict with ``version``, ``supported_configs``, etc.
         """
         return self._request("GET", "/v1/version")
+
+    def metrics(self):
+        """Read operator metrics, requiring the configured operator capability."""
+        return self._request("GET", "/v1/metrics")
 
     def create_session(self, config="secure_128"):
         """Create a new FHE session.
