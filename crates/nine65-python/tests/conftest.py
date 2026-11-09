@@ -16,32 +16,12 @@ import nine65_python as n65
 # this is fine for tests and wrong for anything holding real data.
 KEY_SEED = 42
 
-# --- The "safe zone" for plaintext values with the single-modulus contexts
-# this crate currently binds ------------------------------------------------
-#
-# `SecureConfig.secure_128()` / `.secure_192()` / `.secure_256()` all reduce,
-# through `FHEContext.from_secure_config`, to the *same* single ciphertext
-# modulus (the first RNS prime, 998244353) and the same plaintext modulus
-# (65537) -- the additional anchor lanes that give those configs their named
-# security level aren't used by this single-modulus BFV path at all.
-#
-# For that (q, t) pair, `BFVEncoder::decode()`'s `round(t*c/q) mod t`
-# formula has a real, deterministic, noise-free bias that grows with the
-# plaintext value: `q mod t` is not `0` (998244353 mod 65537 == 50306), so
-# `t * floor(q/t)` is not exactly `q`, and the rounding error compounds
-# proportionally to the plaintext value. Reproduced directly against the
-# Rust formula (no encryption, no noise, no Python) it first flips the
-# decoded value at m == 9922. Encryption noise consumes some of the
-# remaining margin: measured empirically over 10 independently generated
-# keysets x 5 seeds x several plaintexts (300 trials), m <= 9000 round-tripped
-# with zero failures, while values approaching `t` (e.g. `t - 1`) failed
-# 200/200 trials by a consistent few units -- see `test_known_limitations.py`
-# for the reproduction and README.md "Known limitations" for the writeup.
-#
-# SAFE_MAX is set with a healthy margin under the measured 9000-clean /
-# 9922-theoretical boundary specifically so correctness tests here are not
-# flaky close to an edge that depends on encryption noise (which varies by
-# key and by seed).
+# Moderate values for arithmetic fixtures keep their products and scalar
+# multiples within a predictable single-modulus noise envelope. This is not
+# a plaintext admission limit: fresh encryption now round-trips the complete
+# [0,t) domain using nearest q*m/t encoding. Full-range edge/seed regressions
+# live in test_known_limitations.py. The binding's single-modulus path still
+# does not inherit the multi-lane named profile's security level or ct*ct API.
 SAFE_MAX = 4000
 
 

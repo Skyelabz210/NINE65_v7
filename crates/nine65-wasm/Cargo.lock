@@ -53,12 +53,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
 
 [[package]]
+name = "clockwork-core"
+version = "0.1.0"
+dependencies = [
+ "crc32fast",
+ "subtle",
+ "zeroize",
+]
+
+[[package]]
 name = "cpufeatures"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59ed5838eebb26a2bb2e58f6d5b5316989ae9d08bab10e0e6d103e656d1b0280"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "crc32fast"
+version = "1.5.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f97d3416d5337d15c4b0d78c8c91df922ca143f57ec20e2d1c188333047ef04"
+dependencies = [
+ "cfg-if",
 ]
 
 [[package]]
@@ -169,13 +187,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
+name = "nexgen_rational"
+version = "0.1.0"
+
+[[package]]
 name = "nine65"
 version = "0.1.0"
 dependencies = [
  "bincode 2.0.1",
+ "clockwork-core",
+ "crc32fast",
  "exact_transcendentals",
  "getrandom",
  "mana",
+ "nexgen_rational",
  "serde",
  "serde_json",
  "sha2",

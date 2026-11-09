@@ -13,7 +13,6 @@ mod wasm_impl {
     // This crate currently exposes the legacy single-modulus BFV client surface.
     // It does not expose DualRNS, K-Elimination, or automatic bootstrap.
     const WIDE_INTERMEDIATE_CAPACITY_BITS: u32 = 127;
-    const WASM_WARN_PCT: u32 = 80;
     const WASM_ERROR_PCT: u32 = 90;
 
     fn intermediate_bits(cfg: &FHEConfig) -> u32 {

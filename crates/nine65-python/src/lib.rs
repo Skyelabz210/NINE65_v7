@@ -25,7 +25,6 @@ use nine65::prelude::NTTEngine;
 //   80% means: if the intermediate bit-count is 80% of the anchor capacity bits,
 //              emit a Python warning (logged, operation still proceeds).
 //   90% means: return a Python ValueError before the operation runs.
-const PYBINDING_WARN_PCT: u32 = 80;
 const PYBINDING_ERROR_PCT: u32 = 90;
 
 /// Compute intermediate value bit-length for a given config.

@@ -189,30 +189,19 @@ multi-lane DualRNS/K-Elimination path, such as
 `RNSFHEContext::mul_dual_symmetric()`; that surface is not yet bound to
 Python.
 
-### 2. Plaintext values near the modulus don't round-trip through plain encrypt/decrypt either
+### 2. Full-range scalar encoding
 
-Separately from (1), and with no multiplication involved at all:
-`BFVEncoder::decode()`'s `round(t * c / q) mod t` formula has a real,
-*noise-free* bias for the specific `(q, t)` pair every `SecureConfig` this
-crate exposes reduces to through this single-modulus path (`q = 998244353`,
-`t = 65537`; see `test_config.py`'s
-`test_secure_128_192_256_share_the_single_modulus_qt_pair`). `q mod t` is
-`50306`, not `0`, so `t * floor(q/t) != q`, and the rounding error grows
-with the plaintext value. Reproduced with the formula alone (no encryption):
-decoding first disagrees with the original value at `m = 9922`. Encryption
-noise eats further into the margin -- empirically, values up to `9000`
-round-tripped cleanly over 300 trials across 10 independently generated
-keysets, while values near `t` (e.g. `t - 1`) failed consistently, by a
-small (single-digit), always-*downward* drift rather than random
-corruption (see `test_plaintext_near_modulus_bias_is_directional_not_random`).
+The former message-dependent floor-Delta bias is repaired in the core encoder:
+encoding uses `round(q*m/t)`, matching decryption's rational scale. Fresh
+plaintexts throughout `[0,t)`, including 59905 and `t-1`, now round-trip.
+The compiled-extension regressions check the lower, middle and upper domain
+across deterministic seeds. Ordinary noise growth under arithmetic remains a
+separate bound; the tests retain moderate operands for scalar arithmetic.
 
-`tests/conftest.py`'s `SAFE_MAX = 4000` is a test-fixture guardrail, not a
-production theorem or API guarantee. The full-range exactness defect is
-tracked in **issue #176**. That issue requires either an exact-integer
-full-range encoding/decoding route, using the repository's ExactDelta or
-equivalent proven machinery, or a mathematically derived typed refusal
-boundary. Empirical cutoffs and floating-point patches are explicitly
-insufficient.
+The single-modulus binding does not acquire the multi-lane named profile's
+security level or ciphertext-times-ciphertext capability from this repair.
+For the current main-Q ciphertext multiplication path use the HTTP SDK/service
+or the Rust evaluator.
 
 ## Integer widths: Python ints vs. Rust `u64`
 

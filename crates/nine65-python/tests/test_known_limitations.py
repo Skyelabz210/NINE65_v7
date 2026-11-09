@@ -1,8 +1,7 @@
 """Known limitations of this binding.
 
 `FHEContext.mul()` is retired (#135): it raises `ValueError` and returns
-no ciphertext. The decode bias for plaintexts near `t` is still open and
-stays `xfail(strict=True)`.
+no ciphertext. Full-range scalar encoding uses the repaired rational scale.
 """
 
 from __future__ import annotations
@@ -20,20 +19,7 @@ def test_ciphertext_times_ciphertext_multiplication_is_refused() -> None:
         fhe.mul(ct_a, ct_b)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "BFVEncoder::decode()'s round(t*c/q) formula has a real, "
-        "deterministic (noise-free) bias for the (q, t) pair every "
-        "SecureConfig this crate exposes reduces to through this "
-        "single-modulus path: q mod t != 0, so t*floor(q/t) != q, and the "
-        "rounding error grows with the plaintext value. Values near t "
-        "(such as t - 1) do not round-trip. Issue #176 tracks the exact "
-        "full-range fix or a mathematically derived fail-closed bound; "
-        "conftest.py SAFE_MAX is a test-fixture guardrail only."
-    ),
-)
-def test_plaintext_near_modulus_does_not_roundtrip(
+def test_plaintext_near_modulus_roundtrips(
     ctx_128: n65.FHEContext, keys_128: n65.KeySet
 ) -> None:
     t = ctx_128.plaintext_modulus()
@@ -42,25 +28,11 @@ def test_plaintext_near_modulus_does_not_roundtrip(
     assert ctx_128.decrypt(ct, keys_128.secret_key) == value
 
 
-def test_plaintext_near_modulus_bias_is_directional_not_random(
-    ctx_128: n65.FHEContext, keys_128: n65.KeySet
+@pytest.mark.parametrize("position", [0, 1, 32768, 59905, 65536])
+def test_plaintext_full_range_samples_remain_exact_across_seeds(
+    ctx_128: n65.FHEContext, keys_128: n65.KeySet, position: int
 ) -> None:
-    """Not xfail: this one documents the SHAPE of the bug (a small,
-    consistent downward drift, not wild/random corruption), which is what
-    lets `test_encrypt_decrypt.py` trust the well-inside-the-safe-range
-    values it actually asserts on. If this ever starts failing, the bias
-    has changed character and SAFE_MAX may need re-measuring, not just the
-    xfail above."""
-    t = ctx_128.plaintext_modulus()
-    value = t - 1
-    got_values = set()
+    """The old floor-Delta drift must not return at the middle or upper edge."""
     for seed in range(10):
-        ct = ctx_128.encrypt_seeded(value, keys_128.public_key, seed=seed)
-        got_values.add(ctx_128.decrypt(ct, keys_128.secret_key))
-
-    assert value not in got_values
-    # The observed drift is small (a handful of units) and always downward,
-    # not an arbitrary/high-magnitude value -- consistent with a rounding
-    # bias rather than, say, noise overflow wrapping around the whole ring.
-    for got in got_values:
-        assert 0 <= value - got <= 10
+        ct = ctx_128.encrypt_seeded(position, keys_128.public_key, seed=seed)
+        assert ctx_128.decrypt(ct, keys_128.secret_key) == position
