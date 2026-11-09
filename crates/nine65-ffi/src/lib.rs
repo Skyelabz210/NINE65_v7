@@ -5,20 +5,17 @@
 //!
 //! ## Safety
 //!
-//! This crate is the ONLY place in the NINE65 workspace that uses `unsafe`.
-//! All FFI boundary code follows strict safety invariants documented on
-//! each function.
+//! The raw-pointer boundary requires the safety invariants documented on
+//! each exported function.
 //!
-//! **No `catch_unwind` at the boundary.** None of the `extern "C"` functions
-//! below wrap their body in `std::panic::catch_unwind`. A Rust panic that
-//! reaches an `extern "C"` function unwinds into the calling C code, which is
-//! undefined behavior (and, with `panic = "abort"` configured for release
-//! builds elsewhere in this workspace, aborts the host process). Callers
-//! embedding this library must either ensure inputs cannot trigger a panic
-//! in the underlying `nine65::kiosk` implementation, or wrap calls into this
-//! library in their own unwind boundary. This is a known gap, not a doc-only
-//! omission — see the workspace audit's FFI findings before relying on this
-//! API for untrusted input.
+//! Invalid modulus values are rejected before calling arithmetic constructors
+//! or operations. Callers must still satisfy each raw-pointer safety contract.
+//! Panics/OOM aborting the process and invalid foreign pointers are not turned
+//! into recoverable errors by this API.
+//!
+//! The version-2 receipt includes the complete hash preimage. The legacy
+//! version-1 layout is retained for ABI compatibility and cannot verify the
+//! full destruction record. Hash consistency is not remote attestation.
 //!
 //! ## Lifecycle
 //!
@@ -32,8 +29,14 @@
 
 use std::ptr;
 
-use nine65::kiosk::unit::{KioskLifecycle, KioskUnit};
+fn valid_moduli(moduli: &[u64]) -> bool {
+    moduli
+        .iter()
+        .all(|&q| q > 1 && q & 1 == 1 && q < (1u64 << 63))
+}
+
 use nine65::kiosk::receipt::ReceiptVerifier;
+use nine65::kiosk::unit::{KioskLifecycle, KioskUnit};
 
 /// Opaque handle to a kiosk unit.
 pub struct KioskHandle {
@@ -71,6 +74,9 @@ pub unsafe extern "C" fn nine65_kiosk_create_bullet(
         return ptr::null_mut();
     }
     let moduli_slice = std::slice::from_raw_parts(moduli, num_moduli);
+    if !valid_moduli(moduli_slice) {
+        return ptr::null_mut();
+    }
     let unit = KioskUnit::bullet(id, moduli_slice, seed);
     Box::into_raw(Box::new(KioskHandle { unit }))
 }
@@ -92,6 +98,9 @@ pub unsafe extern "C" fn nine65_kiosk_create_capsule(
         return ptr::null_mut();
     }
     let moduli_slice = std::slice::from_raw_parts(moduli, num_moduli);
+    if !valid_moduli(moduli_slice) {
+        return ptr::null_mut();
+    }
     let unit = KioskUnit::capsule(id, moduli_slice, seed, max_operations);
     Box::into_raw(Box::new(KioskHandle { unit }))
 }
@@ -113,6 +122,9 @@ pub unsafe extern "C" fn nine65_kiosk_create_fuse(
         return ptr::null_mut();
     }
     let moduli_slice = std::slice::from_raw_parts(moduli, num_moduli);
+    if !valid_moduli(moduli_slice) {
+        return ptr::null_mut();
+    }
     let unit = KioskUnit::fuse(id, moduli_slice, seed, lifetime_nanos);
     Box::into_raw(Box::new(KioskHandle { unit }))
 }
@@ -136,7 +148,11 @@ pub unsafe extern "C" fn nine65_kiosk_load(
     }
     let h = &mut *handle;
     let data_slice = std::slice::from_raw_parts(data, num_limbs);
-    if h.unit.load(data_slice) { 1 } else { 0 }
+    if h.unit.load(data_slice) {
+        1
+    } else {
+        0
+    }
 }
 
 /// Perform a checked multiplication.
@@ -156,7 +172,7 @@ pub unsafe extern "C" fn nine65_kiosk_checked_mul(
     modulus: u64,
     result_out: *mut u64,
 ) -> i32 {
-    if handle.is_null() || result_out.is_null() {
+    if handle.is_null() || result_out.is_null() || modulus <= 1 {
         return 0;
     }
     let h = &mut *handle;
@@ -186,7 +202,7 @@ pub unsafe extern "C" fn nine65_kiosk_checked_add(
     modulus: u64,
     result_out: *mut u64,
 ) -> i32 {
-    if handle.is_null() || result_out.is_null() {
+    if handle.is_null() || result_out.is_null() || modulus <= 1 {
         return 0;
     }
     let h = &mut *handle;
@@ -304,9 +320,7 @@ pub unsafe extern "C" fn nine65_kiosk_free(handle: *mut KioskHandle) {
 /// # Returns
 /// 1 if the (partial, see above) verification succeeds, 0 if not
 #[no_mangle]
-pub unsafe extern "C" fn nine65_receipt_verify(
-    receipt: *const FfiDestructionReceipt,
-) -> i32 {
+pub unsafe extern "C" fn nine65_receipt_verify(receipt: *const FfiDestructionReceipt) -> i32 {
     if receipt.is_null() {
         return 0;
     }
@@ -325,5 +339,166 @@ pub unsafe extern "C" fn nine65_receipt_verify(
     };
 
     let hash = nine65::kiosk::receipt::ReceiptHash::from_bytes(r.hash);
-    if ReceiptVerifier::verify(&receipt_data, &hash) { 1 } else { 0 }
+    if ReceiptVerifier::verify(&receipt_data, &hash) {
+        1
+    } else {
+        0
+    }
+}
+
+/// Versioned receipt carrying every field covered by the destruction hash.
+/// Duration is informational and is not included in that hash.
+#[repr(C)]
+#[derive(Default)]
+pub struct FfiDestructionReceiptV2 {
+    pub version: u32,
+    pub hash: [u8; 32],
+    pub unit_id: u64,
+    pub fold_generation: u64,
+    pub final_entropy: u64,
+    pub timestamp_nanos: u64,
+    pub operations_performed: u64,
+    pub duration_nanos: u64,
+    pub unit_type: u8,
+    pub valid: u8,
+}
+
+/// Destroy a unit and export a complete version-2 receipt.
+///
+/// # Safety
+/// The handle must be live and exclusively owned for this call; receipt_out
+/// must point to writable storage for the full FfiDestructionReceiptV2.
+#[no_mangle]
+pub unsafe extern "C" fn nine65_kiosk_destroy_v2(
+    handle: *mut KioskHandle,
+    receipt_out: *mut FfiDestructionReceiptV2,
+) -> i32 {
+    if receipt_out.is_null() {
+        return 0;
+    }
+    (*receipt_out).valid = 0;
+    if handle.is_null() {
+        return 0;
+    }
+    let Some(receipt) = (*handle).unit.destroy() else {
+        return 0;
+    };
+    *receipt_out = FfiDestructionReceiptV2 {
+        version: 2,
+        hash: *receipt.hash.as_bytes(),
+        unit_id: receipt.data.unit_id,
+        fold_generation: receipt.data.fold_generation,
+        final_entropy: receipt.data.final_entropy,
+        timestamp_nanos: receipt.data.timestamp_nanos,
+        operations_performed: receipt.data.operations_performed,
+        duration_nanos: receipt.duration_nanos,
+        unit_type: receipt.data.unit_type,
+        valid: 1,
+    };
+    1
+}
+
+/// Check every hashed field of a version-2 destruction record.
+/// This checks data/hash consistency; it does not authenticate its sender.
+///
+/// # Safety
+/// receipt must be null or point to a readable FfiDestructionReceiptV2.
+#[no_mangle]
+pub unsafe extern "C" fn nine65_receipt_verify_v2(receipt: *const FfiDestructionReceiptV2) -> i32 {
+    if receipt.is_null() {
+        return 0;
+    }
+    let receipt = &*receipt;
+    if receipt.version != 2 || receipt.valid != 1 {
+        return 0;
+    }
+    let data = nine65::kiosk::receipt::ReceiptData {
+        unit_id: receipt.unit_id,
+        fold_generation: receipt.fold_generation,
+        final_entropy: receipt.final_entropy,
+        timestamp_nanos: receipt.timestamp_nanos,
+        operations_performed: receipt.operations_performed,
+        unit_type: receipt.unit_type,
+    };
+    let hash = nine65::kiosk::receipt::ReceiptHash::from_bytes(receipt.hash);
+    i32::from(ReceiptVerifier::verify(&data, &hash))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn full_receipt_roundtrip_rejects_changed_fields() {
+        unsafe {
+            let moduli = [97, 101, 103];
+            let handle = nine65_kiosk_create_capsule(42, moduli.as_ptr(), moduli.len(), 7, 10);
+            assert!(!handle.is_null());
+            assert_eq!(nine65_kiosk_load(handle, [1, 2, 3].as_ptr(), 3), 1);
+            let mut result = 0;
+            assert_eq!(
+                nine65_kiosk_checked_mul(handle, 0, 6, 7, 97, &mut result),
+                1
+            );
+            assert_eq!(result, 42);
+            let mut receipt = FfiDestructionReceiptV2::default();
+            assert_eq!(nine65_kiosk_destroy_v2(handle, &mut receipt), 1);
+            assert_eq!(nine65_kiosk_status(handle), 3);
+            assert_eq!(nine65_receipt_verify_v2(&receipt), 1);
+            receipt.fold_generation ^= 1;
+            assert_eq!(nine65_receipt_verify_v2(&receipt), 0);
+            receipt.fold_generation ^= 1;
+            receipt.unit_type ^= 1;
+            assert_eq!(nine65_receipt_verify_v2(&receipt), 0);
+            nine65_kiosk_free(handle);
+        }
+    }
+
+    #[test]
+    fn invalid_moduli_are_rejected_before_constructing_a_unit() {
+        unsafe {
+            for modulus in [0, 1, 2, 1u64 << 63, u64::MAX] {
+                assert!(nine65_kiosk_create_bullet(1, &modulus, 1, 7).is_null());
+                assert!(nine65_kiosk_create_capsule(1, &modulus, 1, 7, 10).is_null());
+                assert!(nine65_kiosk_create_fuse(1, &modulus, 1, 7, 100).is_null());
+            }
+        }
+    }
+
+    #[test]
+    fn invalid_operation_modulus_does_not_change_output() {
+        unsafe {
+            let modulus = 97;
+            let handle = nine65_kiosk_create_capsule(1, &modulus, 1, 7, 10);
+            assert_eq!(nine65_kiosk_load(handle, [1].as_ptr(), 1), 1);
+            let mut output = 99;
+            for modulus in [0, 1] {
+                assert_eq!(
+                    nine65_kiosk_checked_mul(handle, 0, 6, 7, modulus, &mut output),
+                    0
+                );
+                assert_eq!(
+                    nine65_kiosk_checked_add(handle, 0, 6, 7, modulus, &mut output),
+                    0
+                );
+                assert_eq!(output, 99);
+            }
+            nine65_kiosk_free(handle);
+        }
+    }
+
+    #[test]
+    fn null_and_repeated_destruction_fail_cleanly() {
+        unsafe {
+            let mut receipt = FfiDestructionReceiptV2::default();
+            assert_eq!(nine65_kiosk_destroy_v2(ptr::null_mut(), &mut receipt), 0);
+            assert_eq!(nine65_receipt_verify_v2(ptr::null()), 0);
+            let modulus = 97;
+            let handle = nine65_kiosk_create_bullet(1, &modulus, 1, 7);
+            assert_eq!(nine65_kiosk_destroy_v2(handle, &mut receipt), 1);
+            assert_eq!(nine65_kiosk_destroy_v2(handle, &mut receipt), 0);
+            assert_eq!(receipt.valid, 0);
+            nine65_kiosk_free(handle);
+        }
+    }
 }
