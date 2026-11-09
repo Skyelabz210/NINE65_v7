@@ -1,0 +1,92 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Blocking waiting for file lock on build directory
+    Finished `release` profile [optimized] target(s) in 17.88s
+     Running unittests src/main.rs (target/release/deps/fhe_service-9ef4467553b2fd72)
+
+running 81 tests
+test auth::tests::digest_comparison_is_exact ... ok
+test auth::tests::tenant_mapping_is_exact_and_duplicate_safe ... ok
+test handlers::policy_tests::audit_action_labels_every_route ... ok
+test handlers::policy_tests::decrypt_policy_is_fail_closed ... ok
+test handlers::policy_tests::rate_limit_allows_up_to_the_limit_then_blocks_until_the_next_minute ... ok
+test handlers::policy_tests::rate_limiter_state_starts_empty_at_the_documented_default ... ok
+test handlers::policy_tests::tenant_id_policy_is_bounded_and_ascii ... ok
+test handlers::policy_tests::token_policy_is_fail_closed ... ok
+test http::tests::accepts_header_value_exactly_at_the_limit ... ok
+test http::tests::accepts_headers_exactly_at_the_count_limit ... ok
+test http::tests::accepts_http_1_0_version_token ... ok
+test http::tests::parse_request_head_strips_query_params ... ok
+test http::tests::accepts_body_exactly_matching_declared_content_length ... ok
+test http::tests::rejects_body_shorter_than_declared_content_length ... ok
+test http::tests::rejects_chunked_transfer_encoding ... ok
+test http::tests::rejects_body_over_the_max_size_cap ... ok
+test http::tests::rejects_duplicate_headers_even_when_identical ... ok
+test http::tests::rejects_content_length_and_transfer_encoding_together ... ok
+test http::tests::rejects_header_line_with_no_colon ... ok
+test http::tests::rejects_duplicate_content_length_headers ... ok
+test http::tests::rejects_malformed_request_line_extra_token ... ok
+test http::tests::rejects_oversized_header_value ... ok
+test http::tests::rejects_request_line_with_extra_tokens ... ok
+test http::tests::rejects_request_line_with_missing_version ... ok
+test http::tests::rejects_too_many_headers ... ok
+test http::tests::rejects_unknown_http_version_token ... ok
+test http::tests::should_keep_alive_always_false ... ok
+test http::tests::should_not_keep_alive_when_close_requested ... ok
+test http::tests::strict_content_length_accepts_plain_digits ... ok
+test http::tests::strict_content_length_rejects_non_decimal ... ok
+test http::tests::strict_content_length_rejects_overflow ... ok
+test http::tests::rejects_overflowing_content_length_value ... ok
+test http::tests::rejects_invalid_content_length_value ... ok
+test http::tests::takes_exactly_the_declared_length_when_more_bytes_follow ... ok
+test http::tests::two_pipelined_requests_in_one_write_only_answers_the_first ... ok
+test http::tests::oversized_response_is_replaced_with_an_error_body ... ok
+test tests::add_plain_rejects_scalar_exceeding_plaintext_modulus ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::create_session_rejects_invalid_config ... ok
+test session::tests::dual_rns_wire_boundary_is_fail_closed ... ok
+test session::tests::tenant_mismatch_is_indistinguishable_from_missing_session ... ok
+test tests::create_session_returns_session_id ... ok
+test tests::dualrns_batch_operations ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_chained_add_plain_then_mul_ct ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_chained_add_then_mul_plain ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_chained_mul_ct_then_mul_plain ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_mul_ct_11_times_13_equals_143 ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_mul_ct_basic ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_mul_ct_by_one ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_mul_ct_by_zero ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_mul_ct_larger_values ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_mul_ct_near_t ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_mul_ct_small_values ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_mul_ct_then_decrypt ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_mul_plain_basic ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_mul_plain_by_zero ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_negate_basic ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_negate_then_add_is_zero ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_operation_count_tracks ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_roundtrip_all_configs ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_secure_192_mul_ct ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_secure_192_mul_then_add_plain ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_sub_basic ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::dualrns_sub_underflow_wraps ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test session::tests::tenant_bound_delete_rejects_cross_tenant_request ... ok
+test tests::decrypt_error_is_generic_and_non_leaky ... ok
+test tests::encrypt_with_invalid_session_returns_404 ... ok
+test tests::evaluate_add_rejects_wrong_input_count ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::evaluate_rejects_unknown_operation ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::get_nonexistent_session_returns_404 ... ok
+test tests::delete_session_removes_it ... ok
+test tests::healthz_returns_ok ... ok
+test tests::encrypt_decrypt_roundtrip ... ok
+test tests::homomorphic_add_plain ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::encrypt_error_does_not_leak_plaintext_modulus ... ok
+test tests::noise_budget_decrements ... ignored, WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md
+test tests::session_store_custom_ttl ... ok
+test tests::unknown_route_returns_404 ... ok
+test tests::version_returns_configs ... ok
+test tests::homomorphic_add ... ok
+test tests::get_session_returns_info ... ok
+test tests::max_sessions_enforced ... ok
+
+test result: ok. 54 passed; 0 failed; 27 ignored; 0 measured; 0 filtered out; finished in 7.08s
+

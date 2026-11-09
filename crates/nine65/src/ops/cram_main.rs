@@ -2,7 +2,7 @@
 //! Client secret material and public evaluator material are separate. Ciphertext
 //! fields and certificates are immutable; raw ciphertexts cannot be wrapped as fresh.
 
-use super::exact_mul::{ExactMulError, RNSHybridGadgetKey, HYBRID_BASE_BITS};
+use super::exact_mul::{ExactMulError, PreparedHybridGadgetKey, HYBRID_BASE_BITS};
 use super::{RNSCiphertext, RNSFHEContext, RNSPublicKey, RNSSecretKey};
 use crate::arithmetic::canonical_scale_round::CanonicalScaleRound;
 use crate::arithmetic::RNSPolynomial;
@@ -17,6 +17,9 @@ pub mod wire_q;
 
 #[path = "cram_main_phase_clock.rs"]
 pub mod phase_clock;
+
+#[path = "cram_main_division.rs"]
+pub mod division;
 
 #[derive(Debug, thiserror::Error)]
 pub enum CramMainError {
@@ -78,7 +81,7 @@ impl CramMainCiphertext {
 /// Public key and evaluation key only; no decryption secret or noise observation.
 pub struct CramMainEvaluator {
     state: Arc<PublicState>,
-    relin: RNSHybridGadgetKey,
+    relin: PreparedHybridGadgetKey,
 }
 
 /// Client-owned secret. This is the only main-Q wrapper with a decrypt method.
@@ -114,7 +117,11 @@ impl CramMainEvaluator {
             RNSFHEContext::try_new(config).map_err(|e| CramMainError::Parameters(e.to_string()))?;
         let exact = ctx.try_exact_evaluator()?;
         let keys = ctx.generate_keys_with_rng(rng);
-        let relin = exact.generate_hybrid_gadget_key_with_rng(&keys.secret_key, rng);
+        // Transform the public evaluation key once, then reuse it for every
+        // FPD multiply. The temporary unprepared key is dropped after setup.
+        let relin = exact.prepare_hybrid_gadget_key(
+            &exact.generate_hybrid_gadget_key_with_rng(&keys.secret_key, rng),
+        )?;
         let mut hasher = Sha256::new();
         hasher.update(b"NINE65-main-Q-scalar-v1");
         for value in [
@@ -324,11 +331,11 @@ impl CramMainEvaluator {
             .noise
             .multiply(&a.bound, &b.bound)
             .map_err(CramMainError::NoiseExhausted)?;
-        let raw =
-            self.state
-                .ctx
-                .try_exact_evaluator()?
-                .try_mul_exact(&a.raw, &b.raw, &self.relin)?;
+        let raw = self
+            .state
+            .ctx
+            .try_exact_evaluator()?
+            .try_mul_exact_prepared(&a.raw, &b.raw, &self.relin)?;
         Ok(self.output(raw, bound))
     }
 }

@@ -14,12 +14,14 @@ license = "LicenseRef-Proprietary-AllRightsReserved"
 [features]
 # Optional diagnostic instrumentation; absent from default timing paths.
 architecture-meter = ["dep:cram-core"]
-# Default build: O(N log N) FFT-based NTT + exact transcendentals backend +
-# MANA/UNHAL acceleration (purpose-built for this integer-only FHE
-# architecture). Rayon is strictly opt-in via `parallel`/`generic-rayon` and
+# Default build: O(N log N) FFT-based NTT, exact integer/rational extensions,
+# Clockwork integrity helpers, live shadow monitoring and MANA/UNHAL.
+# These optional APIs are available; selecting a feature does not route every
+# evaluator through it. FPD/prepared keys are selected by CramMainEvaluator.
+# Rayon is strictly opt-in via `parallel`/`generic-rayon` and
 # is NOT part of any default graph — unhal is consumed with
 # default-features = false to keep it that way.
-default = ["exact_transcendentals_backend", "accelerated"]
+default = ["exact_transcendentals_backend", "accelerated", "exact_rational", "clockwork", "adaptive-threading"]
 
 # Core feature flags
 # reference_ntt: Use O(N^2) DFT instead of O(N log N) FFT for NTT operations.
@@ -72,7 +74,7 @@ secure_seed = []
 # Verbose debug output for DualRNS K-Elimination rescaling.
 debug_dual_mul = []
 
-# Allow insecure test configs in release builds. NOT FOR PRODUCTION.
+# Research/test opt-in. Release library builds deliberately reject this flag.
 allow_insecure = []
 
 # Opt-in flags for expensive test/bench runs.
@@ -172,6 +174,12 @@ required-features = ["allow_insecure"]
 [[test]]
 name = "op_timings"
 required-features = ["allow_insecure"]
+
+# Current FPD + persistent-Montgomery + prepared-key service route.
+# OS randomness permits a real release build without allow_insecure.
+[[example]]
+name = "fpd_stack_timings"
+required-features = ["serde"]
 
 [[test]]
 name = "expanded_phase1"

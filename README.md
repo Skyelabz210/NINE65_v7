@@ -140,17 +140,20 @@ floating-point residue computation remain forbidden. K-Elimination requires
 its divisibility, coprimality, anchor-capacity and uniqueness-range conditions.
 The general shared-factor encrypted division adapter is not enabled.
 
-The [FPD feature branch](https://github.com/Skyelabz210/NINE65_v7/pull/204)
-has separate prepared-key/default-feature work; a branch result is not evidence
-that its defaults are integrated in this checkout.
+The [merged FPD stack](docs/FEATURE_ACTIVATION_2026-11-02.md) supplies the
+main-Q remainder-adjusted multiplication route, persistent Montgomery storage
+and prepared hybrid relinearization keys used by the service. Default features
+also expose exact rational, Clockwork and adaptive-threading APIs.
+General shared-factor encrypted division remains a separate adapter.
 
 ## Contributing and security
 
 Use [CONTRIBUTING.md](CONTRIBUTING.md) for development checks,
 [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md) for repository conventions,
 and [SECURITY.md](SECURITY.md) for security policy and reporting.
-Hosted workflows are active; consult runs for the exact commit and workflow.
-No repository-wide green CI claim follows from a passing specialized job.
+CI and automated diagnostics are disabled during active development. Run the
+local build and test commands above; hosted job state does not establish local
+correctness.
 
 ## License
 

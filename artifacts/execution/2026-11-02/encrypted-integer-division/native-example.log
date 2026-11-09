@@ -1,0 +1,13 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/NINE65_v7/crates/nine65)
+    Finished `release` profile [optimized] target(s) in 43.33s
+     Running `target/release/examples/encrypted_integer_division`
+N=8192, primes=[998244353, 985661441, 754974721, 469762049], t=3, eta=3, width=4
+15/3: q=5, r=0, zero=false [verified], products=287, gates=761, output_budget_millibits=10000, evaluation_ns=20969207596
+14/3: q=4, r=2, zero=false [verified], products=287, gates=761, output_budget_millibits=10000, evaluation_ns=18152791139
+2/3: q=0, r=2, zero=false [verified], products=287, gates=761, output_budget_millibits=10000, evaluation_ns=21498576177
+15/0: q=0, r=15, zero=true [verified], products=287, gates=761, output_budget_millibits=10000, evaluation_ns=18223485271
+Divisor 3 shares the plaintext modulus; the encrypted Boolean circuit requires no divisor inverse.
+cram-public emission ledger: 4 ops (0 lane-local, 0 R8 materialization, 4 elimination-first) — elimination-first rescale+relin core throughout (canonicalize_dual_anchor's separate winding-reset materialization is a distinct, gate-qualified site — see docs/CRAM_PUBLIC_MODE.md M4)

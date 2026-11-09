@@ -74,10 +74,12 @@
 //!
 //! ## Scope
 //!
-//! This coefficient-level kernel is integrated by `ops::exact_mul`, which
-//! lifts centered inputs before tensor multiplication in both bases and
-//! applies this exact scale-and-round to every tensor component. The algebra
-//! and error-envelope scope are described in `docs/proofs/REFRESH_PIPELINE.md`.
+//! This coefficient kernel is wired into `ExactMulEvaluator` and the main-Q
+//! service evaluator, with centered input lifting before tensor multiplication.
+//! Its fixed-divisor BFV rescaling contract is separate from a general
+//! encrypted division API. `CramPublicEvaluator::exact_divide` still accepts
+//! only divisors invertible on every main and anchor lane. The algebra and
+//! error-envelope scope are described in `docs/proofs/REFRESH_PIPELINE.md`.
 
 use super::main_only_base_ext::{MainOnlyBaseExt, MainOnlyBaseExtError, RankPath};
 #[cfg(test)]
@@ -232,7 +234,8 @@ impl ExactScaleRound {
     ///
     /// `x_bound_over_q_sq` declares the caller's operand bound as
     /// `|Xc| <= x_bound_over_q_sq * Q^2`. For a BFV tensor over centered
-    /// coefficients of a degree-`N` ring that is `N / 4`.
+    /// coefficients of a degree-`N` ring that is `N / 4` for one product, or
+    /// `N / 2` for the summed middle component.
     pub fn new(
         main: &[u64],
         aux: &[u64],

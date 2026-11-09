@@ -61,6 +61,8 @@
 
 use crate::entropy::FheRng;
 use crate::errors::{Nine65Error, Nine65Result};
+use crate::ops::cram_main::division::{EncryptedDivRem, EncryptedUint, IntegerDivisionError};
+use crate::ops::cram_main::{CramMainClient, CramMainError, CramMainEvaluator};
 use crate::ops::rns_fhe::{
     DualRNSCiphertext, DualRNSEvalKey, DualRNSPoly, DualRNSPublicKey, DualRNSSecretKey,
     RNSFHEContext,
@@ -227,6 +229,44 @@ impl CramPublicEvaluator {
         )
     }
 
+    /// Integer words use a separate main-Q key domain and Boolean ingress.
+    /// Returns public evaluator material first, then client-only secret material.
+    /// Legacy DualRNS scalar ciphertexts cannot be cast into this representation.
+    pub fn integer_keygen(&self) -> Result<(CramMainEvaluator, CramMainClient), CramMainError> {
+        self.integer_keygen_with_rng(&mut crate::entropy::SecureRng::new())
+    }
+
+    pub fn integer_keygen_with_rng<R: FheRng>(
+        &self,
+        rng: &mut R,
+    ) -> Result<(CramMainEvaluator, CramMainClient), CramMainError> {
+        let (client, evaluator) = CramMainEvaluator::generate_with_rng(&self.ctx.config, rng)?;
+        Ok((evaluator, client))
+    }
+
+    /// Unsigned encrypted numerator / encrypted denominator. Returns encrypted
+    /// quotient, remainder, and zero status. For zero denominator, q=0 and r=n.
+    /// No modular divisor inverse is required. Width/noise admission still applies.
+    pub fn divide_integer(
+        &mut self,
+        numerator: &EncryptedUint,
+        denominator: &EncryptedUint,
+        keys: &CramMainEvaluator,
+    ) -> Result<EncryptedDivRem, IntegerDivisionError> {
+        let config = keys.config();
+        if config.n != self.ctx.config.n
+            || config.t != self.ctx.config.t
+            || config.eta != self.ctx.config.eta
+            || config.primes != self.ctx.config.primes
+        {
+            return Err(CramMainError::DomainMismatch.into());
+        }
+        let result = keys.divide_integer(numerator, denominator)?;
+        self.ledger
+            .record("divide_integer", EmissionClass::EliminationFirst);
+        Ok(result)
+    }
+
     /// M3 — same key split as [`Self::keygen_with_rng`], plus the RNS-limb
     /// gadget key ([`crate::ops::rns_fhe::DualRNSGadgetKey`]) for
     /// [`Self::mul_manufactured_gadget`]. Requires a manufactured chain
@@ -306,6 +346,8 @@ impl CramPublicEvaluator {
     /// lane multiplied by the lane reciprocal, no lane dropped, `level`
     /// untouched, no reconstruction. Refuses (typed error) any divisor that
     /// is not a unit on every lane — refuse, don't corrupt.
+    /// This component-lane operation is not integer quotient/remainder.
+    /// Use [`Self::divide_integer`] with explicit encrypted-word ingress for that.
     pub fn exact_divide(
         &mut self,
         ct: &DualRNSCiphertext,
@@ -326,7 +368,7 @@ impl CramPublicEvaluator {
             return Err(Nine65Error::InvalidParameter {
                 message: format!(
                     "exact_divide: divisor {d} is not a unit on lane {prime} (gcd={g}); \
-                     route through FPD (aux lane) instead of corrupting the lane"
+                     integer quotient/remainder requires divide_integer with encrypted-word ingress"
                 ),
             });
         }

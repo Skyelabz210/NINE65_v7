@@ -1,0 +1,26 @@
+{
+  "executed_source_commit": "7cf18cd1cfb21073da4a0f7a4171892a698d97ee",
+  "measured_performance_commit": "dde5ea20ecff8198d0eb3353ec038243b42b188f",
+  "toolchain": "rustc 1.89.0 (29483883e 2025-08-04)",
+  "commands": [
+    "cargo run --offline --locked -p nine65 --release --example cram_public_showcase",
+    "cargo test --offline --locked -p exact_transcendentals --lib fpd_",
+    "cargo test --offline --locked -p nine65 --lib --config profile.test.package.nine65.opt-level=2 arithmetic::exact_scale_round::tests",
+    "cargo clippy --offline --locked -p nine65 --example cram_public_showcase -- -D warnings",
+    "cargo fmt --all -- --check"
+  ],
+  "results": {
+    "showcase": "passed; 9 BFV coefficients on 2 lanes, 7 S8 coefficients on 8 lanes; encrypted unit divide passed; encrypted nonunit divide refused",
+    "fpd_kernel_tests": 17,
+    "bfv_scaler_tests": 10,
+    "clippy": "passed",
+    "format": "passed"
+  },
+  "scope": "Public coefficient-kernel vectors, not a general encrypted shared-factor division implementation. No new performance or native refresh run.",
+  "sha256": {
+    "showcase.log": "c501bf2970132fbeae3b3bb52a08c5fe06b67fd812b586172ba5b1168c0b1145",
+    "fpd-kernel-tests.log": "19777775d13eb7c066e7005b80991656ba6df546e85372199323331f2658421a",
+    "bfv-scaler-tests.log": "6c8ab533920e011ea2ddb2d73ebeb874d7c7124e6a48b8e9d87b59d84d7ba897",
+    "clippy.log": "2903861d11ca55500916ec0d5372594fc1d2936407e5e6eebd4b3591fb62cb1a"
+  }
+}

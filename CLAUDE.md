@@ -39,8 +39,9 @@ stay enforced. Do not fabricate closure of open cryptographic assumptions.
 ## Build and features
 
 Use the pinned Rust toolchain and the commands in [README.md](README.md).
-The `nine65` default features are `exact_transcendentals_backend` and
-`accelerated`; the latter enables MANA and UNHAL. Rayon remains opt-in.
+The `nine65` default features include `exact_transcendentals_backend`,
+`accelerated`, `exact_rational`, `clockwork` and `adaptive-threading`;
+`accelerated` enables MANA and UNHAL. Rayon remains opt-in.
 `ntt_fft` is a compatibility alias; `reference_ntt` selects the reference path.
 Read `crates/nine65/Cargo.toml` for the current feature graph.
 `allow_insecure` enables unadmitted research in development/test builds;

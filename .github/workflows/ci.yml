@@ -298,6 +298,12 @@ jobs:
       - name: Run error variant coverage tests
         run: cargo test -p nine65 --test error_variant_coverage
 
+      - name: Check prepared-key sequential execution
+        run: >-
+          cargo test -p nine65 --lib
+          --config profile.test.package.nine65.opt-level=2
+          --features sequential prepared_hybrid
+
       - name: Test clockwork feature
         run: cargo test -p nine65 --lib --release --features clockwork
 
