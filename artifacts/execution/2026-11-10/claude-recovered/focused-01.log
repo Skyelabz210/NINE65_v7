@@ -1,0 +1,19 @@
+
+running 14 tests
+test arithmetic::ntt_fft::tests::class_f_constructor_rejects_composite_modulus ... ok
+test arithmetic::ntt_fft::tests::constructor_rejects_incompatible_prime ... ok
+test arithmetic::ntt_fft::tests::branchless_coefficient_ops_match_integer_reference ... ok
+test arithmetic::ntt_fft::tests::constructor_rejects_non_power_of_two_degree ... ok
+test arithmetic::ntt_fft::tests::multiply_matches_schoolbook ... ok
+test arithmetic::ntt_fft::tests::multiply_small ... ok
+test arithmetic::ntt_fft::tests::multiply_sum_pair_matches_summed_products ... ok
+test arithmetic::ntt_fft::tests::negacyclic_wrap ... ok
+test arithmetic::ntt_fft::tests::ntt_intt_roundtrip ... ok
+test arithmetic::ntt_fft::tests::ntt_multiply_ab_timing ... ignored, timing measurement, not a correctness test
+test arithmetic::ntt_fft::tests::parallel_strategy_probe ... ignored, timing probe
+test arithmetic::ntt_fft::tests::power_table_matches_mod_pow ... ok
+test arithmetic::ntt_fft::tests::tensor_product_matches_separate_products ... ok
+test arithmetic::ntt_fft::tests::fused_negacyclic_multiply_matches_textbook_reference ... ok
+
+test result: ok. 12 passed; 0 failed; 2 ignored; 0 measured; 1389 filtered out; finished in 1.71s
+

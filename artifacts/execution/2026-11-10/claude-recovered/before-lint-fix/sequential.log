@@ -1,0 +1,12 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/shared/nine65-claude-recovered/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/shared/nine65-claude-recovered/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/nine65)
+    Finished `test` profile [unoptimized] target(s) in 21.74s
+     Running unittests src/lib.rs (target/debug/deps/nine65-fc72f9b2b02c13d3)
+
+running 1 test
+test ops::rns_fhe::tests::sequential_limb_dispatch_stays_on_calling_thread ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1403 filtered out; finished in 0.00s
+

@@ -17,7 +17,7 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use core::cmp::Ordering;
 
-/// T2/M3-style regression-guardrail counter: every call to
+/// T2/M3-style regression-guardrail counter: every admitted reconstruction by
 /// [`RNSContext::to_u256_level`] increments this. Used by
 /// `ops::rns_fhe::tests::m3_guardrail_gadget_relin_never_calls_to_u256_level`
 /// to prove the M3 RNS-limb relinearization path performs zero CRT
@@ -882,6 +882,10 @@ pub struct RNSContext {
     /// Precomputed CRT reconstruction values
     /// For each prime q_i: M_i = (product / q_i), M_i_inv = M_i^(-1) mod q_i
     pub crt_values: Vec<(u128, u64)>,
+    /// Lazily built [`CrtU256Plan`] per level (index = number of leading
+    /// primes). `None` inside means that level has no `U256` CRT value
+    /// (empty, or product wider than 256 bits).
+    pub(crate) level_crt: Vec<std::sync::OnceLock<Option<CrtU256Plan>>>,
 }
 
 impl RNSContext {
@@ -925,6 +929,10 @@ impl RNSContext {
             primes.iter().map(|_| (0u128, 0u64)).collect()
         };
 
+        let level_crt = (0..=primes.len())
+            .map(|_| std::sync::OnceLock::new())
+            .collect();
+
         Self {
             #[cfg(feature = "architecture-meter")]
             architecture_meter: std::sync::Arc::default(),
@@ -934,6 +942,7 @@ impl RNSContext {
             ntt_engines,
             n,
             crt_values,
+            level_crt,
         }
     }
 
@@ -1028,19 +1037,27 @@ impl RNSContext {
         Some(result)
     }
 
-    /// Reconstruct at a given level into a 256-bit integer (exact if the level product fits in 256 bits).
+    /// Reconstruct at a given level into a 256-bit integer.
     ///
     /// This is used for secure_192 / secure_256 paths where the level product exceeds u128.
+    /// Panics for an empty level or a prime product wider than 256 bits; wider
+    /// contexts remain valid for RNS operations and arbitrary-width evaluators.
     pub(crate) fn to_u256_level(&self, rns: &[u64], level: usize) -> U256 {
-        #[cfg(test)]
-        to_u256_level_calls::increment();
         assert!(level <= self.primes.len(), "Level exceeds prime count");
         assert!(rns.len() >= level, "RNS length mismatch");
+        // Cache both admitted plans and unsupported levels. Never substitute
+        // a truncated CRT value for a basis that cannot fit in U256.
+        let plan = self.level_crt[level]
+            .get_or_init(|| CrtU256Plan::try_new(&self.primes[..level]))
+            .as_ref()
+            .expect("to_u256_level: need a nonempty basis whose product fits in 256 bits");
         #[cfg(feature = "architecture-meter")]
         self.architecture_meter
             .crt_reconstructions
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        crt_reconstruct_u256(&rns[..level], &self.primes[..level])
+        #[cfg(test)]
+        to_u256_level_calls::increment();
+        plan.reconstruct(&rns[..level])
     }
 
     /// Compute modular inverse using extended Euclidean algorithm
@@ -1373,6 +1390,10 @@ pub(crate) fn mod_u64_word_ct(value: u64, modulus: u64) -> u64 {
 pub(crate) fn crt_reconstruct_u256(residues: &[u64], primes: &[u64]) -> U256 {
     assert!(!primes.is_empty(), "need primes");
     assert!(residues.len() >= primes.len(), "residue length mismatch");
+    // Check before widening: a U512 product can itself wrap for a sufficiently
+    // wide basis, so examining its upper limbs would not prove admission.
+    let modulus = U256::checked_product_u64s(primes)
+        .expect("crt_reconstruct_u256: prime product exceeds 256 bits");
 
     // A2 "No-Garner" Invariant: Use Parallel Summation CRT
     // x = (sum r_i * Mi * [Mi^-1 mod p_i]) mod M
@@ -1397,7 +1418,7 @@ pub(crate) fn crt_reconstruct_u256(residues: &[u64], primes: &[u64]) -> U256 {
     // fixed 64-step residue reduction, one `mod_inverse`, two `mul_u128`,
     // and one `add` -- regardless of any residue's value.
     let mut sum = U512::zero();
-    let m = U512::product_u64s(primes);
+    let m = U512::from_u256(modulus);
 
     for i in 0..primes.len() {
         let pi = primes[i];
@@ -1413,7 +1434,313 @@ pub(crate) fn crt_reconstruct_u256(residues: &[u64], primes: &[u64]) -> U256 {
         sum = sum.add(term);
     }
 
-    sum.mod_u256(m.to_u256_truncated())
+    sum.mod_u256(modulus)
+}
+
+/// Precomputed, public-only constants for reconstructing a value from its
+/// residues over a FIXED prime set, with fixed work per call.
+///
+/// [`crt_reconstruct_u256`] recomputes everything per call: the modulus
+/// product, one extended-Euclid inverse and one wide division per prime, and
+/// a 512-iteration bit-serial reduction. All of that depends only on the
+/// (public) prime set, so it is built once here. Per call this does one
+/// persistent-Montgomery REDC per prime, one wide multiply-accumulate per
+/// prime, and exactly `k - 1` masked conditional subtracts of `M` -- no
+/// division, no data-dependent branch, no secret-dependent iteration count.
+///
+/// Why `k - 1` subtracts suffice: each `y_i = r_i * (M_i^-1) mod p_i` is
+/// canonical (`< p_i`), so `y_i * M_i < p_i * M_i = M` and the sum is `< k*M`.
+/// Each masked subtract removes at most one `M`, so `k - 1` of them leave a
+/// value in `[0, M)`, equal to the CRT value.
+#[derive(Clone, Debug)]
+pub(crate) struct CrtU256Plan {
+    pm: Vec<super::persistent_montgomery::PersistentMontgomery>,
+    /// `(M_i^-1 mod p_i)` in Montgomery form, so `REDC(r * inv_mont) = r * M_i^-1 mod p_i`.
+    inv_mont: Vec<u64>,
+    mi: Vec<U512>,
+    m: U512,
+}
+
+impl CrtU256Plan {
+    pub(crate) fn new(primes: &[u64]) -> Self {
+        Self::try_new(primes)
+            .expect("CrtU256Plan: need at least one prime and a product that fits in 256 bits")
+    }
+
+    /// `None` when there is nothing to reconstruct (no primes) or the prime
+    /// product is wider than 256 bits, where a `U256` result is not the CRT
+    /// value. Callers decide what that case means; there is no silent
+    /// substitution in here.
+    pub(crate) fn try_new(primes: &[u64]) -> Option<Self> {
+        if primes.is_empty() {
+            return None;
+        }
+        // Admission must happen before fixed-width widening: a product wider
+        // than U512 can wrap back into apparently valid U256-sized limbs.
+        let m = U512::from_u256(U256::checked_product_u64s(primes)?);
+        let mut pm = Vec::with_capacity(primes.len());
+        let mut inv_mont = Vec::with_capacity(primes.len());
+        let mut mi_all = Vec::with_capacity(primes.len());
+        for &p in primes {
+            let ctx = super::persistent_montgomery::PersistentMontgomery::new(p);
+            let mi = m.div_u64(p);
+            let inv = mod_inverse(mi.mod_u64(p), p);
+            inv_mont.push(ctx.enter(inv));
+            pm.push(ctx);
+            mi_all.push(mi);
+        }
+        Some(Self {
+            pm,
+            inv_mont,
+            mi: mi_all,
+            m,
+        })
+    }
+
+    /// CRT value of `residues` over this plan's primes. `residues[i]` may be
+    /// any `u64` (it need not be reduced mod `p_i`), matching
+    /// [`crt_reconstruct_u256`].
+    pub(crate) fn reconstruct(&self, residues: &[u64]) -> U256 {
+        let k = self.pm.len();
+        assert!(residues.len() >= k, "residue length mismatch");
+        let mut sum = U512::zero();
+        for i in 0..k {
+            // t = r * inv_mont < 2^64 * p_i, the REDC input bound.
+            let t = residues[i] as u128 * self.inv_mont[i] as u128;
+            let y = self.pm[i].redc(t as u64, (t >> 64) as u64);
+            sum = sum.add(self.mi[i].mul_u128(y as u128));
+        }
+        for _ in 1..k {
+            let (difference, borrow) = sum.sub_borrow_mask_ct(self.m);
+            sum = U512::select_mask_ct(sum, difference, borrow ^ 1);
+        }
+        sum.to_u256_truncated()
+    }
+}
+
+/// Fixed-work division and remainder for a public nonzero 256-bit divisor.
+///
+/// Replaces the data-dependent bit-serial `U256::rem_u256` (one shift /
+/// compare / subtract per bit of the dividend) on the rescale hot path. With
+/// `L = bitlen(d)` and the public constant `mu = floor(2^256 / d)`:
+/// `q = ((x >> (L-1)) * mu) >> (257-L)` underestimates `floor(x / d)` by at
+/// most 3 for every `x < 2^256` (error terms: `x/2^256 < 1`, the two floors,
+/// and `2^(L-1)/d <= 1`), so `r = x - q*d < 4d` and four masked conditional
+/// subtracts finish for `2 <= d < 2^254`. For `d >= 2^254`, the exact quotient
+/// is at most three, so three masked subtracts suffice without a reciprocal.
+/// For `d = 1`, the quotient is `x` and the remainder is zero. Every dividend
+/// takes the same instruction path for a given public divisor; shift counts,
+/// path selection and setup depend only on `d`.
+#[derive(Clone, Debug)]
+pub(crate) struct FixedDivisor {
+    d: U256,
+    l: u32,
+    mu: U256,
+}
+
+impl FixedDivisor {
+    pub(crate) fn new(d: U256) -> Self {
+        assert!(!d.is_zero(), "FixedDivisor: zero modulus");
+        let l = d.bitlen();
+        // d = 1 would require a 257-bit reciprocal. Large divisors use an
+        // exact, bounded subtraction path and need no reciprocal either.
+        if l == 1 || l >= 255 {
+            return Self {
+                d,
+                l,
+                mu: U256::zero(),
+            };
+        }
+        // Public-modulus setup: mu = floor(2^256 / d) by bit-serial division.
+        // Here d < 2^254, so doubling the running remainder cannot overflow.
+        let mut rem = U256::zero();
+        let mut mu = U256::zero();
+        for i in (0..=256u32).rev() {
+            rem = rem.shl1();
+            if i == 256 {
+                rem.lo |= 1;
+            }
+            mu = mu.shl1();
+            if rem.ge(d) {
+                rem = rem.sub(d);
+                mu.lo |= 1;
+            }
+        }
+        Self { d, l, mu }
+    }
+
+    /// `x >> n` for a public shift `n` in `0..256`.
+    fn shr_public(x: U256, n: u32) -> U256 {
+        if n == 0 {
+            x
+        } else if n < 128 {
+            U256 {
+                lo: (x.lo >> n) | (x.hi << (128 - n)),
+                hi: x.hi >> n,
+            }
+        } else if n == 128 {
+            U256 { lo: x.hi, hi: 0 }
+        } else {
+            U256 {
+                lo: x.hi >> (n - 128),
+                hi: 0,
+            }
+        }
+    }
+
+    /// Bits `[n, n + 256)` of the 512-bit product `limbs` (public `n < 512`).
+    fn shr_wide_public(limbs: [u128; 4], n: u32) -> U256 {
+        let word = (n / 128) as usize;
+        let bit = n % 128;
+        let at = |i: usize| -> u128 {
+            if i < 4 {
+                limbs[i]
+            } else {
+                0
+            }
+        };
+        let part = |i: usize| -> u128 {
+            if bit == 0 {
+                at(i)
+            } else {
+                (at(i) >> bit) | (at(i + 1) << (128 - bit))
+            }
+        };
+        U256 {
+            lo: part(word),
+            hi: part(word + 1),
+        }
+    }
+
+    /// Full 256x256 -> 512-bit product as little-endian 128-bit limbs.
+    fn mul_wide(a: U256, b: U256) -> [u128; 4] {
+        let (p00_lo, p00_hi) = U256::wide_mul_256(a.lo, b.lo);
+        let (p01_lo, p01_hi) = U256::wide_mul_256(a.lo, b.hi);
+        let (p10_lo, p10_hi) = U256::wide_mul_256(a.hi, b.lo);
+        let (p11_lo, p11_hi) = U256::wide_mul_256(a.hi, b.hi);
+        let mut out = [p00_lo, p00_hi, p11_lo, p11_hi];
+        let mut add_at = |idx: usize, v: u128| {
+            let mut carry = v;
+            // Full-length carry chain (no early exit): fixed work per call.
+            let mut i = idx;
+            while i < 4 {
+                let (s, c) = out[i].overflowing_add(carry);
+                out[i] = s;
+                carry = c as u128;
+                i += 1;
+            }
+        };
+        add_at(1, p01_lo);
+        add_at(2, p01_hi);
+        add_at(1, p10_lo);
+        add_at(2, p10_hi);
+        out
+    }
+
+    /// Exact `(floor(x / d), x mod d)` across the full U256 dividend domain.
+    fn div_rem(&self, x: U256) -> (U256, U256) {
+        // These branches depend only on the public divisor, never on x.
+        if self.l == 1 {
+            return (x, U256::zero());
+        }
+        if self.l >= 255 {
+            let mut q = U256::zero();
+            let mut r = x;
+            for _ in 0..3 {
+                let ge = r.ge_mask_ct(self.d);
+                r = U256::select_mask_ct(r, r.sub_ct(self.d), ge);
+                q = U256::select_mask_ct(q, q.add_ct(U256::one()), ge);
+            }
+            return (q, r);
+        }
+        let x1 = Self::shr_public(x, self.l - 1);
+        let prod = Self::mul_wide(x1, self.mu);
+        let mut q = Self::shr_wide_public(prod, 257 - self.l);
+        let mut r = x.sub_ct(q.mul_low(self.d));
+        for _ in 0..4 {
+            let ge = r.ge_mask_ct(self.d);
+            r = U256::select_mask_ct(r, r.sub_ct(self.d), ge);
+            q = U256::select_mask_ct(q, q.add_ct(U256::one()), ge);
+        }
+        (q, r)
+    }
+
+    /// `min(floor(x / d), upper)` rounded to nearest (`+1` when the remainder
+    /// against the capped quotient is at least `ceil(d/2)`), with exactly the
+    /// semantics of the former binary-search `round_div_u256_small` for every
+    /// input, including quotients above `upper`. Fixed work for a given public
+    /// divisor, followed by a masked cap and masked rounding.
+    pub(crate) fn round_div_capped(&self, x: U256, upper: u64) -> u64 {
+        let (q, _) = self.div_rem(x);
+        let upper_u = U256::from_u64(upper);
+        let q_in_range = upper_u.ge_mask_ct(q);
+        let qc = U256::select_mask_ct(upper_u, q, q_in_range);
+        // qc <= floor(x/d), so this product is exact and cannot overflow.
+        let rem = x.sub_ct(qc.mul_low(self.d));
+        let threshold = self.d.sub_ct(self.d.shr1());
+        let bump = (rem.ge_mask_ct(threshold) & 1) as u64;
+        (qc.lo as u64).saturating_add(bump)
+    }
+
+    /// `x mod d`.
+    pub(crate) fn rem(&self, x: U256) -> U256 {
+        self.div_rem(x).1
+    }
+}
+
+/// Fixed-work reduction of a 256-bit value (and of a product of two reduced
+/// words) modulo one public odd prime `p < 2^63`, on the persistent-Montgomery
+/// engine. Replaces the 256-iteration bit-serial `U256::mod_u64_ct` and the
+/// variable-time u128 `%` on the K-Elimination hot path.
+///
+/// `v mod p` is the sum of four terms `limb_k * 2^(64k)`. With the per-prime
+/// constants `c_k = (2^(64k) mod p) * R mod p` precomputed here,
+/// `REDC(limb_k * c_k) = limb_k * 2^(64k) mod p` (input `< 2^64 * p`, the REDC
+/// bound), and four canonical values add with the branchless modular `add`.
+/// No division, no data-dependent branch or iteration count; `p` is public,
+/// only the dividend is secret-correlated.
+#[derive(Clone, Debug)]
+pub(crate) struct PrimeReducer {
+    pm: super::persistent_montgomery::PersistentMontgomery,
+    limb_const: [u64; 4],
+}
+
+impl PrimeReducer {
+    pub(crate) fn new(p: u64) -> Self {
+        let pm = super::persistent_montgomery::PersistentMontgomery::new(p);
+        // Public-modulus setup only (runs once per prime).
+        let two64 = ((1u128 << 64) % p as u128) as u64;
+        let mut pow = 1u64 % p;
+        let mut limb_const = [0u64; 4];
+        for c in &mut limb_const {
+            *c = pm.enter(pow);
+            pow = ((pow as u128 * two64 as u128) % p as u128) as u64;
+        }
+        Self { pm, limb_const }
+    }
+
+    /// `v mod p`.
+    #[inline]
+    pub(crate) fn reduce_u256(&self, v: U256) -> u64 {
+        let limbs = [
+            v.lo as u64,
+            (v.lo >> 64) as u64,
+            v.hi as u64,
+            (v.hi >> 64) as u64,
+        ];
+        let mut acc = 0u64;
+        for (limb, c) in limbs.iter().zip(&self.limb_const) {
+            let t = *limb as u128 * *c as u128;
+            acc = self.pm.add(acc, self.pm.redc(t as u64, (t >> 64) as u64));
+        }
+        acc
+    }
+
+    /// `a * b mod p` for plain (non-Montgomery) `a, b < p`.
+    #[inline]
+    pub(crate) fn mul_plain(&self, a: u64, b: u64) -> u64 {
+        self.pm.mul(a, self.pm.enter(b))
+    }
 }
 
 pub(crate) fn mod_inverse(a: u64, m: u64) -> u64 {
@@ -1526,6 +1853,11 @@ pub struct DualRNSContext {
     pub main_inv_anchor_rns: Vec<u64>,
     /// Polynomial degree
     pub n: usize,
+    /// Lazily built CRT reconstruction constants for the K-Elimination
+    /// anchor set; see [`CrtU256Plan`].
+    pub(crate) k_crt: std::sync::OnceLock<CrtU256Plan>,
+    /// Lazily built per-anchor-prime reducers; see [`PrimeReducer`].
+    pub(crate) anchor_reducers: std::sync::OnceLock<Vec<PrimeReducer>>,
 }
 
 #[cfg(test)]
@@ -1549,6 +1881,13 @@ pub(crate) mod k_probe {
     pub fn stop() -> Vec<(bool, u32)> {
         RECORDING.store(false, Ordering::SeqCst);
         samples().lock().unwrap().clone()
+    }
+    /// Whether a measurement is in progress. Callers gate the (data-dependent)
+    /// sign/bit-length computation on this, so test builds that are NOT
+    /// recording -- notably the dudect timing tests -- run the same
+    /// branch-free body as production instead of timing the instrumentation.
+    pub(crate) fn is_recording() -> bool {
+        RECORDING.load(Ordering::Relaxed)
     }
     pub(crate) fn record(is_neg: bool, bits: u32) {
         if RECORDING.load(Ordering::SeqCst) {
@@ -1642,7 +1981,28 @@ impl DualRNSContext {
             main_inv_anchor,
             main_inv_anchor_rns,
             n,
+            k_crt: std::sync::OnceLock::new(),
+            anchor_reducers: std::sync::OnceLock::new(),
         }
+    }
+
+    /// One [`PrimeReducer`] per anchor prime, built once on first use.
+    pub(crate) fn anchor_reducers(&self) -> &[PrimeReducer] {
+        self.anchor_reducers.get_or_init(|| {
+            self.anchor
+                .primes
+                .iter()
+                .map(|&p| PrimeReducer::new(p))
+                .collect()
+        })
+    }
+
+    /// CRT reconstruction plan over the K-Elimination anchor primes, built
+    /// once on first use (public constants only).
+    pub(crate) fn k_crt_plan(&self) -> &CrtU256Plan {
+        self.k_crt.get_or_init(|| {
+            CrtU256Plan::new(&self.anchor.primes[..self.k_reconstruction_anchor_count()])
+        })
     }
 
     /// Canonical anchor primes for a given polynomial degree N.
@@ -2183,10 +2543,14 @@ impl DualRNSContext {
         // K-Elimination-shaped code, just not previously measured on THIS,
         // the production `extract_k_rns_level` path. `mod_u64_ct` below is
         // the fixed-256-iteration constant-time replacement.
+        let reducers = self.anchor_reducers();
         let mut k_rns = vec![0u64; self.anchor.primes.len()];
         for (i, &a_i) in self.anchor.primes.iter().enumerate() {
             let inv = inverses.inv[i];
-            let v_m_mod_ai = v_main.mod_u64_ct(a_i);
+            // Fixed-work persistent-Montgomery reduction (see `PrimeReducer`);
+            // same F-2 constant-time property as `mod_u64_ct`, without its
+            // 256 bit-serial iterations per call.
+            let v_m_mod_ai = reducers[i].reduce_u256(v_main);
             // diff = (v_anchor_rns[i] + a_i - v_m_mod_ai) mod a_i, as a single
             // masked conditional subtract rather than `%`: both operands are
             // already reduced mod a_i, so the raw sum lies in [1, 2*a_i - 1]
@@ -2201,21 +2565,15 @@ impl DualRNSContext {
                 core::hint::black_box(((raw as u128).wrapping_sub(a_i as u128) >> 127) as u64);
             let geq_mask = !borrow.wrapping_neg(); // all-ones iff raw >= a_i
             let diff = raw.wrapping_sub(a_i & geq_mask);
-            // NOTE: the reduction below, `(diff * inv) % a_i`, is a u128
-            // product mod a runtime (non-secret, per-lane) divisor and
-            // remains variable-time -- the same `__umodti3` defect class,
-            // unaddressed in this pass. `diff` and `inv` are each already
-            // reduced mod `a_i`, so a per-anchor-prime CT reduction context
-            // (Barrett- or Montgomery-style, as `RNSContext::mont_contexts`
-            // already precomputes for the main primes) is the fix; building
-            // and threading one through `DualRNSContext` is out of scope
-            // here. Left as a documented, flagged gap rather than a silent
-            // one.
-            k_rns[i] = ((diff as u128) * (inv as u128) % (a_i as u128)) as u64;
+            // `diff * inv mod a_i` with both operands already reduced: a
+            // persistent-Montgomery multiply, not the u128 `%` (`__umodti3`)
+            // this used to be, which was variable-time (the F-2/F-3 defect
+            // class) and was flagged here as an open gap.
+            k_rns[i] = reducers[i].mul_plain(diff, inv);
         }
 
         // Reconstruct k from the first k_primes anchors via parallel summation CRT.
-        let k_u = crt_reconstruct_u256(&k_rns[..k_primes], &self.anchor.primes[..k_primes]);
+        let k_u = self.k_crt_plan().reconstruct(&k_rns[..k_primes]);
 
         // Capacity check: k should be far from A/2 to avoid wrap-around.
         let a_recon = U256::product_u64s(&self.anchor.primes[..k_primes]);
@@ -2224,15 +2582,26 @@ impl DualRNSContext {
         {
             // Balanced magnitude, mirroring SignedK256::from_unsigned, for
             // the k_probe measurement -- not used by the live check below.
-            let (neg, mag) = if k_u.gt(a_recon_half) {
-                (true, a_recon.sub(k_u))
-            } else {
-                (false, k_u)
-            };
-            k_probe::record(neg, mag.bitlen());
+            // Only computed while recording: the sign branch is data-dependent.
+            if k_probe::is_recording() {
+                let (neg, mag) = if k_u.gt(a_recon_half) {
+                    (true, a_recon.sub(k_u))
+                } else {
+                    (false, k_u)
+                };
+                k_probe::record(neg, mag.bitlen());
+            }
         }
         let safety_margin = U256::from_u64(1_000_000);
-        if k_u.ge(a_recon_half.sub(safety_margin)) && k_u.le(a_recon_half.add(safety_margin)) {
+        // `k_u` is the secret-correlated winding number. The window test uses
+        // the borrow-based masks and a non-short-circuiting `&`, not the
+        // early-exit `ge`/`le` and `&&`, whose branch pattern tracked
+        // `k_u`'s high limbs (measured by
+        // `test_ct_dudect_production_extract_k_cached_operand_magnitude`).
+        // Only the error exit below branches on the result.
+        let in_window = k_u.ge_mask_ct(a_recon_half.sub(safety_margin))
+            & a_recon_half.add(safety_margin).ge_mask_ct(k_u);
+        if in_window != 0 {
             return Err(Nine65Error::InvalidParameter {
                 message: format!(
                     "CAPACITY ERROR: Winding number k reached the anchor boundary A/2. \
@@ -2247,8 +2616,10 @@ impl DualRNSContext {
         // subset must agree with the reconstructed k under the SAME signed
         // interpretation the consumers apply (k > A_recon/2 means negative).
         if k_primes < self.anchor.primes.len() {
-            let is_neg = k_u.gt(a_recon_half);
-            let magnitude = if is_neg { a_recon.sub(k_u) } else { k_u };
+            // is_neg <=> k_u > A_recon/2 <=> k_u >= A_recon/2 + 1, as masks.
+            let neg_mask = k_u.ge_mask_ct(a_recon_half.add(U256::from_u64(1)));
+            let neg_word = neg_mask as u64; // all-ones iff negative
+            let magnitude = U256::select_mask_ct(k_u, a_recon.sub(k_u), neg_mask);
             for (i, &a_w) in self.anchor.primes.iter().enumerate().skip(k_primes) {
                 // `magnitude` is derived from the secret winding number `k_u`;
                 // see the `mod_u64_ct` swap above for why the plain `%`-based
@@ -2258,12 +2629,12 @@ impl DualRNSContext {
                 // which is the n=16384 configs (secure_192, secure_256; 10
                 // anchor primes, ceiling 8) -- i.e. it is not the cold path
                 // `mod_switch_down_dual` is.
-                let mag_mod = magnitude.mod_u64_ct(a_w);
-                let expected = if is_neg && mag_mod != 0 {
-                    a_w - mag_mod
-                } else {
-                    mag_mod
-                };
+                let mag_mod = reducers[i].reduce_u256(magnitude);
+                // expected = (is_neg && mag_mod != 0) ? a_w - mag_mod : mag_mod,
+                // selected by mask instead of branching on the sign of `k_u`.
+                let nonzero = (mag_mod | mag_mod.wrapping_neg()) >> 63;
+                let flip = neg_word & 0u64.wrapping_sub(nonzero);
+                let expected = (a_w.wrapping_sub(mag_mod) & flip) | (mag_mod & !flip);
                 if expected != k_rns[i] {
                     return Err(Nine65Error::InvalidParameter {
                         message: format!(
@@ -4586,6 +4957,533 @@ mod tests {
         let result_u256 = crt_reconstruct_u256(&residues, primes);
         assert_eq!(result_u256.lo, test_val as u128);
         assert_eq!(result_u256.hi, 0);
+    }
+
+    /// The precomputed, multiply-only plan must agree exactly with the
+    /// recompute-everything reference on every residue shape, over the
+    /// canonical anchor prime sets actually used for K-Elimination (the
+    /// first `min(len, 8)` primes, as `k_reconstruction_anchor_count` picks)
+    /// and over small and unreduced-residue cases.
+    #[test]
+    fn test_crt_u256_plan_matches_reference_reconstruction() {
+        let mut prime_sets: Vec<Vec<u64>> = vec![
+            vec![998244353, 985661441, 754974721, 469762049, 167772161],
+            vec![998244353, 985661441, 754974721],
+        ];
+        for n in [8192usize, 16384] {
+            let anchors = DualRNSContext::canonical_anchor_primes_for_n(n);
+            let k = anchors.len().min(8);
+            prime_sets.push(anchors[..k].to_vec());
+        }
+        let mut state = 0x9E37_79B9_7F4A_7C15u64;
+        let mut next = || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        for primes in &prime_sets {
+            let plan = CrtU256Plan::new(primes);
+            let k = primes.len();
+            let mut cases: Vec<Vec<u64>> = vec![
+                vec![0; k],
+                vec![u64::MAX; k],
+                primes.iter().map(|&p| p - 1).collect(),
+                primes.to_vec(), // unreduced: == p
+                primes.iter().map(|&p| p + 1).collect(),
+                (0..k).map(|i| if i == 0 { 1 } else { 0 }).collect(),
+            ];
+            for _ in 0..400 {
+                cases.push(primes.iter().map(|&p| next() % p).collect());
+            }
+            for _ in 0..200 {
+                cases.push((0..k).map(|_| next()).collect()); // arbitrary u64
+            }
+            for residues in &cases {
+                assert_eq!(
+                    plan.reconstruct(residues),
+                    crt_reconstruct_u256(residues, primes),
+                    "plan disagreed with reference for primes={primes:?} residues={residues:?}"
+                );
+            }
+        }
+    }
+
+    /// Check the fixed-work remainder against the bit-serial reference.
+    #[test]
+    fn test_fixed_divisor_matches_bit_serial_remainder() {
+        let mut state = 0x9E37_79B9_7F4A_7C15u128;
+        let mut next = || -> u128 {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state.wrapping_mul(0xD134_2543_DE82_EF95_u128)
+        };
+        let mut divisors = vec![
+            U256::one(),
+            U256::from_u64(3),
+            U256::from_u64(65_537),
+            U256 {
+                lo: u128::MAX,
+                hi: 0,
+            },
+            U256 { lo: 1, hi: 1 },
+            U256 {
+                lo: 0,
+                hi: 1u128 << 120,
+            },
+        ];
+        for _ in 0..20 {
+            let bits = 2 + (next() % 200) as u32;
+            let raw = U256 {
+                lo: next(),
+                hi: next(),
+            };
+            let d = FixedDivisor::shr_public(raw, 256 - bits);
+            if !d.is_zero() {
+                divisors.push(d);
+            }
+        }
+        for d in divisors {
+            let fd = FixedDivisor::new(d);
+            let mut xs = vec![
+                U256::zero(),
+                U256::one(),
+                d,
+                d.sub(U256::one()),
+                U256 {
+                    lo: u128::MAX,
+                    hi: u128::MAX,
+                },
+            ];
+            for _ in 0..200 {
+                let shift = (next() % 256) as u32;
+                xs.push(FixedDivisor::shr_public(
+                    U256 {
+                        lo: next(),
+                        hi: next(),
+                    },
+                    shift,
+                ));
+            }
+            for x in xs {
+                assert_eq!(fd.rem(x), x.rem_u256(d), "x={x:?} d={d:?}");
+            }
+        }
+    }
+
+    // Independent, variable-time oracle used only for boundary tests. Each
+    // remainder is bounded by the dividend prefix already consumed, so its
+    // shift cannot overflow U256 even for a 256-bit divisor.
+    fn reference_div_rem_u256(x: U256, d: U256) -> (U256, U256) {
+        let mut q = U256::zero();
+        let mut r = U256::zero();
+        for bit in (0..256u32).rev() {
+            q = q.shl1();
+            r = r.shl1();
+            r.lo |= x.get_bit(bit) as u128;
+            if r.ge(d) {
+                r = r.sub(d);
+                q.lo |= 1;
+            }
+        }
+        (q, r)
+    }
+
+    fn fixed_divisor_boundary_divisors() -> Vec<U256> {
+        vec![
+            U256::one(),
+            U256::from_u64(2),
+            U256::from_u64(3),
+            U256 {
+                lo: 0,
+                hi: 1 << 125,
+            }, // smallest 254-bit divisor
+            U256 {
+                lo: 1,
+                hi: 1 << 125,
+            },
+            U256 {
+                lo: u128::MAX,
+                hi: (1 << 126) - 1,
+            }, // largest 254-bit
+            U256 {
+                lo: 0,
+                hi: 1 << 126,
+            }, // smallest 255-bit divisor
+            U256 {
+                lo: 1,
+                hi: 1 << 126,
+            },
+            U256 {
+                lo: u128::MAX,
+                hi: (1 << 127) - 1,
+            }, // largest 255-bit
+            U256 {
+                lo: 0,
+                hi: 1 << 127,
+            }, // smallest 256-bit divisor
+            U256 {
+                lo: 1,
+                hi: 1 << 127,
+            },
+            U256 {
+                lo: u128::MAX,
+                hi: u128::MAX,
+            },
+        ]
+    }
+
+    #[test]
+    fn test_fixed_divisor_full_width_quotient_and_remainder() {
+        let max = U256 {
+            lo: u128::MAX,
+            hi: u128::MAX,
+        };
+        let mut state = 0x9E37_79B9_7F4A_7C15u64;
+        let mut next = || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        for d in fixed_divisor_boundary_divisors() {
+            let fd = FixedDivisor::new(d);
+            let mut xs = vec![U256::zero(), U256::one(), d.sub(U256::one()), d, max];
+            if d != max {
+                xs.push(d.add(U256::one()));
+            }
+            for _ in 0..200 {
+                xs.push(U256 {
+                    lo: ((next() as u128) << 64) | next() as u128,
+                    hi: ((next() as u128) << 64) | next() as u128,
+                });
+            }
+            for x in xs {
+                let expected = reference_div_rem_u256(x, d);
+                assert_eq!(
+                    fd.div_rem(x),
+                    expected,
+                    "quotient/remainder x={x:?} d={d:?}"
+                );
+                assert_eq!(fd.rem(x), expected.1, "remainder x={x:?} d={d:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_round_div_capped_full_width_boundaries() {
+        let max = U256 {
+            lo: u128::MAX,
+            hi: u128::MAX,
+        };
+        for d in fixed_divisor_boundary_divisors() {
+            let fd = FixedDivisor::new(d);
+            let threshold = d.sub(d.shr1());
+            let mut xs = vec![
+                U256::zero(),
+                U256::one(),
+                threshold.sub(U256::one()),
+                threshold,
+                d.sub(U256::one()),
+                d,
+                U256::from_u64(u64::MAX),
+                U256::from_u128(u64::MAX as u128 + 1),
+                max,
+            ];
+            // Include rounding boundaries after nonzero quotients, but never
+            // wrap the test dividend while constructing those boundaries.
+            for q in [1u128, 2, 3] {
+                let product = U512::from_u256(d).mul_u128(q);
+                if product.d2 == 0 && product.d3 == 0 {
+                    let base = product.to_u256_truncated();
+                    for remainder in [threshold.sub(U256::one()), threshold] {
+                        let (x, overflow) = base.overflowing_add(remainder);
+                        if !overflow {
+                            xs.push(x);
+                        }
+                    }
+                }
+            }
+            for x in xs {
+                let (q, _) = reference_div_rem_u256(x, d);
+                for upper in [0u64, 1, 2, 3, 7, 131_076, u64::MAX] {
+                    let capped = if q.ge(U256::from_u64(upper)) {
+                        upper
+                    } else {
+                        q.lo as u64
+                    };
+                    let product = U512::from_u256(d).mul_u128(capped as u128);
+                    assert_eq!((product.d2, product.d3), (0, 0));
+                    let remainder = x.sub(product.to_u256_truncated());
+                    let expected = capped.saturating_add(u64::from(remainder.ge(threshold)));
+                    assert_eq!(
+                        fd.round_div_capped(x, upper),
+                        expected,
+                        "capped quotient x={x:?} d={d:?} upper={upper}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_round_div_capped_matches_binary_search_reference() {
+        fn reference(x: U256, delta: U256, upper: u64) -> u64 {
+            let (mut lo, mut hi) = (0u64, upper);
+            while lo < hi {
+                let mid = lo + ((hi - lo + 1) >> 1);
+                if delta.mul_u64(mid).le(x) {
+                    lo = mid;
+                } else {
+                    hi = mid - 1;
+                }
+            }
+            let rem = x.sub(delta.mul_u64(lo));
+            if rem.ge(delta.sub(delta.shr1())) {
+                lo.saturating_add(1)
+            } else {
+                lo
+            }
+        }
+        let mut state = 0xA5A5_1234_DEAD_BEEFu128;
+        let mut next = || -> u128 {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state.wrapping_mul(0xD134_2543_DE82_EF95_u128)
+        };
+        for _ in 0..30 {
+            let bits = 20 + (next() % 150) as u32;
+            let d = FixedDivisor::shr_public(
+                U256 {
+                    lo: next(),
+                    hi: next(),
+                },
+                256 - bits,
+            );
+            if d.is_zero() {
+                continue;
+            }
+            let fd = FixedDivisor::new(d);
+            for upper in [1u64, 5, 131_076, 1 << 40] {
+                for _ in 0..60 {
+                    let q = (next() as u64) % (upper.saturating_add(3));
+                    let jitter = FixedDivisor::shr_public(
+                        U256 {
+                            lo: next(),
+                            hi: next(),
+                        },
+                        256 - (bits - 1).max(1),
+                    );
+                    let x = d.mul_u64(q).add(jitter);
+                    assert_eq!(
+                        fd.round_div_capped(x, upper),
+                        reference(x, d, upper),
+                        "d={d:?} upper={upper} x={x:?}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_prime_reducer_matches_plain_reduction() {
+        let mut primes: Vec<u64> = vec![
+            3,
+            5,
+            7,
+            65537,
+            998244353,
+            (1u64 << 62) - 57,
+            (1u64 << 63) - 25,
+        ];
+        for n in [8192usize, 16384] {
+            primes.extend(DualRNSContext::canonical_anchor_primes_for_n(n));
+        }
+        let mut state = 0xA076_1D64_78BD_642Fu64;
+        let mut next = || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        for &p in &primes {
+            let red = PrimeReducer::new(p);
+            let mut values = vec![
+                U256::zero(),
+                U256::from_u64(1),
+                U256::from_u64(p),
+                U256::from_u64(p - 1),
+                U256::from_u128(u128::MAX),
+                U256 {
+                    hi: u128::MAX,
+                    lo: u128::MAX,
+                },
+                U256 { hi: 1, lo: 0 },
+                U256 {
+                    hi: 0,
+                    lo: 1u128 << 64,
+                },
+            ];
+            for bit in 0..256usize {
+                let mut v = U256::zero();
+                if bit < 128 {
+                    v.lo = 1u128 << bit;
+                } else {
+                    v.hi = 1u128 << (bit - 128);
+                }
+                values.push(v);
+            }
+            for _ in 0..300 {
+                values.push(U256 {
+                    hi: (next() as u128) << 64 | next() as u128,
+                    lo: (next() as u128) << 64 | next() as u128,
+                });
+            }
+            for v in &values {
+                assert_eq!(red.reduce_u256(*v), v.mod_u64(p), "reduce p={p} v={v:?}");
+            }
+            for _ in 0..300 {
+                let (a, b) = (next() % p, next() % p);
+                assert_eq!(
+                    red.mul_plain(a, b),
+                    ((a as u128 * b as u128) % p as u128) as u64,
+                    "mul p={p} a={a} b={b}"
+                );
+            }
+            assert_eq!(red.mul_plain(p - 1, p - 1), 1 % p);
+            assert_eq!(red.mul_plain(0, p - 1), 0);
+        }
+    }
+
+    /// `RNSContext::to_u256_level` now goes through a per-level plan. It must
+    /// equal the reference reconstruction at every level, on reduced and
+    /// unreduced residues, and repeated calls (cached plan) must not drift.
+    #[test]
+    fn test_to_u256_level_plan_matches_reference_at_every_level() {
+        let primes = vec![998244353u64, 985661441, 754974721, 469762049, 167772161];
+        let ctx = RNSContext::new(primes.clone(), 16);
+        let mut state = 0xD1B5_4A32_D192_ED03u64;
+        let mut next = || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        for level in 1..=primes.len() {
+            for round in 0..300 {
+                let residues: Vec<u64> = primes
+                    .iter()
+                    .map(|&p| match round % 3 {
+                        0 => next() % p,
+                        1 => next(),
+                        _ => p - 1,
+                    })
+                    .collect();
+                assert_eq!(
+                    ctx.to_u256_level(&residues, level),
+                    crt_reconstruct_u256(&residues[..level], &primes[..level]),
+                    "level {level} round {round}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_to_u256_level_caches_named_secure_profile_plans() {
+        use crate::params::secure_configs::SecureConfig;
+        for (name, secure) in [
+            ("secure_128", SecureConfig::secure_128()),
+            ("secure_192", SecureConfig::secure_192()),
+            ("secure_256", SecureConfig::secure_256()),
+        ] {
+            let config = secure.into_config();
+            let ctx = RNSContext::new(config.primes.clone(), config.n);
+            for level in 1..=config.primes.len() {
+                assert!(ctx.level_crt[level].get().is_none());
+                let residues: Vec<_> = config.primes.iter().map(|&p| p - 1).collect();
+                let expected = U256::checked_product_u64s(&config.primes[..level])
+                    .unwrap()
+                    .sub(U256::one());
+                assert_eq!(
+                    ctx.to_u256_level(&residues, level),
+                    expected,
+                    "{name} level={level}"
+                );
+                let plan = ctx.level_crt[level].get().unwrap().as_ref().unwrap();
+                for residues in [vec![0; level], vec![u64::MAX; level], vec![42; level]] {
+                    assert_eq!(
+                        ctx.to_u256_level(&residues, level),
+                        crt_reconstruct_u256(&residues, &config.primes[..level]),
+                        "{name} level={level} residues={residues:?}"
+                    );
+                    assert!(std::ptr::eq(
+                        plan,
+                        ctx.level_crt[level].get().unwrap().as_ref().unwrap()
+                    ));
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_wide_rns_context_rejects_only_unsupported_u256_conversions() {
+        let primes = DualRNSContext::canonical_anchor_primes_for_n(16384);
+        assert_eq!(primes.len(), 10);
+        assert!(U256::checked_product_u64s(&primes).is_none());
+        assert!(U256::checked_product_u64s(&primes[..8]).is_some());
+        // Context construction must remain available to arbitrary-width exact
+        // evaluators. A small degree isolates the basis-width boundary here.
+        let ctx = RNSContext::new(primes, 16);
+        let residues = ctx.from_int(42);
+        let calls_before = to_u256_level_calls::get();
+        #[cfg(feature = "architecture-meter")]
+        let metered_before = ctx
+            .architecture_meter
+            .crt_reconstructions
+            .load(std::sync::atomic::Ordering::Relaxed);
+        assert_eq!(ctx.to_u256_level(&residues, 8), U256::from_u64(42));
+        assert_eq!(to_u256_level_calls::get(), calls_before + 1);
+        #[cfg(feature = "architecture-meter")]
+        assert_eq!(
+            ctx.architecture_meter
+                .crt_reconstructions
+                .load(std::sync::atomic::Ordering::Relaxed),
+            metered_before + 1
+        );
+        for level in [0, 10] {
+            for _ in 0..2 {
+                let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    ctx.to_u256_level(&residues, level)
+                }));
+                assert!(result.is_err(), "level={level} must fail closed");
+                assert!(ctx.level_crt[level].get().unwrap().is_none());
+                assert_eq!(to_u256_level_calls::get(), calls_before + 1);
+                #[cfg(feature = "architecture-meter")]
+                assert_eq!(
+                    ctx.architecture_meter
+                        .crt_reconstructions
+                        .load(std::sync::atomic::Ordering::Relaxed),
+                    metered_before + 1
+                );
+            }
+        }
+        // Rejected conversions must not poison an admitted prefix plan.
+        assert_eq!(ctx.to_u256_level(&residues, 8), U256::from_u64(42));
+        assert_eq!(to_u256_level_calls::get(), calls_before + 2);
+    }
+
+    #[test]
+    fn test_u256_crt_admission_rejects_empty_and_overflowing_products() {
+        let wide = DualRNSContext::canonical_anchor_primes_for_n(16384);
+        // Synthetic metadata also exercises a product above 512 bits which
+        // wraps to zero in U512. Rejection must precede Montgomery setup.
+        for primes in [vec![], wide, vec![1u64 << 63; 9]] {
+            assert!(CrtU256Plan::try_new(&primes).is_none());
+            let residues = vec![0; primes.len()];
+            assert!(std::panic::catch_unwind(|| crt_reconstruct_u256(&residues, &primes)).is_err());
+        }
     }
 
     /// Regression test for removing `crt_reconstruct_u256`'s secret-dependent

@@ -1,0 +1,6 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/shared/nine65-claude-recovered/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/shared/nine65-claude-recovered/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/nine65)
+    Finished `test` profile [unoptimized] target(s) in 7.73s
+  Executable unittests src/lib.rs (target/debug/deps/nine65-87bfb7a805a695d1)

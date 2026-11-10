@@ -1,0 +1,6 @@
+
+running 1 test
+test ops::rns_fhe::tests::extract_all_digits_matches_per_digit_extraction ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1402 filtered out; finished in 0.41s
+

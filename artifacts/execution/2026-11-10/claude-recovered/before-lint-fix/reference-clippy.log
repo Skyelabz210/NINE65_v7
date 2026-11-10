@@ -1,0 +1,30 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/shared/nine65-claude-recovered/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/shared/nine65-claude-recovered/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/nine65)
+    Checking unhal v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/unhal)
+    Checking getrandom v0.2.16
+    Checking rand_core v0.6.4
+    Checking criterion v0.5.1
+    Checking rand_chacha v0.3.1
+error: very complex type used. Consider factoring parts into `type` definitions
+   --> crates/nine65/src/arithmetic/ntt_fft.rs:932:30
+    |
+932 |                 let results: Arc<Mutex<Vec<Option<(Vec<u64>, Vec<u64>, Vec<u64>)>>>> =
+    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#type_complexity
+    = note: `-D clippy::type-complexity` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::type_complexity)]`
+
+error: you are using an explicit closure for copying elements
+    --> crates/nine65/src/arithmetic/rns.rs:4992:17
+     |
+4992 |                 primes.iter().map(|&p| p).collect(), // unreduced: == p
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider calling the dedicated `copied` method: `primes.iter().copied()`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#map_clone
+     = note: `-D clippy::map-clone` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(clippy::map_clone)]`
+
+error: could not compile `nine65` (lib test) due to 2 previous errors

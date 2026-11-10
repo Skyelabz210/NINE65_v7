@@ -82,10 +82,14 @@ Generated on 2026-02-14 09:51:41 UTC
 > never assert plaintext correctness**. "Correctness Verified: ✓ PASS" below
 > means "zero noise collapses observed," not "decrypt-checked correct at
 > depth 50." For decrypt-checked, CI-asserted depth evidence, see
-> `crates/nine65/tests/time_crystal_verification.rs::symmetric_depth_is_unbounded`
-> (asserts and decrypt-checks a 128-level floor, `secure_128`, no bootstrap)
-> and `crates/nine65/tests/depth_and_noise.rs::depth_and_noise_curve_deep_chain`
-> (asserts a 32-level regression floor, decrypt-checked at every step). The
+> `crates/nine65/tests/time_crystal_verification.rs::symmetric_depth_is_finite_and_noise_limited`
+> (decrypt-checks a 3-level floor on `secure_128`, no bootstrap, and asserts the
+> chain ends on exhausted noise budget) and
+> `crates/nine65/tests/depth_and_noise.rs::depth_and_noise_curve_deep_chain`
+> (3-level regression floor, decrypt-checked at every step, must stop on noise).
+> The earlier 128- and 32-level floors were withdrawn 2026-11-01: they encoded
+> the retracted unbounded-depth claim (see `RETIRED_MECHANISMS.md`, correction
+> 2026-10-28) and did not hold at the shipped four-prime tuple. The
 > timing figures below are not reproduced in this pass — see CLAUDE.md's
 > "Performance Baselines" for current numbers.
 

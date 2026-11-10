@@ -1,0 +1,164 @@
+{
+  "date_utc": "2026-11-10",
+  "base_commit": "a6780e9a0a4ca633d941cdd8b42973560948a0ab",
+  "research_commit": "0986fca6183d9e537e955c2285ba59f66f9003d1",
+  "tested_source_tree": "04100b4babd40ae859837c6b6aeb765c65fee814",
+  "toolchain": "Rust/Cargo 1.89.0",
+  "profile": "debug, two build jobs, CARGO_PROFILE_TEST_DEBUG=0, CARGO_PROFILE_DEV_DEBUG=0",
+  "focused_counts": {
+    "passed": 106,
+    "failed": 0,
+    "ignored": 3
+  },
+  "focused_logs": [
+    {
+      "log": "focused-00.log",
+      "passed": 57,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "log": "focused-01.log",
+      "passed": 12,
+      "failed": 0,
+      "ignored": 2
+    },
+    {
+      "log": "focused-02.log",
+      "passed": 24,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "log": "focused-03.log",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "log": "focused-04.log",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "log": "focused-05.log",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "log": "focused-06.log",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "log": "focused-07.log",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "log": "focused-08.log",
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "log": "focused-09.log",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "log": "focused-10.log",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "log": "focused-11.log",
+      "passed": 3,
+      "failed": 0,
+      "ignored": 1
+    },
+    {
+      "log": "focused-12.log",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  ],
+  "separate_tests": {
+    "coefficient_slot_gate": {
+      "passed": 1,
+      "encrypted_cases": 85,
+      "batches": 11
+    },
+    "sequential_calling_thread": 1,
+    "unhal_api": {
+      "reported_passes": 2,
+      "unsupported_host_test_returned_early": true
+    }
+  },
+  "capability": "AVX-512F present; positive SIMD kernel comparison executed",
+  "status": "bounded checks passed; not full suite, timing, CT or production-security admission",
+  "limitations": [
+    "Dense K0 all-slots fixture not rerun after reconstruction",
+    "Full workspace/native-refresh/release/timing suites not run",
+    "Unsupported-AVX CPU rejection unexecuted",
+    "No-default build retains three pre-existing SafeBasis test warnings"
+  ],
+  "raw_log_sha256": {
+    "before-lint-fix/build-default.log": "7cfc8df755bf21d6f1439ce7ff143ec533eae4e6b1c6df506fce5941f9718c01",
+    "before-lint-fix/build-initial-test-fixture-error.log": "dffafac932b336c232e732d41f564414ef74242421ff91c4fbaf7be9330ded26",
+    "before-lint-fix/claim-check.log": "9a7345b95eab80d903a39aeb2ade5b7f7e8744fc26ce62602da3e93cd3fbb507",
+    "before-lint-fix/coefficient-domain.log": "2b2c0f3b6a255c4eb6398dd82396203b8b87fcaa7a94e12ff0ff631f5df1e6ef",
+    "before-lint-fix/ct-source-check.log": "d55a819e16ae59893ecd422678f9d29ed32f7b9ccadf0771ea76a716af0c1ecc",
+    "before-lint-fix/focused-00.log": "f39d4ba0ad4ead7075519ff5ac29c476df63c6b20bf470fb29b2f16016618981",
+    "before-lint-fix/focused-01.log": "2b58be8c9556cbdb3449e6f387a4fa54253ae486e0078a7b3cbdb87980e69393",
+    "before-lint-fix/focused-02.log": "48b94ae4a5b0151800182c0684b31b8e4fbd20bcf8cf1d2d97447ca9118af6f6",
+    "before-lint-fix/focused-03.log": "d5b2e6371e3cbb03d4ce7b4dfbcf89622320b5a7365bfeeec4fc48754f3251c3",
+    "before-lint-fix/focused-04.log": "9843f4e39b9a9db6eacd007ba19ec558b2395b62f7aa11a4c0b4c3e9860d12f1",
+    "before-lint-fix/focused-05.log": "f0ee7472b7565e19c506286e405051fb7b535f99cec30eddd6c9c48a6abaed03",
+    "before-lint-fix/focused-06.log": "43ebf768fdf669c635973a73d32ea605c0f1e0753a7e59f2db6497bdabc1a3e4",
+    "before-lint-fix/focused-07.log": "5d6d7a0d582b32e7a85405f96f945a8e892f67d9c25b3fbaa273ad39335ac5b7",
+    "before-lint-fix/focused-08.log": "54fe1c5e4dd8dc2e9df62ccf09dcc5b46587bca940e4035c10871193468e5bcd",
+    "before-lint-fix/focused-09.log": "175b3c066e8471c76ceb2564321665bdc0588bddefa09367dfeb5ec0dd47366c",
+    "before-lint-fix/focused-10.log": "f293a0e3e1af54fc29028551a382529ad1c4076f74f2f702792ccf7356650591",
+    "before-lint-fix/focused-11.log": "57916d8a3fd8cd43a6961583bfa6adfccc9335e27fb516a0e1f85e1136c1621e",
+    "before-lint-fix/focused-12.log": "6bc9fecf5bb8a9fe622c42f858ddb48ffa07d9e17860fb9c94dc682132f9c1b1",
+    "before-lint-fix/initial-build-result.json": "d2a4da439d0d59b0ce0e67683686123a3213cb4cb97c9b22288a73a1a22d1369",
+    "before-lint-fix/minimal-build.log": "7ee4a56822d22b36f7e43d7aed5ed2423862cc76b01ff7e6dba48525669a104e",
+    "before-lint-fix/reference-clippy.log": "812cc3796a9b82fddd7bc0e52b3181b7b5b9dcea252f1d4c6b548346d4d59733",
+    "before-lint-fix/results.json": "97eb231e1fabd3b1c53cd685b49f76c95788732135199a9b0b84a6d211e2d866",
+    "before-lint-fix/sequential.log": "69db162af00317f7f754d18c8bc9a4995364ba1d67f0ab23563dacfd7de5426e",
+    "before-lint-fix/tested-source-tree.txt": "f258e33b8172482b9feb10ce963465769e5a3feeb8c014fa5e8ab40f873a0254",
+    "before-lint-fix/unhal-api.log": "8e12069b2113fe55aa8ea7171e6271bbbe63be00405f8f49495fe2443521764c",
+    "before-lint-fix/workspace-clippy.log": "a1397608304debad0a74615fc26c4dc413ac7f27276d68b5739d301a11704838",
+    "build-default.log": "0040a8c41b5a6ef356cbff9805ae561266d2e85ef34d5145d7559a745c632369",
+    "coefficient-domain.log": "a15c591a9805a7b632b5ec2dd9d572de903b944e54e6ad2f87191248ba1c37ac",
+    "fmt-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "focused-00.log": "0765f924aecf814bfc570273c22181779e1ceec83d38f7af8e68426a4ef720e4",
+    "focused-01.log": "a7d7d32183c640d05194dd857ca883bb2f9d6698a583d9f5253162c1dc2c6962",
+    "focused-02.log": "dee9e3c688a8fcbb558c607e12ed50ad9434a0dcd91f47d9c3c0e8847eafc6c8",
+    "focused-03.log": "e759f4a27cd447630b27d066e70d80bc5120c48c3145d30a834076af4e9a2f3d",
+    "focused-04.log": "9843f4e39b9a9db6eacd007ba19ec558b2395b62f7aa11a4c0b4c3e9860d12f1",
+    "focused-05.log": "f0ee7472b7565e19c506286e405051fb7b535f99cec30eddd6c9c48a6abaed03",
+    "focused-06.log": "13afa43169f7db70b9132e484feba37b72483747499ef1f9cdfe632099d7a000",
+    "focused-07.log": "95467561df88964374c3ea27d02750270f675fbb7ae844eff2aa33e2c9d0b067",
+    "focused-08.log": "08a99ec50f23de8217e22f3d21d5f506373eef46a96537c4e5d575d436ac2941",
+    "focused-09.log": "175b3c066e8471c76ceb2564321665bdc0588bddefa09367dfeb5ec0dd47366c",
+    "focused-10.log": "f293a0e3e1af54fc29028551a382529ad1c4076f74f2f702792ccf7356650591",
+    "focused-11.log": "36dc9b1b83548e401ac4b2fa9a74d353533ed9c7989a3e68a51d725fcaafa3d4",
+    "focused-12.log": "6bc9fecf5bb8a9fe622c42f858ddb48ffa07d9e17860fb9c94dc682132f9c1b1",
+    "minimal-build.log": "825dc363f26efce3e6a7fa42dd0a9dd72e92de5b71061a60059044f785809e38",
+    "reference-clippy.log": "5ec1e3e176d546d5c3bc6625b53051f86be5afc72783725081c3a414320e1afd",
+    "results.json": "19b31fdcb34902b7cbf7961100dd18183e4d3b927cdbd1ee857ae05ead385279",
+    "sequential.log": "53f06cd8edf30e48eb7d71c963b9705e6030cfe86aaa78656547ec3ae6fc8bc0",
+    "tested-source-tree.txt": "0c92fde022c420bd2285a73f36fb693aa28113b860b20ab4d3cfbf7ffc3351e6",
+    "unhal-api.log": "4c4469c24dc9d7915c67a128c68723d25600f073147ab363eb96e4e920f57f3e",
+    "workspace-clippy.log": "673736634ece901b17b2b746253da0210672534341de87383836fa84fdecd6d8"
+  }
+}

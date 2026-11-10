@@ -232,21 +232,24 @@ fn unperturbed_lanes_stay_pristine() {
     }
 }
 
-/// Report claim 3 (depth, correctness) — MEASURED, no artificial cap.
+/// Report claim 3 (depth, correctness) — MEASURED, finite.
 ///
-/// The symmetric path (`mul_dual_symmetric` + K-Elimination rescale) is
-/// UNBOUNDED by design: the code consumes no level per multiply (the anchor
-/// basis does not move; K-Elim rescales in place). Probed uncapped it stays
-/// exact past depth 250 with zero bootstrap on BOTH secure_128 and
-/// secure_256. The report's "Depth-50" and CLAUDE.md's "unlimited-depth"
-/// are the SAME path; 50 was never a limit, just a benchmark's loop bound.
+/// The symmetric path (`mul_dual_symmetric` + K-Elimination rescale) keeps the
+/// basis fixed (no level is consumed per multiply), but capacity is still
+/// finite: every ct x ct multiply adds about log2(N*t) ~ 28 noise bits against
+/// a ~101-bit budget on `secure_128`, so a mul-by-Enc(1) chain decrypts
+/// correctly to depth 3 and fails at depth 4. The earlier version of this test
+/// asserted a 128-level floor ("unbounded"); that claim is withdrawn
+/// (docs/RETIRED_MECHANISMS.md, correction 2026-10-28) and the number was never
+/// reproducible at the shipped 4-prime tuple.
 ///
-/// This test asserts a conservative floor (128) so it stays fast in CI while
-/// still refuting any regression that would reintroduce a level-consuming
-/// wall. `public_relin_chain_depth_measured` records the separate — and
-/// anomalous — public-relin number.
+/// This test pins the honest contract: the chain clears depth 3 (a wall below
+/// that would be a regression of the retired depth-2/3 crash), and it ENDS by a
+/// wrong decryption inside a generous cap. If it ever runs to the cap, the
+/// noise model and this test disagree and someone must find out why.
+/// `public_relin_chain_depth_measured` records the separate public-relin number.
 #[test]
-fn symmetric_depth_is_unbounded() {
+fn symmetric_depth_is_finite_and_noise_limited() {
     let config = SecureConfig::secure_128().into_config();
     let ctx = RNSFHEContext::try_new(&config).expect("ctx");
     let mut rng = ShadowHarvester::with_seed(46);
@@ -255,22 +258,34 @@ fn symmetric_depth_is_unbounded() {
     let ct_one = ctx.encrypt_dual(1, &keys.public_key, &mut rng);
     let mut acc = ctx.encrypt_dual(5, &keys.public_key, &mut rng);
 
-    const FLOOR: u32 = 128;
+    const FLOOR: u32 = 3;
+    const CAP: u32 = 16;
     let mut reached = 0u32;
-    for depth in 1..=FLOOR {
+    let mut ended_wrong = false;
+    for depth in 1..=CAP {
         #[allow(deprecated)]
         let next = ctx.mul_dual_symmetric(&acc, &ct_one, &keys.secret_key);
         if ctx.decrypt_dual(&next, &keys.secret_key) != 5 {
+            ended_wrong = true;
             break;
         }
         acc = next;
         reached = depth;
     }
-    println!("SECURE_128 symmetric mul-by-1: EXACT to depth {reached} (floor {FLOOR}, no bootstrap; probed >250 separately)");
-    assert_eq!(
-        reached, FLOOR,
-        "symmetric K-Elim path must clear {FLOOR} levels with no bootstrap — \
-         a wall here means a level-consuming regression"
+    println!(
+        "SECURE_128 symmetric mul-by-1: EXACT to depth {reached} (floor {FLOOR}, cap {CAP}, no bootstrap); \
+         first wrong decryption at depth {}",
+        reached + 1
+    );
+    assert!(
+        reached >= FLOOR,
+        "symmetric path must clear {FLOOR} levels with no bootstrap - a wall below \
+         that is a regression (reached {reached})"
+    );
+    assert!(
+        ended_wrong,
+        "finite capacity: the chain must end on an exhausted noise budget inside \
+         {CAP} levels, but it ran to the cap - noise model and test disagree"
     );
 }
 

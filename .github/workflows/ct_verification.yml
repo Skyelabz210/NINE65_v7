@@ -115,9 +115,9 @@ jobs:
             --ignored --list 2>/dev/null | grep ': test$' || true)
           echo "$listing"
           count=$(printf '%s\n' "$listing" | grep -c . || true)
-          if [ "$count" -ne 21 ]; then
-            echo "::error::expected 21 ignored constant_time_statistical tests, found $count"
-            echo "::error::(9 robust-CV + 12 dudect two-class; update deliberately if the"
+          if [ "$count" -ne 22 ]; then
+            echo "::error::expected 22 ignored constant_time_statistical tests, found $count"
+            echo "::error::(9 robust-CV + 13 dudect two-class; update deliberately if the"
             echo "::error:: harness changed, and update docs/CT_VERIFICATION_PLAN.md with it)"
             exit 1
           fi
@@ -210,7 +210,8 @@ jobs:
             test_ct_dudect_exact_prime_drop_fixed_vs_random \
             test_ct_dudect_exact_prime_drop_small_vs_large_residues \
             test_ct_dudect_adjacency_k_elim_operand_magnitude \
-            test_ct_dudect_adjacency_k_elim_operand_order
+            test_ct_dudect_adjacency_k_elim_operand_order \
+            test_ct_dudect_production_extract_k_cached_operand_magnitude
           do
             echo "::group::$t"
             : > "ct_dudect_tests/$t.log"

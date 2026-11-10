@@ -1,0 +1,25 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/shared/nine65-claude-recovered/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/shared/nine65-claude-recovered/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/nine65)
+    Finished `test` profile [unoptimized] target(s) in 15.31s
+     Running tests/coefficient_slot_gate.rs (target/debug/deps/coefficient_slot_gate-79ae62991bf58ce3)
+
+running 1 test
+stage 2 digits got [287, 287, 287, 287, 287, 287, 287, 287] want [287, 287, 287, 287, 287, 287, 287, 287]
+stage 2 digits got [287, 287, 287, 287, 287, 287, 287, 287] want [287, 287, 287, 287, 287, 287, 287, 287]
+stage 2 digits got [287, 288, 288, 288, 288, 288, 288, 288] want [287, 288, 288, 288, 288, 288, 288, 288]
+stage 2 digits got [288, 288, 288, 288, 288, 288, 288, 288] want [288, 288, 288, 288, 288, 288, 288, 288]
+stage 2 digits got [288, 288, 0, 0, 0, 0, 0, 0] want [288, 288, 0, 0, 0, 0, 0, 0]
+stage 2 digits got [0, 0, 0, 0, 0, 0, 0, 0] want [0, 0, 0, 0, 0, 0, 0, 0]
+stage 2 digits got [0, 0, 0, 1, 1, 1, 1, 1] want [0, 0, 0, 1, 1, 1, 1, 1]
+stage 2 digits got [1, 1, 1, 1, 1, 1, 1, 1] want [1, 1, 1, 1, 1, 1, 1, 1]
+stage 2 digits got [1, 1, 1, 1, 2, 2, 2, 2] want [1, 1, 1, 1, 2, 2, 2, 2]
+stage 2 digits got [2, 2, 2, 2, 2, 2, 2, 2] want [2, 2, 2, 2, 2, 2, 2, 2]
+stage 2 digits got [2, 2, 2, 2, 2, 287, 287, 287] want [2, 2, 2, 2, 2, 287, 287, 287]
+encrypted domain coverage: 85 unique pairs, 11 batches, one key setup
+bounded digit gate: p=17, B=2, deg F=9, lanes=8, log2 Q ~ 248 bits; p*m recovered exactly at all 8 coefficients; insecure toy only
+test encrypted_slot_bridge_removes_bounded_digit_error_and_recovers_p_times_message ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 61 filtered out; finished in 0.60s
+

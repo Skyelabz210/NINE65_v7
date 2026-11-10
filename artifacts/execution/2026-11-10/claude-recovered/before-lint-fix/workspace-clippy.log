@@ -1,0 +1,122 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/shared/nine65-claude-recovered/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/shared/nine65-claude-recovered/Cargo.toml
+ Downloading crates ...
+  Downloaded bincode v1.3.3
+  Downloaded rand v0.8.6
+  Downloaded base64 v0.22.1
+    Checking cfg-if v1.0.4
+    Checking libc v0.2.178
+    Checking serde_core v1.0.228
+    Checking zmij v0.1.7
+    Checking itoa v1.0.16
+    Checking memchr v2.7.6
+    Checking exact_transcendentals v1.0.0 (/workspace/shared/nine65-claude-recovered/crates/exact_transcendentals)
+    Checking serde v1.0.228
+    Checking serde_json v1.0.147
+    Checking zeroize v1.8.2
+    Checking typenum v1.19.0
+    Checking mana v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/mana)
+    Checking getrandom v0.2.16
+    Checking zerocopy v0.8.31
+    Checking generic-array v0.14.7
+    Checking block-buffer v0.10.4
+    Checking crypto-common v0.1.7
+    Checking crc32fast v1.5.0
+    Checking subtle v2.6.1
+   Compiling virtue v0.0.18
+   Compiling bincode_derive v2.0.1
+    Checking digest v0.10.7
+    Checking unhal v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/unhal)
+   Compiling nine65 v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/nine65)
+    Checking cpufeatures v0.2.17
+    Checking unty v0.0.4
+    Checking cram-core v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/cram-core)
+    Checking bincode v2.0.1
+    Checking sha2 v0.10.9
+    Checking thiserror v1.0.69
+    Checking clockwork-core v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/clockwork-core)
+    Checking nexgen_rational v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/nexgen_rational)
+    Checking once_cell v1.21.3
+    Checking regex-syntax v0.8.8
+    Checking num-traits v0.2.19
+    Checking crossbeam-utils v0.8.21
+    Checking crossbeam-epoch v0.9.21
+    Checking either v1.15.0
+    Checking crossbeam-deque v0.8.6
+    Checking rayon-core v1.13.0
+    Checking half v2.7.1
+    Checking clap_lex v0.7.6
+    Checking ciborium-io v0.2.2
+    Checking anstyle v1.0.13
+    Checking plotters-backend v0.3.7
+    Checking plotters-svg v0.3.7
+    Checking clap_builder v4.5.53
+    Checking ciborium-ll v0.2.2
+    Checking rayon v1.11.0
+    Checking itertools v0.10.5
+    Checking regex-automata v0.4.13
+    Checking same-file v1.0.6
+    Checking cast v0.3.0
+    Checking criterion-plot v0.5.0
+    Checking walkdir v2.5.0
+    Checking ciborium v0.2.2
+    Checking clap v4.5.53
+    Checking plotters v0.3.7
+    Checking regex v1.12.2
+    Checking tinytemplate v1.2.1
+    Checking is-terminal v0.4.17
+    Checking anes v0.1.6
+    Checking oorandom v11.1.5
+    Checking getrandom v0.3.4
+    Checking criterion v0.5.1
+    Checking ppv-lite86 v0.2.21
+    Checking rand_core v0.9.3
+    Checking bitflags v2.10.0
+    Checking linux-raw-sys v0.11.0
+    Checking rustix v1.1.3
+    Checking fastrand v2.3.0
+    Checking wait-timeout v0.2.1
+    Checking quick-error v1.2.3
+    Checking fnv v1.0.7
+    Checking bit-vec v0.8.0
+    Checking bit-set v0.8.0
+    Checking rand_chacha v0.9.0
+    Checking rand v0.9.5
+    Checking tempfile v3.24.0
+    Checking rand_xorshift v0.4.0
+    Checking unarray v0.1.4
+    Checking rusty-fork v0.3.1
+    Checking rand_core v0.6.4
+    Checking proptest v1.9.0
+    Checking rand_chacha v0.3.1
+    Checking bincode v1.3.3
+    Checking base64 v0.22.1
+    Checking private-feedback-core v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/private-feedback-core)
+    Checking rand v0.8.6
+    Checking qmnf_crtbigint v3.1.1 (/workspace/shared/nine65-claude-recovered/crates/qmnf-crtbigint)
+    Checking nine65-extreme-tests v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/nine65-extreme-tests)
+    Checking private-feedback-nine65 v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/private-feedback-nine65)
+    Checking fhe-service v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/fhe-service)
+    Checking math_utils v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/math_utils)
+error: very complex type used. Consider factoring parts into `type` definitions
+   --> crates/nine65/src/arithmetic/ntt_fft.rs:932:30
+    |
+932 |                 let results: Arc<Mutex<Vec<Option<(Vec<u64>, Vec<u64>, Vec<u64>)>>>> =
+    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#type_complexity
+    = note: `-D clippy::type-complexity` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::type_complexity)]`
+
+error: you are using an explicit closure for copying elements
+    --> crates/nine65/src/arithmetic/rns.rs:4992:17
+     |
+4992 |                 primes.iter().map(|&p| p).collect(), // unreduced: == p
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider calling the dedicated `copied` method: `primes.iter().copied()`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#map_clone
+     = note: `-D clippy::map-clone` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(clippy::map_clone)]`
+
+error: could not compile `nine65` (lib test) due to 2 previous errors

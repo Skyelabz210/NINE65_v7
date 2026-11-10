@@ -780,15 +780,23 @@ fn test_cross_config_bootstrap_creation() {
 
 #[test]
 fn test_cross_config_noise_budget_scaling() {
-    let b128 = NoiseBudget::from_config(&SecureConfig::secure_128().into_config());
-    let b128d = NoiseBudget::from_config(&SecureConfig::secure_128_deep().into_config());
+    let c128 = SecureConfig::secure_128().into_config();
+    let c128d = SecureConfig::secure_128_deep().into_config();
+    let b128 = NoiseBudget::from_config(&c128);
+    let b128d = NoiseBudget::from_config(&c128d);
     let b192 = NoiseBudget::from_config(&SecureConfig::secure_192().into_config());
 
-    assert!(
-        b128d.remaining_millibits() > b128.remaining_millibits(),
-        "128_deep ({}) should exceed 128 ({})",
+    // secure_128 was re-cut on 2026-08-26 (OPEN_WORK A3) and is now the exact
+    // same tuple as secure_128_deep, so their budgets must be identical, not
+    // ordered. If the two ever diverge again this is the line that says so.
+    assert_eq!(
+        c128.primes, c128d.primes,
+        "128 and 128_deep share one tuple"
+    );
+    assert_eq!(
         b128d.remaining_millibits(),
-        b128.remaining_millibits()
+        b128.remaining_millibits(),
+        "identical tuples must give identical budgets"
     );
     assert!(
         b192.remaining_millibits() > b128d.remaining_millibits(),

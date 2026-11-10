@@ -5,9 +5,10 @@
 > (below) predates `docs/LINEAGE.md`'s deprecation rule requiring depth
 > claims to name a mode, parameter tuple, and evidence artifact. Read
 > "unlimited depth" here as informal/historical, not a CI-asserted claim. The
-> current asserted evidence: `crates/nine65/tests/time_crystal_verification.rs::symmetric_depth_is_unbounded`
-> CI-asserts a 128-level floor for `secure_128` symmetric mul-by-fresh-operand
-> chains (no bootstrap); `public_relin_chain_depth_measured` in the same file
+> current asserted evidence: `crates/nine65/tests/time_crystal_verification.rs::symmetric_depth_is_finite_and_noise_limited`
+> CI-asserts a 3-level floor and a noise-limited stop for `secure_128` symmetric
+> mul-by-fresh-operand chains (no bootstrap; the earlier 128-level floor was
+> withdrawn 2026-11-01); `public_relin_chain_depth_measured` in the same file
 > measures the public-mode number but asserts only `>= 1` — no public-mode
 > depth floor is currently CI-enforced. Symmetric mul-by-fresh chains and
 > general ct×ct squaring chains are different claims with different depths;

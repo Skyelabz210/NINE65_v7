@@ -1,0 +1,10 @@
+
+running 4 tests
+test ops::bootstrap::tests::test_secure_192_bootstrap_roundtrip_u256 ... ignored, VESTIGIAL: asserts the U256 CRT fallback carries a full secure_192 encrypt -> bootstrap -> decrypt roundtrip. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::rns_fhe::tests::test_secure_192_encrypt_decrypt_roundtrip ... ok
+[PASS]secure_192: q_bits=146, routes to KElimDual
+test ops::rns_fhe::tests::test_secure_192_routes_to_kelim_dual ... ok
+test ops::rns_fhe::tests::test_secure_192_mul_dual_symmetric ... ok
+
+test result: ok. 3 passed; 0 failed; 1 ignored; 0 measured; 1399 filtered out; finished in 3.67s
+

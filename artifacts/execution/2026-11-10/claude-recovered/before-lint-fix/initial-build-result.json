@@ -1,0 +1,20 @@
+[
+  {
+    "label": "build-default",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "nine65",
+      "--lib",
+      "--features",
+      "architecture-meter",
+      "--no-fail-fast",
+      "--no-run"
+    ],
+    "limit_seconds": 150,
+    "elapsed_seconds": 37.98,
+    "status": 101
+  }
+]

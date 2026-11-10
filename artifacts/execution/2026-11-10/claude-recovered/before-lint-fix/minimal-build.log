@@ -1,0 +1,49 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/shared/nine65-claude-recovered/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/shared/nine65-claude-recovered/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/nine65)
+warning: unused import: `DualRNSKeySet`
+  --> crates/nine65/src/ops/safe_basis_composition_tests.rs:14:5
+   |
+14 |     DualRNSKeySet, DualRNSSecretKey, RNSCiphertext, RNSFHEContext, RNSSecretKey,
+   |     ^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: methods `plain_twiddles_for_simd`, `forward_plain_for_simd`, and `forward_kernel_only_for_simd` are never used
+   --> crates/nine65/src/arithmetic/ntt_fft.rs:297:19
+    |
+46  | impl NTTEngineFFT {
+    | ----------------- methods in this implementation
+...
+297 |     pub(crate) fn plain_twiddles_for_simd(&self) -> (Vec<u64>, Vec<u64>, u64) {
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^
+...
+308 |     pub(crate) fn forward_plain_for_simd(&self, a: &[u64]) -> Vec<u64> {
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+...
+316 |     pub(crate) fn forward_kernel_only_for_simd(&self, w: &mut [u64]) {
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: associated function `new_for_composite_sister_target` is never used
+  --> crates/nine65/src/ops/safe_basis_composition_tests.rs:86:8
+   |
+82 | impl Noise {
+   | ---------- associated function in this implementation
+...
+86 |     fn new_for_composite_sister_target(config: &FHEConfig) -> Self {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: associated function `new_composite_sister_target` is never used
+   --> crates/nine65/src/ops/safe_basis_composition_tests.rs:219:8
+    |
+215 | impl<'a> CarryRuntime<'a> {
+    | ------------------------- associated function in this implementation
+...
+219 |     fn new_composite_sister_target(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `nine65` (lib test) generated 4 warnings (run `cargo fix --lib -p nine65 --tests` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized] target(s) in 10.23s

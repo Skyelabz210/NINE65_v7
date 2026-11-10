@@ -1,0 +1,7 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/shared/nine65-claude-recovered/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/shared/nine65-claude-recovered/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/nine65)
+    Checking private-feedback-nine65 v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/private-feedback-nine65)
+    Checking fhe-service v0.1.0 (/workspace/shared/nine65-claude-recovered/crates/fhe-service)
+    Finished `dev` profile [unoptimized] target(s) in 19.91s

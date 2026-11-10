@@ -1,0 +1,41 @@
+
+running 24 tests
+test arithmetic::ntt::tests::test_intt_ct_matches_intt ... ok
+test arithmetic::ntt::tests::test_multiply_ct_matches_multiply ... ok
+test arithmetic::ntt::tests::test_intt_ct_matches_intt_large ... ok
+test arithmetic::ntt::tests::test_multiply_ct_negacyclic ... ok
+test arithmetic::ntt::tests::test_multiply_sum_pair_reference_empty_single_and_multiple_terms ... ok
+
+thread 'arithmetic::ntt::tests::test_multiply_sum_pair_reference_rejects_right_a_count_mismatch' panicked at crates/nine65/src/arithmetic/ntt.rs:344:9:
+assertion `left == right` failed: term count mismatch
+  left: 0
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test arithmetic::ntt::tests::test_multiply_sum_pair_reference_rejects_right_a_count_mismatch - should panic ... ok
+
+thread 'arithmetic::ntt::tests::test_multiply_sum_pair_reference_rejects_right_b_count_mismatch' panicked at crates/nine65/src/arithmetic/ntt.rs:345:9:
+assertion `left == right` failed: term count mismatch
+  left: 0
+ right: 1
+test arithmetic::ntt::tests::test_multiply_sum_pair_reference_rejects_right_b_count_mismatch - should panic ... ok
+test arithmetic::ntt::tests::test_multiply_ct_matches_multiply_large ... ok
+test arithmetic::ntt::tests::test_ntt_ct_matches_ntt ... ok
+test arithmetic::ntt::tests::test_ntt_ct_matches_ntt_large ... ok
+test arithmetic::ntt::tests::test_ntt_ct_roundtrip ... ok
+test arithmetic::ntt::tests::test_ntt_multiply_correctness_small ... ok
+test arithmetic::ntt::tests::test_ntt_multiply_random ... ok
+test arithmetic::ntt::tests::test_ntt_negacyclic ... ok
+test arithmetic::ntt::tests::test_ntt_roundtrip ... ok
+test arithmetic::ntt::tests::test_polynomial_add ... ok
+test arithmetic::ntt::tests::test_polynomial_sub ... ok
+test arithmetic::ntt::tests::test_tensor_product_reference_negacyclic ... ok
+test arithmetic::ntt::tests::test_try_new_1024_degree ... ok
+test arithmetic::ntt::tests::test_try_new_incompatible_modulus ... ok
+test arithmetic::ntt::tests::test_try_new_non_power_of_two ... ok
+test arithmetic::ntt::tests::test_try_new_valid_params ... ok
+test arithmetic::ntt::tests::try_new_rejects_invalid_moduli_and_root_order_without_panicking ... ok
+NTT 1024-point multiply x100: 5.081234722s
+test arithmetic::ntt::tests::test_ntt_benchmark_1024 ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 1379 filtered out; finished in 5.12s
+

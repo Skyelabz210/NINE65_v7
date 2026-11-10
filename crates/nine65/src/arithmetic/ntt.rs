@@ -312,6 +312,46 @@ impl NTTEngine {
         }));
     }
 
+    /// BFV tensor product `(a0*b0, a0*b1 + a1*b0, a1*b1)` in the
+    /// negacyclic ring, with plain-domain inputs and outputs. Public work only.
+    ///
+    /// Keep the reference backend independent of the fused FFT kernels by
+    /// composing separate textbook products and coefficient-wise addition.
+    pub fn tensor_product(
+        &self,
+        a0: &[u64],
+        a1: &[u64],
+        b0: &[u64],
+        b1: &[u64],
+    ) -> (Vec<u64>, Vec<u64>, Vec<u64>) {
+        let d0 = self.multiply(a0, b0);
+        let d1 = self.add(&self.multiply(a0, b1), &self.multiply(a1, b0));
+        let d2 = self.multiply(a1, b1);
+        (d0, d1, d2)
+    }
+
+    /// `(sum_i left[i] * right_a[i], sum_i left[i] * right_b[i])` in the
+    /// negacyclic ring, with plain-domain inputs and outputs. Public work only.
+    ///
+    /// Each product is evaluated separately by the textbook backend and the
+    /// sums are reduced mod `q`. Empty term lists return two zero polynomials.
+    pub fn multiply_sum_pair(
+        &self,
+        left: &[&[u64]],
+        right_a: &[&[u64]],
+        right_b: &[&[u64]],
+    ) -> (Vec<u64>, Vec<u64>) {
+        assert_eq!(left.len(), right_a.len(), "term count mismatch");
+        assert_eq!(left.len(), right_b.len(), "term count mismatch");
+        let mut acc_a = vec![0_u64; self.n];
+        let mut acc_b = vec![0_u64; self.n];
+        for ((l, ra), rb) in left.iter().zip(right_a).zip(right_b) {
+            acc_a = self.add(&acc_a, &self.multiply(l, ra));
+            acc_b = self.add(&acc_b, &self.multiply(l, rb));
+        }
+        (acc_a, acc_b)
+    }
+
     /// Constant-time multiply two polynomials using NTT (negacyclic convolution)
     ///
     /// Uses Barrett constant-time reduction throughout to prevent timing side-channels.
@@ -724,6 +764,59 @@ mod tests {
         let engine = NTTEngine::new(TEST_PRIME, 4);
         let result = engine.sub(&[10, 20, 30, 40], &[5, 6, 7, 8]);
         assert_eq!(result, vec![5, 14, 23, 32]);
+    }
+
+    #[test]
+    fn test_tensor_product_reference_negacyclic() {
+        let engine = NTTEngine::new(17, 4);
+        let a0 = [0, 0, 0, 1]; // x^3
+        let a1 = [16, 0, 0, 0]; // -1
+        let b0 = [0, 1, 0, 0]; // x
+        let b1 = [2, 0, 0, 0]; // 2
+
+        // Direct polynomial identities in Z_17[x]/(x^4 + 1), without
+        // using either backend's multiply routine as the expected result.
+        assert_eq!(
+            engine.tensor_product(&a0, &a1, &b0, &b1),
+            (vec![16, 0, 0, 0], vec![0, 16, 0, 2], vec![15, 0, 0, 0])
+        );
+    }
+
+    #[test]
+    fn test_multiply_sum_pair_reference_empty_single_and_multiple_terms() {
+        let engine = NTTEngine::new(17, 4);
+        let x3 = [0, 0, 0, 1];
+        let minus_one = [16, 0, 0, 0];
+        let x = [0, 1, 0, 0];
+        let two = [2, 0, 0, 0];
+
+        assert_eq!(
+            engine.multiply_sum_pair(&[], &[], &[]),
+            (vec![0; 4], vec![0; 4])
+        );
+        assert_eq!(
+            engine.multiply_sum_pair(&[&x3], &[&x], &[&two]),
+            (vec![16, 0, 0, 0], vec![0, 0, 0, 2])
+        );
+        // x^3*x + (-1)*2 = -3; x^3*2 + (-1)*x = 2x^3 - x.
+        assert_eq!(
+            engine.multiply_sum_pair(&[&x3, &minus_one], &[&x, &two], &[&two, &x]),
+            (vec![14, 0, 0, 0], vec![0, 16, 0, 2])
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "term count mismatch")]
+    fn test_multiply_sum_pair_reference_rejects_right_a_count_mismatch() {
+        let engine = NTTEngine::new(17, 4);
+        engine.multiply_sum_pair(&[], &[&[0; 4]], &[]);
+    }
+
+    #[test]
+    #[should_panic(expected = "term count mismatch")]
+    fn test_multiply_sum_pair_reference_rejects_right_b_count_mismatch() {
+        let engine = NTTEngine::new(17, 4);
+        engine.multiply_sum_pair(&[], &[], &[&[0; 4]]);
     }
 
     #[test]

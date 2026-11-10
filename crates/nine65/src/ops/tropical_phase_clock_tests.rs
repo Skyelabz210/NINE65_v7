@@ -1047,3 +1047,6 @@ fn phase_clock_refreshes_two_coefficients_of_a_live_sparse_source() {
 fn phase_clock_native_8192_alias_and_dependent_squares() {
     encrypted_probe(8192, &[0, 1]);
 }
+
+#[path = "encrypted_k0_tests.rs"]
+mod encrypted_k0_tests;

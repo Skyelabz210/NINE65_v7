@@ -371,3 +371,13 @@ required-features = ["allow_insecure", "serde"]
 [[test]]
 name = "architecture_meter"
 required-features = ["architecture-meter", "allow_insecure"]
+
+# These diagnostic targets import the optional exact-transcendentals backend.
+[[bin]]
+name = "deep_rigorous_audit"
+path = "src/bin/deep_rigorous_audit.rs"
+required-features = ["exact_transcendentals_backend"]
+
+[[example]]
+name = "export_parameter_registry"
+required-features = ["exact_transcendentals_backend"]

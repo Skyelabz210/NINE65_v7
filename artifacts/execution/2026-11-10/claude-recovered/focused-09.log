@@ -1,0 +1,16 @@
+
+running 1 test
+dense worst-case outer ring needed (V<=Q/16, H=N terms), power of two:
+ N_src     kmax      direct(m)     lanes      lane ring
+    16        8     17->    512        S6            512
+    32       16     33->   2048        S6           1024
+    34       17     35->   2048        S6           1024
+    64       32     65->   8192        S8           2048
+    68       34     69->   8192        S8           2048
+   128       64    129->  32768 beyond S8              -
+  8192     4096   8193->m>1023 refused beyond S8              -
+N=16 direct m=17 @ring512: worst-case window2=417, certified window2=232
+test ops::rns_fhe::tropical_phase_clock_tests::encrypted_k0_tests::k0_window_certificate_and_dense_scaling_table ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1402 filtered out; finished in 0.00s
+

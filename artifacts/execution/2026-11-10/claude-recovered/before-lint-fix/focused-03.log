@@ -1,0 +1,6 @@
+
+running 1 test
+test ops::rns_fhe::tests::single_pass_digits_preserve_signed_values_and_first_error ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1402 filtered out; finished in 0.14s
+

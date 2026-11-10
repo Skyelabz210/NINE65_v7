@@ -1,0 +1,11 @@
+
+running 2 tests
+lane plateaus: lanes=[2, 3, 5, 7, 11, 13] N=32 ring=1024: 17886 exact plateau checks over all 33 carries
+lane-sum identity: lanes=[2, 3, 5, 7, 11, 13], every kmax in 1..=17 solved and re-verified on all 35 carries; kmax=18 refused (capacity 35)
+lane plateaus: lanes=[2, 3, 5, 7, 11, 13, 17, 19] N=64 ring=2048: 82240 exact plateau checks over all 65 carries
+test ops::rns_fhe::tropical_phase_clock_tests::encrypted_k0_tests::k0_lane_plateaus_exhaustive ... ok
+lane-sum identity: lanes=[2, 3, 5, 7, 11, 13, 17, 19], every kmax in 1..=34 solved and re-verified on all 69 carries; kmax=35 refused (capacity 69)
+test ops::rns_fhe::tropical_phase_clock_tests::encrypted_k0_tests::k0_lane_sum_identity_is_exact_up_to_the_capacity_bound ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1401 filtered out; finished in 0.25s
+

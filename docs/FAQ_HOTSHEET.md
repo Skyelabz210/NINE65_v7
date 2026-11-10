@@ -24,10 +24,11 @@ QMNF integer-only architecture.
 > **2026-08-19 note:** the depth and runtime figures below were not
 > reproduced in this pass and are not in `docs/CLAIM_REGISTRY.csv`. For
 > current, CI-asserted depth evidence, see
-> `crates/nine65/tests/time_crystal_verification.rs::symmetric_depth_is_unbounded`
-> (asserts a 128-level floor, `secure_128`, symmetric mul-by-fresh-operand, no
-> bootstrap) and `depth_and_noise.rs::depth_and_noise_curve_deep_chain`
-> (asserts a 32-level regression floor). For current timing baselines, see
+> `crates/nine65/tests/time_crystal_verification.rs::symmetric_depth_is_finite_and_noise_limited`
+> (asserts a 3-level floor and a noise-limited stop, `secure_128`, symmetric
+> mul-by-fresh-operand, no bootstrap) and `depth_and_noise.rs::depth_and_noise_curve_deep_chain`
+> (3-level regression floor, must stop on noise). The earlier 128/32-level floors
+> were withdrawn 2026-11-01 with the unbounded-depth claim. For current timing baselines, see
 > CLAUDE.md's "Performance Baselines" section.
 
 | Question | Answer |

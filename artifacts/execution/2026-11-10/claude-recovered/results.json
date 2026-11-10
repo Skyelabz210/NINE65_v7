@@ -1,0 +1,287 @@
+[
+  {
+    "label": "build-default",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "nine65",
+      "--lib",
+      "--features",
+      "architecture-meter",
+      "--no-fail-fast",
+      "--no-run"
+    ],
+    "limit_seconds": 150,
+    "elapsed_seconds": 7.79,
+    "status": 0
+  },
+  {
+    "label": "focused-00",
+    "command": [
+      "/workspace/shared/nine65-claude-recovered/target/debug/deps/nine65-87bfb7a805a695d1",
+      "arithmetic::rns::tests::",
+      "--test-threads=2",
+      "--nocapture"
+    ],
+    "limit_seconds": 45,
+    "elapsed_seconds": 0.67,
+    "status": 0
+  },
+  {
+    "label": "focused-01",
+    "command": [
+      "/workspace/shared/nine65-claude-recovered/target/debug/deps/nine65-87bfb7a805a695d1",
+      "arithmetic::ntt_fft::tests::",
+      "--test-threads=2",
+      "--nocapture"
+    ],
+    "limit_seconds": 45,
+    "elapsed_seconds": 1.72,
+    "status": 0
+  },
+  {
+    "label": "focused-02",
+    "command": [
+      "/workspace/shared/nine65-claude-recovered/target/debug/deps/nine65-87bfb7a805a695d1",
+      "arithmetic::ntt::tests::",
+      "--test-threads=2",
+      "--nocapture"
+    ],
+    "limit_seconds": 45,
+    "elapsed_seconds": 5.13,
+    "status": 0
+  },
+  {
+    "label": "focused-03",
+    "command": [
+      "/workspace/shared/nine65-claude-recovered/target/debug/deps/nine65-87bfb7a805a695d1",
+      "single_pass_digits_preserve_signed_values_and_first_error",
+      "--test-threads=2",
+      "--nocapture"
+    ],
+    "limit_seconds": 45,
+    "elapsed_seconds": 0.17,
+    "status": 0
+  },
+  {
+    "label": "focused-04",
+    "command": [
+      "/workspace/shared/nine65-claude-recovered/target/debug/deps/nine65-87bfb7a805a695d1",
+      "extract_all_digits_matches_per_digit_extraction",
+      "--test-threads=2",
+      "--nocapture"
+    ],
+    "limit_seconds": 45,
+    "elapsed_seconds": 0.43,
+    "status": 0
+  },
+  {
+    "label": "focused-05",
+    "command": [
+      "/workspace/shared/nine65-claude-recovered/target/debug/deps/nine65-87bfb7a805a695d1",
+      "fixed_signed_rounding_matches_reference_cases",
+      "--test-threads=2",
+      "--nocapture"
+    ],
+    "limit_seconds": 45,
+    "elapsed_seconds": 0.0,
+    "status": 0
+  },
+  {
+    "label": "focused-06",
+    "command": [
+      "/workspace/shared/nine65-claude-recovered/target/debug/deps/nine65-87bfb7a805a695d1",
+      "simd32_matches_scalar_engine_forward_and_inverse",
+      "--test-threads=2",
+      "--nocapture"
+    ],
+    "limit_seconds": 45,
+    "elapsed_seconds": 5.28,
+    "status": 0
+  },
+  {
+    "label": "focused-07",
+    "command": [
+      "/workspace/shared/nine65-claude-recovered/target/debug/deps/nine65-87bfb7a805a695d1",
+      "accelerated_dual_poly_mul_is_bit_identical_to_sequential_reference",
+      "--test-threads=2",
+      "--nocapture"
+    ],
+    "limit_seconds": 45,
+    "elapsed_seconds": 0.78,
+    "status": 0
+  },
+  {
+    "label": "focused-08",
+    "command": [
+      "/workspace/shared/nine65-claude-recovered/target/debug/deps/nine65-87bfb7a805a695d1",
+      "encrypted_k0_tests::k0_lane",
+      "--test-threads=2",
+      "--nocapture"
+    ],
+    "limit_seconds": 45,
+    "elapsed_seconds": 0.26,
+    "status": 0
+  },
+  {
+    "label": "focused-09",
+    "command": [
+      "/workspace/shared/nine65-claude-recovered/target/debug/deps/nine65-87bfb7a805a695d1",
+      "encrypted_k0_tests::k0_window",
+      "--test-threads=2",
+      "--nocapture"
+    ],
+    "limit_seconds": 45,
+    "elapsed_seconds": 0.01,
+    "status": 0
+  },
+  {
+    "label": "focused-10",
+    "command": [
+      "/workspace/shared/nine65-claude-recovered/target/debug/deps/nine65-87bfb7a805a695d1",
+      "encrypted_k0_tests::k0_refuses",
+      "--test-threads=2",
+      "--nocapture"
+    ],
+    "limit_seconds": 45,
+    "elapsed_seconds": 0.02,
+    "status": 0
+  },
+  {
+    "label": "focused-11",
+    "command": [
+      "/workspace/shared/nine65-claude-recovered/target/debug/deps/nine65-87bfb7a805a695d1",
+      "test_secure_192_",
+      "--test-threads=2",
+      "--nocapture"
+    ],
+    "limit_seconds": 45,
+    "elapsed_seconds": 3.63,
+    "status": 0
+  },
+  {
+    "label": "focused-12",
+    "command": [
+      "/workspace/shared/nine65-claude-recovered/target/debug/deps/nine65-87bfb7a805a695d1",
+      "public_refresh_refusal_fires_at_the_bootstrap_entry_points",
+      "--test-threads=2",
+      "--nocapture"
+    ],
+    "limit_seconds": 45,
+    "elapsed_seconds": 0.06,
+    "status": 0
+  },
+  {
+    "label": "workspace-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "architecture-meter",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "limit_seconds": 120,
+    "elapsed_seconds": 20.04,
+    "status": 0
+  },
+  {
+    "label": "reference-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "nine65",
+      "--all-targets",
+      "--features",
+      "reference_ntt,sequential,architecture-meter",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "limit_seconds": 120,
+    "elapsed_seconds": 17.93,
+    "status": 0
+  },
+  {
+    "label": "minimal-build",
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "-p",
+      "nine65",
+      "--all-targets",
+      "--no-default-features"
+    ],
+    "limit_seconds": 120,
+    "elapsed_seconds": 2.73,
+    "status": 0
+  },
+  {
+    "label": "sequential",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "nine65",
+      "--lib",
+      "--features",
+      "architecture-meter,sequential",
+      "--no-fail-fast",
+      "sequential_limb_dispatch_stays_on_calling_thread",
+      "--",
+      "--nocapture"
+    ],
+    "limit_seconds": 120,
+    "elapsed_seconds": 8.49,
+    "status": 0
+  },
+  {
+    "label": "unhal-api",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "unhal",
+      "--no-fail-fast",
+      "ntt_simd32::tests",
+      "--",
+      "--nocapture"
+    ],
+    "limit_seconds": 60,
+    "elapsed_seconds": 0.17,
+    "status": 0
+  },
+  {
+    "label": "coefficient-domain",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "nine65",
+      "--test",
+      "coefficient_slot_gate",
+      "--features",
+      "allow_insecure",
+      "--no-fail-fast",
+      "encrypted_slot_bridge_removes_bounded_digit_error_and_recovers_p_times_message",
+      "--",
+      "--exact",
+      "--nocapture"
+    ],
+    "limit_seconds": 120,
+    "elapsed_seconds": 8.07,
+    "status": 0
+  }
+]
