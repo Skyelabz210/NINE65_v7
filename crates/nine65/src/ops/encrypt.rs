@@ -8,10 +8,13 @@
 //!
 //! For production, use `encrypt_secure()` or `encrypt_with_rng()` with `SecureRng`.
 //! The basic `encrypt()` method uses `ShadowHarvester` which is deterministic
-//! and should only be used for testing.
+//! and is supported only in development/library unit-test builds. Both direct
+//! and generic polynomial encryption refuse non-secure RNGs in a release-linked
+//! library; scalar and seeded wrappers inherit that check.
 
 use crate::arithmetic::NTTEngine;
 
+use crate::entropy::rng_trait::try_require_secure_rng;
 use crate::entropy::{try_secure_cbd_vector, try_secure_ternary_vector, FheRng, ShadowHarvester};
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::keys::{PublicKey, SecretKey};
@@ -319,40 +322,69 @@ impl<'a> BFVEncryptor<'a> {
         }
     }
 
-    /// Encrypt a message
+    /// Encrypt a message with deterministic test randomness.
     ///
     /// # Panics
-    /// Panics if `m >= t` (plaintext modulus). Prefer `try_encrypt()` in
-    /// production code to avoid panics from untrusted input.
+    /// Panics if `m >= t` (plaintext modulus), or before sampling in a
+    /// release-linked library. Use [`Self::try_encrypt_secure`] for OS-backed
+    /// encryption with fallible input validation.
     pub fn encrypt(&self, m: u64, harvester: &mut ShadowHarvester) -> Ciphertext {
         self.try_encrypt(m, harvester)
             .unwrap_or_else(|e| panic!("encrypt: {}", e))
     }
 
-    /// Fallible encryption: returns error if message out of bounds
+    /// Fallible encryption with deterministic test randomness.
+    ///
+    /// Returns an input error for out-of-range messages, or `ConfigError`
+    /// before sampling if the release RNG policy forbids `ShadowHarvester`.
     pub fn try_encrypt(&self, m: u64, harvester: &mut ShadowHarvester) -> Nine65Result<Ciphertext> {
         let plaintext = self.encoder.try_encode(m)?;
-        Ok(self.encrypt_poly(&plaintext, harvester))
+        self.try_encrypt_poly(&plaintext, harvester)
     }
 
-    /// Encrypt with specific seed (deterministic)
+    /// Encrypt with a specific test seed (deterministic).
+    ///
+    /// # Panics
+    /// Panics if the message is out of bounds or in a release-linked library.
     pub fn encrypt_seeded(&self, m: u64, seed: u64) -> Ciphertext {
         let mut harvester = ShadowHarvester::with_seed(seed);
         self.encrypt(m, &mut harvester)
     }
 
-    /// Fallible seeded encryption
+    /// Fallible seeded encryption.
+    ///
+    /// Returns the same input or release RNG policy errors as
+    /// [`Self::try_encrypt`], without panicking on prohibited entropy.
     pub fn try_encrypt_seeded(&self, m: u64, seed: u64) -> Nine65Result<Ciphertext> {
         let mut harvester = ShadowHarvester::with_seed(seed);
         self.try_encrypt(m, &mut harvester)
     }
 
-    /// Encrypt a polynomial
+    /// Encrypt a polynomial with deterministic test randomness.
+    ///
+    /// # Panics
+    /// Panics before sampling in a release-linked library. Use
+    /// [`Self::try_encrypt_poly`] to receive the policy error instead.
     pub fn encrypt_poly(
         &self,
         plaintext: &RingPolynomial,
         harvester: &mut ShadowHarvester,
     ) -> Ciphertext {
+        self.try_encrypt_poly(plaintext, harvester)
+            .unwrap_or_else(|e| panic!("encrypt_poly: {}", e))
+    }
+
+    /// Fallible polynomial encryption with deterministic test randomness.
+    ///
+    /// Returns `ConfigError` before sampling when the release RNG policy
+    /// rejects the harvester. The caller must supply compatible polynomial,
+    /// key and NTT dimensions, as for [`Self::encrypt_poly`].
+    pub fn try_encrypt_poly(
+        &self,
+        plaintext: &RingPolynomial,
+        harvester: &mut ShadowHarvester,
+    ) -> Nine65Result<Ciphertext> {
+        try_require_secure_rng(harvester, "BFVEncryptor::encrypt_poly")?;
         let n = self.encoder.n;
         let q = self.encoder.q;
 
@@ -371,7 +403,7 @@ impl<'a> BFVEncryptor<'a> {
         let pk1_u = self.pk.pk1.mul(&u, self.ntt);
         let c1 = pk1_u.add(&e2, self.ntt);
 
-        Ciphertext { c0, c1 }
+        Ok(Ciphertext { c0, c1 })
     }
 
     // =========================================================================
@@ -398,23 +430,29 @@ impl<'a> BFVEncryptor<'a> {
     /// ```
     ///
     /// # Panics
-    /// Panics if `m >= t` (plaintext modulus). Prefer `try_encrypt_with_rng()` in
-    /// production code to avoid panics from untrusted input.
+    /// Panics if `m >= t` (plaintext modulus), or if a non-secure RNG is used
+    /// in a release-linked library. Use [`Self::try_encrypt_with_rng`] with
+    /// `SecureRng` for fallible input validation.
     pub fn encrypt_with_rng<R: FheRng>(&self, m: u64, rng: &mut R) -> Ciphertext {
         self.try_encrypt_with_rng(m, rng)
             .unwrap_or_else(|e| panic!("encrypt_with_rng: {}", e))
     }
 
     /// Fallible encryption with generic RNG
+    ///
+    /// Returns `ConfigError` before sampling if the release RNG policy rejects
+    /// the RNG. Invalid messages return their input error before the RNG check.
+    /// `FheRng` sampling itself is infallible; use [`Self::try_encrypt_secure`]
+    /// when OS entropy failures must also be returned as errors.
     pub fn try_encrypt_with_rng<R: FheRng>(&self, m: u64, rng: &mut R) -> Nine65Result<Ciphertext> {
         let plaintext = self.encoder.try_encode(m)?;
-        Ok(self.encrypt_poly_with_rng(&plaintext, rng))
+        self.try_encrypt_poly_with_rng(&plaintext, rng)
     }
 
     /// Encrypt with cryptographically secure randomness (RECOMMENDED FOR PRODUCTION)
     ///
-    /// Uses `SecureRng` (OS CSPRNG) for all randomness, providing
-    /// IND-CPA security guarantees.
+    /// Uses the OS CSPRNG for all randomness. This entropy choice alone does
+    /// not establish parameter security or production admission.
     ///
     /// # Example
     ///
@@ -441,11 +479,32 @@ impl<'a> BFVEncryptor<'a> {
     /// Encrypt a polynomial using a generic RNG source
     ///
     /// Core encryption routine using any `FheRng` implementation.
+    ///
+    /// # Panics
+    /// Panics before sampling if the RNG is non-secure in a release-linked
+    /// library. Use [`Self::try_encrypt_poly_with_rng`] to receive the policy
+    /// error instead. Deterministic RNGs remain supported in development/tests.
     pub fn encrypt_poly_with_rng<R: FheRng>(
         &self,
         plaintext: &RingPolynomial,
         rng: &mut R,
     ) -> Ciphertext {
+        self.try_encrypt_poly_with_rng(plaintext, rng)
+            .unwrap_or_else(|e| panic!("encrypt_poly_with_rng: {}", e))
+    }
+
+    /// Fallible polynomial encryption using a generic RNG.
+    ///
+    /// Returns `ConfigError` before sampling when the release RNG policy
+    /// rejects the RNG. The caller must supply compatible polynomial, key and
+    /// NTT dimensions. For fallible OS entropy access, prefer
+    /// [`Self::try_encrypt_poly_secure`]; `FheRng` sampling itself is infallible.
+    pub fn try_encrypt_poly_with_rng<R: FheRng>(
+        &self,
+        plaintext: &RingPolynomial,
+        rng: &mut R,
+    ) -> Nine65Result<Ciphertext> {
+        try_require_secure_rng(rng, "BFVEncryptor::encrypt_poly_with_rng")?;
         let n = self.encoder.n;
         let q = self.encoder.q;
 
@@ -464,7 +523,7 @@ impl<'a> BFVEncryptor<'a> {
         let pk1_u = self.pk.pk1.mul(&u, self.ntt);
         let c1 = pk1_u.add(&e2, self.ntt);
 
-        Ciphertext { c0, c1 }
+        Ok(Ciphertext { c0, c1 })
     }
 
     /// Encrypt a polynomial with cryptographically secure randomness

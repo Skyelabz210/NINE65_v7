@@ -1,7 +1,8 @@
 """Shared fixtures and constants for the nine65_python test suite.
 
-Every test here runs against the real compiled extension (`maturin develop
---release` must have been run first -- see README.md "Running the tests").
+Every test here runs against the real compiled development extension
+(`maturin develop` must have been run first, since this suite uses seeded
+fixtures -- see README.md "Running the tests").
 Nothing in this suite mocks the Rust layer.
 """
 

@@ -7,6 +7,8 @@
 //! - **SecretKey** implements `Zeroize` and `ZeroizeOnDrop` for secure memory clearing
 //! - **generate_secure()** uses OS CSPRNG - USE FOR PRODUCTION
 //! - **generate()** uses Shadow Entropy - USE FOR TESTING/BENCHMARKS ONLY
+//!   and refuses deterministic entropy in a release-linked library.
+//!   Development and library unit-test builds preserve seeded behavior.
 //!
 //! # Example
 //!
@@ -26,7 +28,7 @@ pub use bootstrap::{BootstrapKey, BootstrapKeySet, KeySwitchKey, BOOTSTRAP_PRIME
 
 use crate::arithmetic::NTTEngine;
 
-use crate::entropy::ShadowHarvester;
+use crate::entropy::{require_secure_rng, ShadowHarvester};
 use crate::entropy::{try_secure_cbd_vector, try_secure_ternary_vector, try_secure_uniform_vector};
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::params::FHEConfig;
@@ -55,7 +57,13 @@ impl SecretKey {
     /// **Use only for testing and reproducible benchmarks.**
     ///
     /// For production, use [`generate_secure()`](Self::generate_secure).
+    ///
+    /// # Panics
+    ///
+    /// Panics before sampling in a release-linked library. Deterministic
+    /// generation is supported in development and library unit-test builds.
     pub fn generate(config: &FHEConfig, harvester: &mut ShadowHarvester) -> Self {
+        require_secure_rng(harvester, "SecretKey::generate");
         let s = RingPolynomial::random_ternary(config.n, config.q, harvester);
         Self { s }
     }
@@ -123,12 +131,18 @@ impl PublicKey {
     ///
     /// Uses Shadow Entropy for randomness. For production, use
     /// [`generate_secure()`](Self::generate_secure).
+    ///
+    /// # Panics
+    ///
+    /// Panics before sampling in a release-linked library, including when
+    /// the supplied secret key was generated securely.
     pub fn generate(
         sk: &SecretKey,
         config: &FHEConfig,
         ntt: &NTTEngine,
         harvester: &mut ShadowHarvester,
     ) -> Self {
+        require_secure_rng(harvester, "PublicKey::generate");
         // a ← uniform random
         let a = RingPolynomial::random_uniform(config.n, config.q, harvester);
 
@@ -237,12 +251,20 @@ pub struct EvaluationKey {
 
 impl EvaluationKey {
     /// Generate evaluation key for relinearization (DETERMINISTIC)
+    ///
+    /// For production, use [`generate_secure()`](Self::generate_secure).
+    ///
+    /// # Panics
+    ///
+    /// Panics before sampling in a release-linked library, including when
+    /// the supplied secret key was generated securely.
     pub fn generate(
         sk: &SecretKey,
         config: &FHEConfig,
         ntt: &NTTEngine,
         harvester: &mut ShadowHarvester,
     ) -> Self {
+        require_secure_rng(harvester, "EvaluationKey::generate");
         let decomp_base = 1u64 << 16; // T = 2^16
         let q_bits = 64 - config.q.leading_zeros() as usize;
         let levels = q_bits.div_ceil(16);
@@ -587,7 +609,13 @@ impl KeySet {
     ///
     /// Uses Shadow Entropy for reproducible key generation.
     /// **For production, use [`generate_secure()`](Self::generate_secure).**
+    ///
+    /// # Panics
+    ///
+    /// Panics before generating any keys in a release-linked library.
+    /// Development and library unit-test builds preserve seeded behavior.
     pub fn generate(config: &FHEConfig, ntt: &NTTEngine, harvester: &mut ShadowHarvester) -> Self {
+        require_secure_rng(harvester, "KeySet::generate");
         let secret_key = SecretKey::generate(config, harvester);
         let public_key = PublicKey::generate(&secret_key, config, ntt, harvester);
         let eval_key = EvaluationKey::generate(&secret_key, config, ntt, harvester);
