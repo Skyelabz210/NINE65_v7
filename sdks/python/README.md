@@ -33,6 +33,22 @@ print("Encrypted multiplication roundtrip passed")
 PY
 ```
 
+## Integer and ciphertext boundary
+
+`encrypt`, `add_plain` and `mul_plain` accept plain Python `int` values only.
+They reject booleans, floats (including integral floats), strings and objects
+with integer-conversion methods instead of silently truncating or coercing them.
+Non-integer values raise `TypeError`. Values outside the unsigned 64-bit wire
+range or outside `[0, t)` raise `ValueError` before a request is sent. When an
+older server omits `t`, the SDK enforces the wire range and the server enforces
+its plaintext range. Decrypted plaintext responses are checked the same way.
+Use `decrypt_signed` for a centered integer representative after decryption.
+
+Python integers remain exact through JSON serialization, including values above
+`2**53`; named service profiles still enforce their own plaintext modulus.
+Ciphertexts remain opaque base64-encoded binary data, never numeric arrays.
+This contract applies to the HTTP SDK, not the separate native PyO3 extension.
+
 ## Credentials
 
 Pass `tenant_id`, `api_token`, and optionally `decrypt_token`/`operator_token`
@@ -44,6 +60,12 @@ Public health/version requests carry no credentials; decrypt and metrics
 capabilities are sent only to their specific routes. Redirects are refused.
 
 ## Tests
+
+Boundary and authentication tests need no running service:
+
+```bash
+python -m pytest sdks/python/tests -m "not integration" -v
+```
 
 With the service running in explicit local operator decryption mode and the
 client environment loaded:

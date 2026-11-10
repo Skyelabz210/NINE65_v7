@@ -16,8 +16,9 @@ class Session:
             result = s.decrypt(ct_sum)
             assert result == [59]
 
-    All integer values passed to and from this class are plain Python
-    ``int`` objects.  No floating-point is used anywhere.
+    Plaintexts must be plain Python ``int`` objects in ``[0, t)`` and fit
+    the service's unsigned 64-bit wire format. Booleans, floats, strings and
+    objects with integer-conversion methods are not coerced to plaintexts.
     """
 
     def __init__(self, client, session_id, config, params, noise_budget_millibits):
@@ -71,6 +72,22 @@ class Session:
             elif old_field is not None:
                 self._noise_budget_millibits = int(old_field)
 
+    def _validate_plaintext(self, value, name):
+        """Validate without lossy conversion or changing the integer value."""
+        if type(value) is not int:
+            raise TypeError("%s must be a plain Python int, got %s" %
+                            (name, type(value).__name__))
+        if not 0 <= value < (1 << 64):
+            raise ValueError("%s must be in the unsigned 64-bit range" % name)
+        # Older servers may omit params. Their range checks remain authoritative.
+        t = self._params.get("t")
+        if t is not None:
+            if type(t) is not int or not 0 < t < (1 << 64):
+                raise ValueError("session plaintext modulus t must be a positive uint64 int")
+            if value >= t:
+                raise ValueError("%s must be less than the session plaintext modulus t" % name)
+        return value
+
     def _evaluate(self, operations):
         """Send an evaluate request and return the parsed response body."""
         body = self._client._request(
@@ -89,12 +106,13 @@ class Session:
         """Encrypt one or more integer values.
 
         Args:
-            *values: Integer plaintext values to encrypt.
+            *values: Plain Python integers in ``[0, t)`` to encrypt.
 
         Returns:
             Tuple of :class:`Ciphertext` objects (one per input value).
         """
-        int_values = [int(v) for v in values]
+        int_values = [self._validate_plaintext(v, "values[%d]" % i)
+                      for i, v in enumerate(values)]
         body = self._client._request(
             "POST",
             self._path("/encrypt"),
@@ -119,7 +137,8 @@ class Session:
             {"ciphertexts": ct_data},
         )
         self._update_budget(body)
-        return [int(v) for v in body["values"]]
+        return [self._validate_plaintext(v, "decrypted values[%d]" % i)
+                for i, v in enumerate(body["values"])]
 
     def decrypt_signed(self, *ciphertexts):
         """Decrypt one or more ciphertexts with centered lift.
@@ -153,7 +172,8 @@ class Session:
 
     def _eval_plain(self, op, ct, scalar):
         """Evaluate a ciphertext-plaintext operation."""
-        body = self._evaluate([{"op": op, "inputs": [ct.data], "scalar": int(scalar)}])
+        scalar = self._validate_plaintext(scalar, "scalar")
+        body = self._evaluate([{"op": op, "inputs": [ct.data], "scalar": scalar}])
         return Ciphertext(body["results"][0])
 
     def _eval_unary(self, op, ct):
@@ -213,7 +233,7 @@ class Session:
 
         Args:
             ct: Ciphertext operand.
-            scalar: Integer plaintext addend.
+            scalar: Plain Python integer addend in ``[0, t)``.
 
         Returns:
             Ciphertext encrypting (plaintext + scalar).
@@ -225,7 +245,7 @@ class Session:
 
         Args:
             ct: Ciphertext operand.
-            scalar: Integer plaintext multiplier.
+            scalar: Plain Python integer multiplier in ``[0, t)``.
 
         Returns:
             Ciphertext encrypting (plaintext * scalar).
