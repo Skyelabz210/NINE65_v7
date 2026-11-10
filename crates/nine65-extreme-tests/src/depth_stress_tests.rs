@@ -336,21 +336,26 @@ mod tests {
     }
 
     // =========================================================================
-    // TRACK B — Public Key Mode: 1000+ Depth via AutoBootstrapEvaluator
+    // TRACK B — Legacy Public-Key Auto-Bootstrap Acceptance
     // =========================================================================
 
-    /// B-1: Unlimited depth validation — 100 chained multiplications via AutoBootstrapEvaluator.
+    /// B-1: Require 100 exact chained squarings via the legacy auto-bootstrap API.
     ///
-    /// Verifies:
-    ///  1. Exact decryption at checkpoint depths: 10, 25, 50, 75, 100
-    ///  2. At least one bootstrap was triggered
-    ///  3. No drift: each checkpoint matches the expected value exactly
+    /// Every multiplication and decryption must succeed, every recovered value
+    /// must be exact, all five checkpoints must be reached, and at least one
+    /// successful bootstrap must be recorded by the evaluator. The historical
+    /// test name is retained for existing selectors; a finite run cannot prove
+    /// unlimited depth.
     ///
-    /// NOTE: We use 100 (not 1000) because each mul involves bootstrap key generation
-    /// and the key generation for secure_128 takes ~50ms. 100 muls is sufficient to
-    /// confirm auto-bootstrap fires and produces correct results.
+    /// Legacy Clockwork bootstrap remains gated (issues #95/#117). This test
+    /// must FAIL at that refusal, not treat a partial run as acceptance. It does
+    /// not exercise the separate research PublicRefreshCircuit backend. See
+    /// docs/PUBLIC_REFRESH_STATUS.md. Do not bypass the legacy gate to run it.
     #[test]
     fn test_public_key_unlimited_depth_100() {
+        const TARGET_MULTIPLICATIONS: usize = 100;
+        const CHECKPOINTS: [usize; 5] = [10, 25, 50, 75, TARGET_MULTIPLICATIONS];
+
         let config = SecureConfig::secure_128().into_config();
         let ctx = RNSFHEContext::try_new(&config).expect("context");
         let mut rng = ShadowHarvester::with_seed(77_001);
@@ -377,78 +382,87 @@ mod tests {
             &ctx.config,
         );
 
-        let checkpoints = [10usize, 25, 50, 75, 100];
-        let mut failures: Vec<(usize, u64, u64)> = Vec::new();
+        let mut completed_multiplications = 0usize;
+        let mut checked_checkpoints = Vec::new();
 
-        println!("\n[unlimited] public key mode — 100 multiplications via AutoBootstrapEvaluator");
-        println!("Depth │ Expected │ Decrypted │ Bootstraps │ Status");
-        println!("──────┼──────────┼───────────┼────────────┼───────");
+        println!("\n[legacy_depth] public key mode: target=100 exact multiplications");
+        println!("Depth │ Expected │ Decrypted │ Successful bootstraps");
 
-        for depth in 1..=100usize {
+        for depth in 1..=TARGET_MULTIPLICATIONS {
+            let bootstraps_before = evaluator.bootstrap_count;
             let ct_sq = current.clone();
-            let next = match evaluator.mul_auto(&current, &ct_sq) {
-                Ok(ct) => ct,
-                Err(e) => {
-                    println!(
-                        "{:5} │ {:>8} │ MulErr    │ {:>10} │ ✗ ERROR: {}",
-                        depth, expected, evaluator.bootstrap_count, e
-                    );
-                    break;
-                }
-            };
+            let next = evaluator
+                .mul_auto(&current, &ct_sq)
+                .unwrap_or_else(|error| {
+                    panic!(
+                        "legacy mul_auto failed at depth {depth} after \
+                     {completed_multiplications} exact multiplications \
+                     (successful bootstraps={}): {error}",
+                        evaluator.bootstrap_count
+                    )
+                });
             expected = (expected * expected) % config.t;
             current = next;
 
-            if checkpoints.contains(&depth) {
-                let decrypted = ctx.decrypt_dual(&current.ct, &work_keys.secret_key);
-                let ok = decrypted == expected;
-                println!(
-                    "{:5} │ {:>8} │ {:>9} │ {:>10} │ {}",
-                    depth,
-                    expected,
-                    decrypted,
-                    evaluator.bootstrap_count,
-                    if ok { "✓" } else { "✗ DRIFT" }
-                );
-                if !ok {
-                    failures.push((depth, decrypted, expected));
-                }
-            }
-        }
-
-        println!("\n[unlimited] 100 depths complete.");
-        println!(
-            "[unlimited] Total bootstraps triggered: {}",
-            evaluator.bootstrap_count
-        );
-        println!(
-            "[unlimited] Total multiplications: {}",
-            evaluator.total_muls
-        );
-
-        if failures.is_empty() {
-            println!(
-                "[unlimited] CONFIRMED: public key auto-bootstrap is depth-unlimited \
-                     (all checkpoints passed)."
+            let decrypted = ctx
+                .try_decrypt_dual(&current.ct, &work_keys.secret_key)
+                .unwrap_or_else(|error| panic!("decryption failed at depth {depth}: {error}"));
+            assert_eq!(
+                decrypted, expected,
+                "plaintext mismatch at depth {depth} (successful bootstraps={})",
+                evaluator.bootstrap_count
             );
-        } else {
-            for (depth, got, exp) in &failures {
+            completed_multiplications += 1;
+            assert_eq!(
+                evaluator.total_muls, completed_multiplications,
+                "evaluator multiplication count differs at depth {depth}"
+            );
+            let successful_refreshes = evaluator
+                .bootstrap_count
+                .checked_sub(bootstraps_before)
+                .expect("successful bootstrap count must not decrease");
+            assert!(
+                successful_refreshes <= 1,
+                "squaring must refresh the shared operand at most once at depth {depth}"
+            );
+
+            if CHECKPOINTS.contains(&depth) {
+                checked_checkpoints.push(depth);
                 println!(
-                    "[unlimited] FINDING: depth {}: got {} expected {} — drift detected",
-                    depth, got, exp
+                    "{:5} │ {:>8} │ {:>9} │ {:>21}",
+                    depth, expected, decrypted, evaluator.bootstrap_count
                 );
             }
         }
 
-        // At least one bootstrap must have fired over 100 multiplications.
+        assert_eq!(
+            completed_multiplications, TARGET_MULTIPLICATIONS,
+            "the chain did not complete all required exact multiplications"
+        );
+        assert_eq!(
+            evaluator.total_muls, TARGET_MULTIPLICATIONS,
+            "the evaluator did not perform all required multiplications"
+        );
+        assert_eq!(
+            checked_checkpoints.as_slice(),
+            &CHECKPOINTS,
+            "not all required decryption checkpoints were reached"
+        );
+        // This counter advances only after ClockworkBootstrap::bootstrap
+        // returns Ok. Budget resets or attempted/failed refreshes do not count.
         assert!(
             evaluator.bootstrap_count > 0,
-            "No bootstrap was triggered over 100 multiplications. \
-             Either the noise budget is underestimated or trigger_permille is too low."
+            "no successful legacy bootstrap occurred during the 100 multiplications"
         );
 
-        // Test records findings but doesn't assert correctness — Q17 is already documented
-        // in bootstrap_adversarial.rs. This extends to confirm behavior at higher depth.
+        // Emit success only after every acceptance assertion has passed.
+        println!(
+            "\n[legacy_depth] VERIFIED: {} exact multiplications, {} checkpoints, \
+             {} successful legacy bootstraps.",
+            completed_multiplications,
+            checked_checkpoints.len(),
+            evaluator.bootstrap_count
+        );
     }
 
     // =========================================================================
