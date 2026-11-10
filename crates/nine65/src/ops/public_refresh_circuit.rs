@@ -21,6 +21,8 @@ use crate::params::FHEConfig;
 
 #[path = "public_refresh_key_graph.rs"]
 pub mod key_graph;
+#[path = "public_refresh_scheduler.rs"]
+pub mod scheduler;
 
 fn refused(reason: impl Into<String>) -> Nine65Error {
     Nine65Error::BootstrapFailed {

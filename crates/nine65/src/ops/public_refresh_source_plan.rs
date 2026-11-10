@@ -97,6 +97,29 @@ impl PublicRefreshSourcePlan {
         self.switch_key_bytes
     }
 
+    // Numeric planning cannot mint a SourceWorkCiphertext or reset its history.
+    pub(crate) fn forecast_add_bounds(&self, a: U512, b: U512) -> Result<U512, SourceError> {
+        self.work_noise.admit(a)?;
+        self.work_noise.admit(b)?;
+        self.work_noise.add(a, b)
+    }
+
+    pub(crate) fn forecast_multiply_bounds(&self, a: U512, b: U512) -> Result<U512, SourceError> {
+        self.work_noise.admit(a)?;
+        self.work_noise.admit(b)?;
+        self.work_noise.multiply(a, b)
+    }
+
+    pub(crate) fn forecast_source_radius(&self, incoming: U512) -> Result<u64, SourceError> {
+        let (_, bound) = self.bounds(incoming)?;
+        Ok(source_residual_radius(
+            bound,
+            U512::product_u64s(&self.source.primes),
+            self.source.t,
+            self.source_weight,
+        ))
+    }
+
     /// Key-free forecast for a returned bound, one full-polynomial square,
     /// and the next source conversion. This creates no ciphertext proof.
     pub(crate) fn next_square_source_radius(&self, returned: U512) -> Result<u64, SourceError> {

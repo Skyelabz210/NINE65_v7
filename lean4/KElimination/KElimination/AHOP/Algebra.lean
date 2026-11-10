@@ -16,7 +16,8 @@
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.Fin.Basic
 import Mathlib.Algebra.Ring.Basic
-import Mathlib.Tactic
+import Mathlib.Tactic.FinCases
+import Mathlib.Tactic.Ring
 
 namespace KElimination.AHOP
 

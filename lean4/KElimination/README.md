@@ -10,6 +10,20 @@
 
 > **Enabling exact division in RNS arithmetic**
 
+## Current trust boundary (2026-11-10)
+
+The historical `ahop_hardness` axiom was inconsistent at modulus one. It has
+been replaced with an unasserted, explicitly refutable proposition. The global
+reflection-decoding tag used by two conditional lemmas is also impossible;
+those lemmas provide no realizable all-length orbit-growth evidence. This does
+not refute the separate public-refresh arithmetic proofs or establish any
+cryptographic attack. See the [dated correction](../../docs/maintenance/LEAN_TRUST_BOUNDARY_2026-11-10.md).
+
+After a fresh `lake build`, run `bash scripts/axiom_audit.sh` to inspect every
+project declaration and its transitive dependencies. Only standard Lean logical
+foundations are allowed. Historical theorem counts below are not current audit
+results, and a source grep is not a substitute for the kernel audit.
+
 ## The Theorem
 
 For any value `X` in range `[0, M·A)` where `gcd(M, A) = 1`:

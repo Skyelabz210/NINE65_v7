@@ -11,6 +11,7 @@ on:
     paths:
       - 'lean4/**'
       - 'scripts/check_public_refresh_proofs.py'
+      - 'scripts/test_lean_axiom_audit.py'
       - 'scripts/test_public_refresh_proofs.py'
       - 'scripts/check_toy_refresh_preflight.py'
       - 'scripts/test_toy_refresh_preflight.py'
@@ -32,6 +33,7 @@ on:
     paths:
       - 'lean4/**'
       - 'scripts/check_public_refresh_proofs.py'
+      - 'scripts/test_lean_axiom_audit.py'
       - 'scripts/test_public_refresh_proofs.py'
       - 'scripts/check_toy_refresh_preflight.py'
       - 'scripts/test_toy_refresh_preflight.py'
@@ -120,9 +122,10 @@ jobs:
       # A proof can also be silently swapped for an `axiom` (no `sorry` warning),
       # which keeps the build green while removing machine-checked coverage. This
       # is the authoritative proof gate, so inspect the elaborated *kernel
-      # environment* and fail if any KElimination module declares an axiom other
-      # than the one documented hardness assumption. Unlike a source grep, this
-      # sees through attributes, comments, and macro-synthesized axioms. It runs
-      # right after `lake build`, so the module oleans are warm (~10s).
-      - name: Assert only the documented axiom (kernel env audit)
+      # environment* and reject all custom axioms and transitive dependencies
+      # outside Lean's standard logical foundations. Module provenance also
+      # catches declarations made outside the KElimination namespace.
+      - name: Audit every project declaration and its transitive axioms
         run: bash scripts/axiom_audit.sh
+      - name: Test axiom gate positive and negative controls
+        run: python3 ../../scripts/test_lean_axiom_audit.py
