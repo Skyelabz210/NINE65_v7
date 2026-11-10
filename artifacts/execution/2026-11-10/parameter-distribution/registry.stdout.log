@@ -1,0 +1,5 @@
+wrote artifacts/execution/parameter_registry.json
+secure_128: n=8192, lanes=4, exact_Q_bits=119, fingerprint=0xf5d08287c13d81b6
+secure_128_deep: n=8192, lanes=4, exact_Q_bits=119, fingerprint=0xf5d08287c13d81b6
+secure_192: n=16384, lanes=5, exact_Q_bits=146, fingerprint=0x62972596f3cc51ab
+secure_256: n=16384, lanes=6, exact_Q_bits=175, fingerprint=0x5cc15c3e3aae2fd5

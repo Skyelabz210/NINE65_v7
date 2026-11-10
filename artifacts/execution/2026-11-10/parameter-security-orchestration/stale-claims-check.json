@@ -1,0 +1,11 @@
+{
+  "source_commit": "7ada6503634a824e80bc4bcfd6231ad0178d7ed3",
+  "captured_at_utc": "2026-11-10T04:32:21.445564+00:00",
+  "command": [
+    "bash",
+    "scripts/check_stale_claims.sh"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 0.416,
+  "log": "stale-claims.log"
+}

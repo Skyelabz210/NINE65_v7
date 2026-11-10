@@ -1,0 +1,48 @@
+{
+  "schema": "nine65-parameter-branch-audit-v1",
+  "captured_at_utc": "2026-11-10T04:24:54.276062+00:00",
+  "source_commit": "7ada6503634a824e80bc4bcfd6231ad0178d7ed3",
+  "source_branch": "work",
+  "output_branch": "codex/parameter-security-evidence-2026-11-10",
+  "saved_origin_main_before_fetch": "bbfa754",
+  "live_main_at_capture": "7ada6503634a824e80bc4bcfd6231ad0178d7ed3",
+  "reviewed_refs": [
+    {
+      "ref": "origin/main",
+      "source_sha": "7ada6503634a824e80bc4bcfd6231ad0178d7ed3",
+      "ancestor_of_source": true,
+      "commits_not_in_source": []
+    },
+    {
+      "ref": "origin/codex/f01-parameter-evidence",
+      "source_sha": "781846bf3d02dc7defa73675acc2f84bdf7321b3",
+      "ancestor_of_source": true,
+      "commits_not_in_source": []
+    },
+    {
+      "ref": "origin/fix/public-refresh-research-gates",
+      "source_sha": "71fdbaf6ebb6df0e65070a0c347373b6f422b7f8",
+      "ancestor_of_source": false,
+      "commits_not_in_source": [
+        "71fdbaf test: separate class dispatch from timing and detect noiseless differences"
+      ]
+    },
+    {
+      "ref": "origin/codex/r03-bootstrap-admission",
+      "source_sha": "1526cc4ffc2953366fafa04ffed8f6c16034ed14",
+      "ancestor_of_source": true,
+      "commits_not_in_source": []
+    },
+    {
+      "ref": "origin/codex/public-refresh-proofs-2026-11-01",
+      "source_sha": "28d026fd8e33e6c1d20f850d73b947a34d432a21",
+      "ancestor_of_source": true,
+      "commits_not_in_source": []
+    }
+  ],
+  "notes": [
+    "All remote heads are archived; only listed relevant refs were fetched.",
+    "fix/public-refresh-research-gates has one later CT follow-up commit, outside parameter/security-evidence scope.",
+    "No branch was merged, pushed, rebased or reset."
+  ]
+}

@@ -1,0 +1,11 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+     Running unittests src/lib.rs (/tmp/nine65-parameter-target/debug/deps/nine65-a291d5d4496c4011)
+
+running 1 test
+test ops::public_refresh_circuit::key_graph::tests::breaking_return_cycle_still_leaves_self_key_dependencies ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1353 filtered out; finished in 4.76s
+

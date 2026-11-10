@@ -1,0 +1,3 @@
+usage: run_public_key_graph_evidence.py [-h] --output-dir OUTPUT_DIR
+                                        [--timeout-seconds TIMEOUT_SECONDS]
+run_public_key_graph_evidence.py: error: --output-dir already exists; preserve previous evidence and choose a new directory

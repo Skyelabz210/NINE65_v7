@@ -1,0 +1,15 @@
+test_artifact_mutations_are_detectable (__main__.ParameterDistributionTests.test_artifact_mutations_are_detectable) ... ok
+test_balanced_support_has_joint_constraint (__main__.ParameterDistributionTests.test_balanced_support_has_joint_constraint) ... ok
+test_cbd_pmf_matches_exhaustive_two_eta_bit_producer (__main__.ParameterDistributionTests.test_cbd_pmf_matches_exhaustive_two_eta_bit_producer) ... ok
+test_current_source_and_saved_artifact_agree (__main__.ParameterDistributionTests.test_current_source_and_saved_artifact_agree) ... ok
+test_distribution_producer_drift_controls (__main__.ParameterDistributionTests.test_distribution_producer_drift_controls) ... ok
+test_modulo_three_exact_counts_and_distance (__main__.ParameterDistributionTests.test_modulo_three_exact_counts_and_distance) ... ok
+test_native_return_and_legacy_geometry_are_distinct (__main__.ParameterDistributionTests.test_native_return_and_legacy_geometry_are_distinct) ... ok
+test_recorded_commit_cannot_bypass_source_hash_validation (__main__.ParameterDistributionTests.test_recorded_commit_cannot_bypass_source_hash_validation) ... ok
+test_rejection_mask_uniformity_bounded_exact_controls (__main__.ParameterDistributionTests.test_rejection_mask_uniformity_bounded_exact_controls) ... ok
+test_tuple_drift_is_rejected_against_existing_registry (__main__.ParameterDistributionTests.test_tuple_drift_is_rejected_against_existing_registry) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 1.639s
+
+OK

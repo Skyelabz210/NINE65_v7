@@ -1,0 +1,23 @@
+{
+  "status": "pass",
+  "control_count": 16,
+  "controls": [
+    "exact source manifest accepted",
+    "exact input packet accepted",
+    "changed source digest rejected",
+    "changed input bytes rejected",
+    "eight exact tuples retain eleven aliases and exact sparse modulus",
+    "well-formed finite fixture accepted",
+    "malformed JSON retained as per-task error",
+    "bogus success retained as per-task error",
+    "nonfinite cost retained as per-task error",
+    "negative cost retained as per-task error",
+    "duplicate marker retained as per-task error",
+    "missing marker retained as per-task error",
+    "nonzero worker exit retained as per-task error",
+    "worker launch error retained",
+    "deadline retains timeout and partial transcript",
+    "completion requires every distinct task finite; missing, duplicate, timeout rejected"
+  ],
+  "scope": "evidence harness controls; no real attack result in fixtures"
+}

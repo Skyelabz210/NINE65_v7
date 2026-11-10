@@ -1,0 +1,48 @@
+{
+  "source_commit": "7ada6503634a824e80bc4bcfd6231ad0178d7ed3",
+  "captured_at_utc": "2026-11-10T04:25:09.813900+00:00",
+  "checks": [
+    {
+      "name": "claim-registry",
+      "command": [
+        "bash",
+        "scripts/check_claim_registry.sh"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.034,
+      "log": "artifacts/execution/2026-11-10/parameter-security-orchestration/claim-registry.log"
+    },
+    {
+      "name": "status-controls",
+      "command": [
+        "python3",
+        "scripts/check_public_refresh_status.py",
+        "--self-test"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.157,
+      "log": "artifacts/execution/2026-11-10/parameter-security-orchestration/status-controls.log"
+    },
+    {
+      "name": "security-controls",
+      "command": [
+        "python3",
+        "scripts/check_public_refresh_security_claims.py",
+        "--self-test"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.075,
+      "log": "artifacts/execution/2026-11-10/parameter-security-orchestration/security-controls.log"
+    },
+    {
+      "name": "existing-parameter-controls",
+      "command": [
+        "python3",
+        "scripts/test_parameter_evidence.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.227,
+      "log": "artifacts/execution/2026-11-10/parameter-security-orchestration/existing-parameter-controls.log"
+    }
+  ]
+}

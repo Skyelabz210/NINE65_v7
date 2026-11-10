@@ -1,0 +1,10 @@
+{
+  "command": [
+    "docker",
+    "--host=unix:///var/run/docker.sock",
+    "pull",
+    "sagemath/sagemath@sha256:19995db6194f4a4bab18ce9a88556fd15b9ed5e916b4504fefe618a7796ddbdb"
+  ],
+  "started_unix": 1794284638.253904,
+  "pid": 1884
+}

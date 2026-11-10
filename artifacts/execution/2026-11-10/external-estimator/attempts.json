@@ -1,0 +1,28 @@
+{
+  "runtime_probes": [
+    {
+      "command_file": "runtime-probe-command.json",
+      "outcome": "failed with exit2: image shell entrypoint flattened Python -c argument",
+      "raw_log": "runtime-probe.log"
+    },
+    {
+      "command_file": "runtime-probe-corrected-command.json",
+      "outcome": "client60second timeout during Docker creation; inspected Created/unstarted container61425194f88f; start-a succeeded",
+      "recovery_record": "runtime-probe-recovery.json"
+    }
+  ],
+  "focused_attempts": [
+    {
+      "command_file": "aborted-before-start-run-command.json",
+      "status_file": "aborted-before-start-run-status.json",
+      "outcome": "client terminated during layer creation to remove HOME override; Docker ps-a empty and no focused result before corrected run",
+      "raw_log": "aborted-before-start-focused-run.log"
+    },
+    {
+      "command_file": "run-command.json",
+      "status_file": "run-status.json",
+      "outcome": "final corrected attempt; named/labeled container, no HOME override"
+    }
+  ],
+  "approval_denied_operations": []
+}

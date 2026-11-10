@@ -1,0 +1,67 @@
+{
+  "container_id": "ec87854e2779",
+  "state": {
+    "Status": "created",
+    "Running": false,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 0,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "0001-01-01T00:00:00Z",
+    "FinishedAt": "0001-01-01T00:00:00Z"
+  },
+  "identified_by_readonly_driver_mount": true,
+  "mounts": [
+    {
+      "Type": "bind",
+      "Source": "/tmp/nine65-estimator-20261110",
+      "Destination": "/upstream",
+      "Mode": "",
+      "RW": false,
+      "Propagation": "rprivate"
+    },
+    {
+      "Type": "bind",
+      "Source": "/tmp/nine65-estimator-driver-20261110",
+      "Destination": "/driver",
+      "Mode": "",
+      "RW": false,
+      "Propagation": "rprivate"
+    },
+    {
+      "Type": "bind",
+      "Source": "/workspace/NINE65_v7/artifacts/execution/2026-11-10/external-estimator",
+      "Destination": "/evidence",
+      "Mode": "",
+      "RW": true,
+      "Propagation": "rprivate"
+    }
+  ],
+  "command": [
+    "-python",
+    "/driver/external_estimator_20261110.py",
+    "--source",
+    "/upstream",
+    "--lock",
+    "/driver/lattice_estimator_lock_20261110.json",
+    "--inputs",
+    "/driver/exact-input-packet.json",
+    "--output",
+    "/evidence/focused-results.json",
+    "--jobs",
+    "4",
+    "--timeout",
+    "45"
+  ],
+  "cleanup_command": [
+    "docker",
+    "--host=unix:///var/run/docker.sock",
+    "rm",
+    "ec87854e2779"
+  ],
+  "cleanup_exit_code": 0,
+  "cleanup_stdout": "ec87854e2779\n"
+}

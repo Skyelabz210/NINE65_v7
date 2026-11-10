@@ -1,0 +1,489 @@
+{
+  "assumptions": [
+    "SecureRng supplies independent uniform words through the OS CSPRNG",
+    "FheRng trait alone does not establish a caller RNG distribution",
+    "source adapter anchors supplement manual review; not Rust semantic equivalence",
+    "listed source and registry hashes must match the recorded Git source SHA",
+    "additive total-variation bounds alone do not establish a 128-bit security transfer"
+  ],
+  "claims": {
+    "encrypted_execution": false,
+    "entropy_quality_test": false,
+    "external_attestation": false,
+    "joint_key_confidentiality_established": false,
+    "production_admitted": false,
+    "source_derived_review_inputs": true
+  },
+  "distributions": {
+    "balanced_sparse_ternary": {
+      "independent_coefficients": false,
+      "law": "uniform_ordered_disjoint_positive_negative_supports"
+    },
+    "cbd_3": {
+      "eta": 3,
+      "law": "centered_binomial",
+      "mean": {
+        "denominator": "1",
+        "numerator": "0"
+      },
+      "not_a_gaussian_sigma_3_2": true,
+      "pmf_denominator": "64",
+      "pmf_numerators": [
+        "1",
+        "6",
+        "15",
+        "20",
+        "15",
+        "6",
+        "1"
+      ],
+      "standard_deviation": "sqrt(3/2)",
+      "support": [
+        -3,
+        3
+      ],
+      "variance": {
+        "denominator": "2",
+        "numerator": "3"
+      }
+    },
+    "cbd_4": {
+      "eta": 4,
+      "law": "centered_binomial",
+      "mean": {
+        "denominator": "1",
+        "numerator": "0"
+      },
+      "not_a_gaussian_sigma_3_2": true,
+      "pmf_denominator": "256",
+      "pmf_numerators": [
+        "1",
+        "8",
+        "28",
+        "56",
+        "70",
+        "56",
+        "28",
+        "8",
+        "1"
+      ],
+      "standard_deviation": "sqrt(4/2)",
+      "support": [
+        -4,
+        4
+      ],
+      "variance": {
+        "denominator": "1",
+        "numerator": "2"
+      }
+    },
+    "cbd_5": {
+      "eta": 5,
+      "law": "centered_binomial",
+      "mean": {
+        "denominator": "1",
+        "numerator": "0"
+      },
+      "not_a_gaussian_sigma_3_2": true,
+      "pmf_denominator": "1024",
+      "pmf_numerators": [
+        "1",
+        "10",
+        "45",
+        "120",
+        "210",
+        "252",
+        "210",
+        "120",
+        "45",
+        "10",
+        "1"
+      ],
+      "standard_deviation": "sqrt(5/2)",
+      "support": [
+        -5,
+        5
+      ],
+      "variance": {
+        "denominator": "2",
+        "numerator": "5"
+      }
+    },
+    "embedded_original_work": {
+      "independent_of_work": false,
+      "law": "deterministic_subring_embedding_of_existing_work_secret"
+    },
+    "uniform_ternary": {
+      "pmf_denominator": "3",
+      "pmf_numerators": [
+        "1",
+        "1",
+        "1"
+      ],
+      "support": [
+        -1,
+        0,
+        1
+      ]
+    },
+    "word_mod3_minus_one_heavy_ternary": {
+      "pmf_denominator": "18446744073709551616",
+      "pmf_numerators": [
+        "6148914691236517206",
+        "6148914691236517205",
+        "6148914691236517205"
+      ],
+      "security_break_demonstrated": false,
+      "support": [
+        -1,
+        0,
+        1
+      ],
+      "total_variation_from_uniform_per_coefficient": {
+        "denominator": "27670116110564327424",
+        "numerator": "1"
+      }
+    },
+    "word_mod3_ternary": {
+      "n_vector_total_variation_upper_bound": "min(1,n*per_coefficient_distance)",
+      "pmf_denominator": "18446744073709551616",
+      "pmf_numerators": [
+        "6148914691236517205",
+        "6148914691236517206",
+        "6148914691236517205"
+      ],
+      "security_break_demonstrated": false,
+      "support": [
+        -1,
+        0,
+        1
+      ],
+      "total_variation_from_uniform_per_coefficient": {
+        "denominator": "27670116110564327424",
+        "numerator": "1"
+      }
+    }
+  },
+  "legacy_clockwork_bootstrap_profiles": [
+    {
+      "bootstrap_key_encryption_u_distribution": "word_mod3_ternary",
+      "circular_key_independent_of_work": false,
+      "circular_secret_distribution": "same_original_work_coefficients_reencoded",
+      "error_distribution": "cbd_3",
+      "eta": 3,
+      "exact_q_bits": 146,
+      "independent_boot_secret_distribution": "word_mod3_minus_one_heavy_ternary",
+      "key_generation_does_not_enable_refresh": true,
+      "legacy_refresh_gate_enabled": false,
+      "n": 8192,
+      "nominal_security_label_bits": 128,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049",
+        "167772161"
+      ],
+      "owner_profile": "secure_128",
+      "public_and_switch_key_mask": "canonical_full_Q_rejection_uniform",
+      "q_decimal": "58545681590027521508543467009573734775259137",
+      "q_hex": "0x2a0124b80e123c835c6603bc46000c9400001",
+      "t_decimal": "65537"
+    },
+    {
+      "bootstrap_key_encryption_u_distribution": "word_mod3_ternary",
+      "circular_key_independent_of_work": false,
+      "circular_secret_distribution": "same_original_work_coefficients_reencoded",
+      "error_distribution": "cbd_3",
+      "eta": 3,
+      "exact_q_bits": 146,
+      "independent_boot_secret_distribution": "word_mod3_minus_one_heavy_ternary",
+      "key_generation_does_not_enable_refresh": true,
+      "legacy_refresh_gate_enabled": false,
+      "n": 8192,
+      "nominal_security_label_bits": 128,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049",
+        "167772161"
+      ],
+      "owner_profile": "secure_128_deep",
+      "public_and_switch_key_mask": "canonical_full_Q_rejection_uniform",
+      "q_decimal": "58545681590027521508543467009573734775259137",
+      "q_hex": "0x2a0124b80e123c835c6603bc46000c9400001",
+      "t_decimal": "65537"
+    },
+    {
+      "bootstrap_key_encryption_u_distribution": "word_mod3_ternary",
+      "circular_key_independent_of_work": false,
+      "circular_secret_distribution": "same_original_work_coefficients_reencoded",
+      "error_distribution": "cbd_4",
+      "eta": 4,
+      "exact_q_bits": 177,
+      "independent_boot_secret_distribution": "word_mod3_minus_one_heavy_ternary",
+      "key_generation_does_not_enable_refresh": true,
+      "legacy_refresh_gate_enabled": false,
+      "n": 16384,
+      "nominal_security_label_bits": 192,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049",
+        "167772161",
+        "1811939329"
+      ],
+      "owner_profile": "secure_192",
+      "public_and_switch_key_mask": "canonical_full_Q_rejection_uniform",
+      "q_decimal": "106081223016082120413723317380660669564707006496899073",
+      "q_hex": "0x11b87b7dcff0d63f790d4616c9ee090ab600135400001",
+      "t_decimal": "65537"
+    },
+    {
+      "bootstrap_key_encryption_u_distribution": "word_mod3_ternary",
+      "circular_key_independent_of_work": false,
+      "circular_secret_distribution": "same_original_work_coefficients_reencoded",
+      "error_distribution": "cbd_5",
+      "eta": 5,
+      "exact_q_bits": 206,
+      "independent_boot_secret_distribution": "word_mod3_minus_one_heavy_ternary",
+      "key_generation_does_not_enable_refresh": true,
+      "legacy_refresh_gate_enabled": false,
+      "n": 16384,
+      "nominal_security_label_bits": 256,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049",
+        "167772161",
+        "1811939329",
+        "595591169"
+      ],
+      "owner_profile": "secure_256",
+      "public_and_switch_key_mask": "canonical_full_Q_rejection_uniform",
+      "q_decimal": "63181039625098055897208234241305706178366567141978713763086337",
+      "q_hex": "0x2751520040e61339d3a2d77a20dc857c62b0bb8dc00158c00001",
+      "t_decimal": "65537"
+    }
+  ],
+  "mask_and_error_producers": [
+    {
+      "error": "one signed CBD(eta) coefficient encoded consistently across lanes",
+      "mask": "independent unbiased residues per main prime; CRT-uniform on R_Q",
+      "producer": "single RNS public/evaluation keys, hybrid target/Galois keys, phase bank",
+      "source": [
+        "crates/nine65/src/ops/rns_fhe.rs",
+        "crates/nine65/src/ops/exact_mul.rs",
+        "crates/nine65/src/ops/direct_slot_phase.rs"
+      ]
+    },
+    {
+      "error": "one signed CBD(eta) coefficient shared by both bases",
+      "mask": "rejection-uniform canonical integer in [0,Q); reduced into main and anchor lanes",
+      "producer": "dual RNS public/evaluation keys",
+      "restriction": "sum of prime bit lengths <=256; not outer Q650 path"
+    },
+    {
+      "error": "e1,e2 each CBD(eta); encryption phase error includes products with secrets",
+      "mask": "word_mod3_ternary",
+      "producer": "public encryption u (RNS/DualRNS)"
+    }
+  ],
+  "named_profiles": [
+    {
+      "encryption_u_distribution": "word_mod3_ternary",
+      "error_distribution": "cbd_3",
+      "eta": 3,
+      "exact_q_bits": 119,
+      "n": 8192,
+      "name": "secure_128",
+      "nominal_security_label_bits": 128,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049"
+      ],
+      "q_decimal": "348959453350711275087786864768188417",
+      "q_hex": "0x433507862acfa0344be000bf400001",
+      "secret_distribution": "word_mod3_ternary",
+      "t_decimal": "65537"
+    },
+    {
+      "encryption_u_distribution": "word_mod3_ternary",
+      "error_distribution": "cbd_3",
+      "eta": 3,
+      "exact_q_bits": 119,
+      "n": 8192,
+      "name": "secure_128_deep",
+      "nominal_security_label_bits": 128,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049"
+      ],
+      "q_decimal": "348959453350711275087786864768188417",
+      "q_hex": "0x433507862acfa0344be000bf400001",
+      "secret_distribution": "word_mod3_ternary",
+      "t_decimal": "65537"
+    },
+    {
+      "encryption_u_distribution": "word_mod3_ternary",
+      "error_distribution": "cbd_4",
+      "eta": 4,
+      "exact_q_bits": 146,
+      "n": 16384,
+      "name": "secure_192",
+      "nominal_security_label_bits": 192,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049",
+        "167772161"
+      ],
+      "q_decimal": "58545681590027521508543467009573734775259137",
+      "q_hex": "0x2a0124b80e123c835c6603bc46000c9400001",
+      "secret_distribution": "word_mod3_ternary",
+      "t_decimal": "65537"
+    },
+    {
+      "encryption_u_distribution": "word_mod3_ternary",
+      "error_distribution": "cbd_5",
+      "eta": 5,
+      "exact_q_bits": 175,
+      "n": 16384,
+      "name": "secure_256",
+      "nominal_security_label_bits": 256,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049",
+        "167772161",
+        "595591169"
+      ],
+      "q_decimal": "34869290938106270277446047003544954886492541683761153",
+      "q_hex": "0x5d32897aff4ac1c45626207f81b057acc000ecc00001",
+      "secret_distribution": "word_mod3_ternary",
+      "t_decimal": "65537"
+    }
+  ],
+  "public_refresh_domains": [
+    {
+      "domain": "Work",
+      "error_distribution": "cbd_3",
+      "eta": 3,
+      "exact_q_bits": 119,
+      "n": 8192,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049"
+      ],
+      "q_decimal": "348959453350711275087786864768188417",
+      "q_hex": "0x433507862acfa0344be000bf400001",
+      "secret_distribution": "word_mod3_ternary",
+      "t_decimal": "65537"
+    },
+    {
+      "coefficient_marginals_do_not_imply_independence": true,
+      "domain": "Source",
+      "error_distribution": "cbd_3",
+      "eta": 3,
+      "exact_q_bits": 60,
+      "gadget_base_bits": 3,
+      "n": 8192,
+      "negative_count": 48,
+      "nonzero_weight": 96,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441"
+      ],
+      "positive_count": 48,
+      "q_decimal": "983930967448092673",
+      "q_hex": "0xda7a00076400001",
+      "secret_distribution": "balanced_sparse_ternary",
+      "support_cardinality_decimal": "17985650286107918882429362308140471318045149325537666353485846994587636746602287952496092796994632680506462066313514564852906866713686402908661728383375598740343911147528184612256681858170787099373685764372391000355419062264703610354111006693126678400000",
+      "t_decimal": "65537",
+      "work_embedding_stride": 1,
+      "zero_count": 8096
+    },
+    {
+      "domain": "Outer",
+      "error_distribution": "cbd_3",
+      "eta": 3,
+      "exact_q_bits": 650,
+      "n": 32768,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049",
+        "576460752301785089",
+        "576460752301391873",
+        "576460752300015617",
+        "576460752298835969",
+        "576460752298180609",
+        "576460752293134337",
+        "576460752291954689",
+        "576460752290775041",
+        "575870995836829697"
+      ],
+      "plaintext_moduli_decimal": [
+        "65537",
+        "4295098369"
+      ],
+      "q_decimal": "2450519297043026530784017971340570014951985121632074702986454462157525270706364094852879576226735969912687516334462104970737581750658613165694144615248489240740832218056472363339254831533321551873",
+      "q_hex": "0x2191b6b984dc27dc035b7eb7eccb7aa2d35d532de12a72392984e33aa1525b0b0fec0789dd98f254c17dd1a38fd77c4ff8336eec678e975aebe8e655937f5ac6b865c9d4ed02798cb2b557473155b7f0001",
+      "secret_distribution": "uniform_ternary",
+      "t_decimal": "4295098369"
+    },
+    {
+      "domain": "ReturnDestination",
+      "effective_secret_degree": 8192,
+      "embedding_stride": 4,
+      "error_distribution": "cbd_3",
+      "eta": 3,
+      "exact_q_bits": 119,
+      "fresh_independent_secret": false,
+      "n": 32768,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049"
+      ],
+      "q_decimal": "348959453350711275087786864768188417",
+      "q_hex": "0x433507862acfa0344be000bf400001",
+      "secret_distribution": "embedded_original_work",
+      "structural_zero_count": 24576,
+      "t_decimal": "65537"
+    }
+  ],
+  "registry_sha256": "5ddb248612358a7f02cfc98118e0b7242e33c60f1766d3148efde96aadfe6138",
+  "schema": "nine65-parameter-distribution-evidence-v1",
+  "scope": "named RNS/DualRNS, derived legacy Clockwork bootstrap, and native PublicRefreshCircuit; other APIs excluded",
+  "source_files_sha256": {
+    "crates/nine65/src/entropy/rng_trait.rs": "03d51ef26249414f4f95e2c2ef52123d54e2f2f3fe386aaa2a42824f2c4d90a2",
+    "crates/nine65/src/entropy/secure.rs": "9d8594da22e2df906eef969772cc1919879f2a1058a30d6219e145a6634eeaee",
+    "crates/nine65/src/keys/bootstrap.rs": "32ab87eb27a698f39729264b7ac8f0e2141915b87b170f816c012d3647fa4272",
+    "crates/nine65/src/ops/bootstrap.rs": "22fb911968cfc73d5c64358f2626a0ce244bdd68fbb66f1f4d1210926da532e9",
+    "crates/nine65/src/ops/direct_slot_phase.rs": "15cb1dee8f8816551854478571959d882db95379fb8ed1da4f81a44f2b0e189a",
+    "crates/nine65/src/ops/exact_mul.rs": "228d23cc8c86eeba566f8d53ced1cc3f7f86445c6bcc4e5828e30df338ea9d2a",
+    "crates/nine65/src/ops/public_refresh_circuit.rs": "7401cb1c508644fd86d3671a488b284765dd2a12091456381c1dbb978adb8c37",
+    "crates/nine65/src/ops/public_refresh_return.rs": "df4278e9c2e7bd3d032394872ecef368940bb677db9953f7cb10f41fb885d56f",
+    "crates/nine65/src/ops/public_refresh_source.rs": "49e62894b56aba911261c36a842c4be639892f09d2e30c39d866a37be73639a2",
+    "crates/nine65/src/ops/public_refresh_source_kernels.rs": "ef946e6c0691a877b5eb3c11a888b609d6ec6395b40cc4e335f7b41aed51ecc7",
+    "crates/nine65/src/ops/public_refresh_source_plan.rs": "f436f3e62c0330d85d1e98cc5599cf200955435997f3e5c6795101e32052d120",
+    "crates/nine65/src/ops/rns_fhe.rs": "cada065964ae9bae9ff0698f004f364e592f2d3d7098fcb81c6b5f08b715f829",
+    "crates/nine65/src/ops/rns_galois.rs": "4fc8ecb632f52eb9312efd3631beead3c3ce25ff4f0c57a190d2becc9cc66bf6",
+    "crates/nine65/src/params/secure_configs.rs": "38e01b8dc2fd05aaa0bb08f8ddeb7d14f46704e7010ead1761d6e34d7ed05c41"
+  },
+  "source_sha": "7ada6503634a824e80bc4bcfd6231ad0178d7ed3"
+}

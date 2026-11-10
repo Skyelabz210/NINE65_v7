@@ -1,0 +1,165 @@
+{
+  "scope": "selected generic-LWE marginal costs only; no lower bound or attestation",
+  "source_commit": "7ada6503634a824e80bc4bcfd6231ad0178d7ed3",
+  "task_count": 32,
+  "finite_count": 32,
+  "error_count": 0,
+  "timeout_count": 0,
+  "rows": [
+    {
+      "target": "secure_128",
+      "aliases": [
+        "secure_128",
+        "secure_128_deep",
+        "native_work"
+      ],
+      "n": 8192,
+      "q_bit_length": 119,
+      "eta": 3,
+      "selected_costs": {
+        "matzov_classical": {
+          "usvp": 244.91643812282746,
+          "dual": 247.07970438718215
+        },
+        "adps16_quantum_lattice": {
+          "usvp": 199.28,
+          "dual": 200.34
+        }
+      }
+    },
+    {
+      "target": "secure_192",
+      "aliases": [
+        "secure_192"
+      ],
+      "n": 16384,
+      "q_bit_length": 146,
+      "eta": 4,
+      "selected_costs": {
+        "matzov_classical": {
+          "usvp": 433.2941097299348,
+          "dual": 436.31000205848903
+        },
+        "adps16_quantum_lattice": {
+          "usvp": 376.3,
+          "dual": 377.625
+        }
+      }
+    },
+    {
+      "target": "secure_256",
+      "aliases": [
+        "secure_256"
+      ],
+      "n": 16384,
+      "q_bit_length": 175,
+      "eta": 5,
+      "selected_costs": {
+        "matzov_classical": {
+          "usvp": 351.2631124136801,
+          "dual": 353.41719870593744
+        },
+        "adps16_quantum_lattice": {
+          "usvp": 298.92,
+          "dual": 299.71500000000003
+        }
+      }
+    },
+    {
+      "target": "native_source",
+      "aliases": [
+        "native_source"
+      ],
+      "n": 8192,
+      "q_bit_length": 60,
+      "eta": 3,
+      "selected_costs": {
+        "matzov_classical": {
+          "usvp": 497.37210943838284,
+          "dual": 503.8064555751618
+        },
+        "adps16_quantum_lattice": {
+          "usvp": 437.78000000000003,
+          "dual": 440.96000000000004
+        }
+      }
+    },
+    {
+      "target": "native_outer",
+      "aliases": [
+        "native_outer"
+      ],
+      "n": 32768,
+      "q_bit_length": 650,
+      "eta": 3,
+      "selected_costs": {
+        "matzov_classical": {
+          "usvp": 174.68982180007993,
+          "dual": 175.73787891721298
+        },
+        "adps16_quantum_lattice": {
+          "usvp": 130.645,
+          "dual": 130.645
+        }
+      }
+    },
+    {
+      "target": "legacy_bootstrap_secure_128",
+      "aliases": [
+        "legacy_bootstrap_secure_128",
+        "legacy_bootstrap_secure_128_deep"
+      ],
+      "n": 8192,
+      "q_bit_length": 146,
+      "eta": 3,
+      "selected_costs": {
+        "matzov_classical": {
+          "usvp": 194.09841709681427,
+          "dual": 195.78963357447725
+        },
+        "adps16_quantum_lattice": {
+          "usvp": 151.05,
+          "dual": 151.58000000000044
+        }
+      }
+    },
+    {
+      "target": "legacy_bootstrap_secure_192",
+      "aliases": [
+        "legacy_bootstrap_secure_192"
+      ],
+      "n": 16384,
+      "q_bit_length": 177,
+      "eta": 4,
+      "selected_costs": {
+        "matzov_classical": {
+          "usvp": 347.07277587860176,
+          "dual": 349.52882769597
+        },
+        "adps16_quantum_lattice": {
+          "usvp": 294.945,
+          "dual": 295.74
+        }
+      }
+    },
+    {
+      "target": "legacy_bootstrap_secure_256",
+      "aliases": [
+        "legacy_bootstrap_secure_256"
+      ],
+      "n": 16384,
+      "q_bit_length": 206,
+      "eta": 5,
+      "selected_costs": {
+        "matzov_classical": {
+          "usvp": 291.27424550289425,
+          "dual": 293.0759679332915
+        },
+        "adps16_quantum_lattice": {
+          "usvp": 242.21,
+          "dual": 242.74
+        }
+      }
+    }
+  ]
+}

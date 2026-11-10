@@ -1,0 +1,43 @@
+{
+  "source_commit": "7ada6503634a824e80bc4bcfd6231ad0178d7ed3",
+  "source_branch": "codex/parameter-security-evidence-2026-11-10",
+  "upstream_git_head": "f31b86fe490ab11abb4a69efa13007583791e10a",
+  "upstream_git_status_porcelain": "",
+  "source_file_sha256": {
+    "AGENTS.md": "b8b5357973b25f86ce0dacb6db9c5bb6a3ae4b21bfccf46c11ea43428b479da5",
+    "CLAUDE.md": "02a4b52966b7407d7c91bfa2594cd141de811dbb83394ef8db4adcc547caa0da",
+    "README.md": "75704a8bf6970e8e69255f3c6e3e0e1ae71bcd81d2cb26125b14e242cb3e1288",
+    "docs/PUBLIC_REFRESH_STATUS.md": "c04631ab1bb82d3f85b114c4bf8ad2db9fe8982d537128fe507151f83755be0b",
+    "crates/nine65/examples/public_refresh_review_packet.rs": "d906175b3a0238e69386a1581eb3b7114449655b5af2cc4f7c1da900a47f5604",
+    "crates/nine65/src/params/secure_configs.rs": "38e01b8dc2fd05aaa0bb08f8ddeb7d14f46704e7010ead1761d6e34d7ed05c41",
+    "crates/nine65/src/ops/public_refresh_key_graph.rs": "9cb904434366b41984fdce140f0bc356343f2cf555ade47a576eda2b9d77dd83",
+    "scripts/security/external_estimator_20261110.py": "f3919d9c47430e1e96aab946ed34b4e7ccf89c91c111722f134d49018aec6fb6",
+    "scripts/security/lattice_estimator_lock_20261110.json": "a873b0b87d52ac62f0963821cf9611b100fbf348314bad83084a220a0e59f132",
+    "scripts/security/check_external_estimator_20261110.py": "5c66fed8a063dbc272719f216645c416a0a6463ce74ea7954dbf3658cd28e394"
+  },
+  "input_sha256": "47e164a1d343f0e8d5a46db6541996ed4e4c628ae161472c121e8dd76afad62c",
+  "host_platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "recorded_unix": 1794284779.0010593,
+  "tool_sources": [
+    "https://github.com/malb/lattice-estimator/tree/f31b86fe490ab11abb4a69efa13007583791e10a",
+    "https://github.com/sagemath/sage"
+  ],
+  "upstream_clone_commands": [
+    [
+      "git",
+      "clone",
+      "--no-checkout",
+      "https://github.com/malb/lattice-estimator.git",
+      "/tmp/nine65-estimator-20261110"
+    ],
+    [
+      "git",
+      "-C",
+      "/tmp/nine65-estimator-20261110",
+      "checkout",
+      "--detach",
+      "f31b86fe490ab11abb4a69efa13007583791e10a"
+    ]
+  ],
+  "legacy_input_packet_sha256": "543ecda68277c7d1323b9b4009b2586bc2f81ead970d4d6a7d0c64db1d26fcd4"
+}

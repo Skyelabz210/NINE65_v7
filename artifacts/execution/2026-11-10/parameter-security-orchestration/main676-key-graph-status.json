@@ -1,0 +1,44 @@
+{
+  "schema": "nine65-main676-key-graph-freshness-v1",
+  "source_commit": "676c4ec68ec497ff5ef2bbc4697393ec9090a7bc",
+  "worktree": "/tmp/nine65-evidence-main676",
+  "started_utc": "2026-11-10T04:41:57.184850+00:00",
+  "deadline_seconds": 120,
+  "command": [
+    "cargo",
+    "run",
+    "--locked",
+    "--offline",
+    "-j2",
+    "-p",
+    "nine65",
+    "--features",
+    "allow_insecure serde",
+    "--example",
+    "public_refresh_review_packet"
+  ],
+  "environment": {
+    "CARGO_HOME": "/workspace/.tooling/cargo",
+    "RUSTUP_HOME": "/workspace/.tooling/rustup",
+    "CARGO_TARGET_DIR": "/tmp/nine65-parameter-target"
+  },
+  "scope": "key-free current-main exporter and independent source-bound graph audit only; no Rust tests or native encrypted run",
+  "exit_code": 0,
+  "outcome": "export_and_source_bound_audit_passed",
+  "old_key_publication_fingerprint": "06f0736c15f31fb061cbac0ff53c4539ce0a536d7b52b989532f9211b56662cf",
+  "new_key_publication_fingerprint": "7b23a4c8f6fc168393e199a8e88232fafdc6049111a28a69ad8a7329389ee2c4",
+  "native_domains_unchanged": true,
+  "native_relations_unchanged": true,
+  "named_profiles_unchanged": true,
+  "published_ciphertexts": 659,
+  "return_channels": 160,
+  "checker_sha256": "00d226150a74bfd2218e64049d0baee410dc92f93755645a08f60305762f5934",
+  "audit_method": "import existing check_public_key_graph_evidence module; set ROOT to detached worktree; call audit(packet, explicit source commit)",
+  "elapsed_seconds": 29.759507,
+  "worktree_status_after": "",
+  "files_sha256": {
+    "main676-review-packet.json": "9f5c7acfa5027000a9c1b786d1aff0dde0edfd2000030cb2a1c3d528918c03b2",
+    "main676-review-packet.stderr.log": "b19d291c3907efcdea9bac75afed2cb54b223ea044e340e9f13b31c3a031d40d",
+    "main676-key-graph-audit.json": "7739d9621b95389aa8658fd08c7d1e8acd053e8aa0d4a71edbdbcb3a344ffb39"
+  }
+}

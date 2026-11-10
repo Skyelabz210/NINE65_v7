@@ -1,0 +1,76 @@
+{
+  "source_commit": "7ada6503634a824e80bc4bcfd6231ad0178d7ed3",
+  "captured_at_utc": "2026-11-10T04:40:03.775542+00:00",
+  "checks": [
+    {
+      "name": "security-final",
+      "command": [
+        "python3",
+        "scripts/check_public_refresh_security_claims.py",
+        "--self-test"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.066,
+      "log": "artifacts/execution/2026-11-10/parameter-security-orchestration/security-final.log"
+    },
+    {
+      "name": "status-final",
+      "command": [
+        "python3",
+        "scripts/check_public_refresh_status.py",
+        "--self-test"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.228,
+      "log": "artifacts/execution/2026-11-10/parameter-security-orchestration/status-final.log"
+    },
+    {
+      "name": "stale-final",
+      "command": [
+        "bash",
+        "scripts/check_stale_claims.sh"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.607,
+      "log": "artifacts/execution/2026-11-10/parameter-security-orchestration/stale-final.log"
+    },
+    {
+      "name": "distribution-final",
+      "command": [
+        "python3",
+        "scripts/export_parameter_distribution_evidence.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.724,
+      "log": "artifacts/execution/2026-11-10/parameter-security-orchestration/distribution-final.log"
+    },
+    {
+      "name": "graph-final",
+      "command": [
+        "python3",
+        "scripts/check_public_key_graph_evidence.py",
+        "--packet",
+        "artifacts/execution/2026-11-10/public-key-graph/public_refresh_review_packet.json",
+        "--output",
+        "artifacts/execution/2026-11-10/public-key-graph/key_graph_audit.source-bound.json",
+        "--check"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.388,
+      "log": "artifacts/execution/2026-11-10/parameter-security-orchestration/graph-final.log"
+    },
+    {
+      "name": "whitespace-final",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.018,
+      "log": "artifacts/execution/2026-11-10/parameter-security-orchestration/whitespace-final.log"
+    }
+  ],
+  "all_passed": true
+}

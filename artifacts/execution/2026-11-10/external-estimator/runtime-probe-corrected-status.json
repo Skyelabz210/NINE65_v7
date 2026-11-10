@@ -1,0 +1,7 @@
+{
+  "status": "client_timeout",
+  "timeout_seconds": 60,
+  "container_state_checked_after_timeout": "created/unstarted",
+  "recovery_record": "runtime-probe-recovery.json",
+  "attack_result": false
+}

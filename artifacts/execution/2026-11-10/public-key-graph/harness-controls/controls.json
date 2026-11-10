@@ -1,0 +1,15 @@
+{
+  "schema": "nine65-key-graph-harness-controls-v1",
+  "missing_launch_collects_all_six": true,
+  "timeouts_collect_all_six": true,
+  "dedicated_timeout_child": {
+    "pid": 8150,
+    "state_after_group_kill": "Z",
+    "timeout_seconds": 3
+  },
+  "existing_run_rejected_without_changes": true,
+  "modified_packet_count_rejected": true,
+  "scope": "controlled diagnostic failures; no additional encrypted tests",
+  "initial_collection_error_preserved": "initial-control-collection-error.log",
+  "runner_sha256": "b8ab965e68f82f448859c6f903286e5f780a260d42354bdd3f7030644648a298"
+}

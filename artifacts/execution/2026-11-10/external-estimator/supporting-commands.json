@@ -1,0 +1,35 @@
+{
+  "controls": [
+    "python3",
+    "scripts/security/check_external_estimator_20261110.py",
+    "--source",
+    "/tmp/nine65-estimator-20261110",
+    "--inputs",
+    "artifacts/execution/2026-11-10/external-estimator/exact-input-packet.json",
+    "--lock",
+    "scripts/security/lattice_estimator_lock_20261110.json"
+  ],
+  "image_metadata": [
+    "docker",
+    "--host=unix:///var/run/docker.sock",
+    "image",
+    "inspect",
+    "sagemath/sagemath@sha256:19995db6194f4a4bab18ce9a88556fd15b9ed5e916b4504fefe618a7796ddbdb",
+    "--format",
+    "{{json .Id}} {{json .RepoDigests}} {{json .Config.Entrypoint}} {{json .Size}}"
+  ],
+  "git_source": [
+    "git",
+    "-C",
+    "/tmp/nine65-estimator-20261110",
+    "rev-parse",
+    "HEAD"
+  ],
+  "git_cleanliness": [
+    "git",
+    "-C",
+    "/tmp/nine65-estimator-20261110",
+    "status",
+    "--porcelain"
+  ]
+}
