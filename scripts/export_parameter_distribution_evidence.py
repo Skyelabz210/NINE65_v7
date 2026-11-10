@@ -19,9 +19,9 @@ import subprocess
 from fractions import Fraction
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-# Default validation follows the source-bound main supplement. The original
-# 7ada650 packet remains frozen at parameter-distribution/parameter-distributions.json.
-OUTPUT = "artifacts/execution/2026-11-10/parameter-security-orchestration/main676-parameter-distributions.json"
+# Default validation follows the latest source-bound integration supplement.
+# Earlier 7ada650 and main676 packets remain frozen in their original paths.
+OUTPUT = "artifacts/execution/2026-11-10/final-integration/parameter-distributions.json"
 RUST = "crates/nine65/src/"
 FILES = (
     RUST + "params/secure_configs.rs",

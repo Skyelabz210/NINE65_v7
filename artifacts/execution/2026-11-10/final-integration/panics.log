@@ -1,0 +1,48 @@
+=== No-Panics Quality Gate ===
+Scanning: crates/nine65/src crates/fhe-service/src (excluding bin/ and test-gated items)
+Mode:     ratchet
+
+--- crates/nine65/src ---
+Production source lines in scope: 62175
+  [FAIL] 'panic!' — 35 occurrences in production code
+    crates/nine65/src/ops/gso_fhe.rs:437:            .unwrap_or_else(|e| panic!("GSO symmetric multiplication refused: {e}"))
+    crates/nine65/src/ops/rns_fhe.rs:1970:            panic!(
+    crates/nine65/src/ops/rns_fhe.rs:3645:            .unwrap_or_else(|e| panic!("symmetric exact multiply failed: {e}"))
+    crates/nine65/src/ops/rns_fhe.rs:3796:            .unwrap_or_else(|e| panic!("symmetric exact multiply failed: {e}"))
+    crates/nine65/src/ops/rns_fhe.rs:5785:                panic!("mul_ntt_domain/mul_coeff_domain: {e}");
+    crates/nine65/src/ops/rns_fhe.rs:5814:            panic!("mul_ntt_domain/mul_coeff_domain: rescale of d0 failed: {e}")
+    crates/nine65/src/ops/rns_fhe.rs:5817:            panic!("mul_ntt_domain/mul_coeff_domain: rescale of d1 failed: {e}")
+    crates/nine65/src/ops/rns_fhe.rs:5820:            panic!("mul_ntt_domain/mul_coeff_domain: rescale of d2 failed: {e}")
+    crates/nine65/src/ops/rns_fhe.rs:5863:                panic!("mul_ntt_domain_with_s2/mul_coeff_domain_with_s2: {e}");
+    crates/nine65/src/ops/rns_fhe.rs:5878:            panic!("mul_ntt_domain/mul_coeff_domain: rescale of d0 failed: {e}")
+    ... and 25 more
+  [PASS] '\.unwrap()' — none in production code
+  [FAIL] '\.expect(' — 79 occurrences in production code
+    crates/nine65/src/ops/cram_main.rs:169:            .remaining_millibits(&self.state.noise.fresh().expect("admitted fresh bound"))
+    crates/nine65/src/ops/rns_fhe.rs:1234:        Self::try_new(config).expect("Invalid FHE config for RNS-native FHE")
+    crates/nine65/src/ops/rns_fhe.rs:5631:            .expect("bench_k_elim_rescale_dual: rescale failed on benchmark input")
+    crates/nine65/src/ops/homomorphic.rs:181:            .expect("DESIGN ERROR: Evaluation key required for relinearization - use try_relinearize() or provide eval_key during construction")
+    crates/nine65/src/ops/encrypt.rs:66:            .expect("Message must be less than plaintext modulus")
+    crates/nine65/src/ops/encrypt.rs:124:            .expect("Invalid message vector")
+    crates/nine65/src/ops/encrypt.rs:532:            .expect("CRITICAL: OS CSPRNG failure during secure encryption")
+    crates/nine65/src/ops/auto_bootstrap.rs:336:            .expect("auto-bootstrap addition refresh failed")
+    crates/nine65/src/entropy/shadow_entropy_monitor.rs:359:            .expect("Failed to create thread pool")
+    crates/nine65/src/entropy/secure.rs:71:            .expect("CRITICAL: OS CSPRNG failure - system entropy unavailable")
+    ... and 69 more
+    RATCHET REGRESSION: baseline for crates/nine65/src '\.expect(' is 77, found 79
+
+--- crates/fhe-service/src ---
+Production source lines in scope: 1819
+  [PASS] 'panic!' — none in production code
+  [PASS] '\.unwrap()' — none in production code
+  [PASS] '\.expect(' — none in production code
+
+RESULT: 114 panic-pattern violations in production code
+NOTE: Some .expect() calls on the OS CSPRNG are intentional (CRITICAL path);
+      others should become try_*/? returns. Each needs individual review.
+
+RATCHET MODE — FAILING: at least one (dir, pattern) count exceeds its
+  committed baseline in scripts/panic_gate_baseline.txt. The existing backlog is
+  not what failed this build; a NEW production panic!/unwrap()/expect()
+  site is. Fix it, or if it is an intentionally reviewed addition,
+  regenerate the baseline deliberately (see the script header).

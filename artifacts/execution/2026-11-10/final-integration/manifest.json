@@ -1,0 +1,34 @@
+{
+  "source_commit": "3b4466a2030573029ad04e45222cc71374c8ed94",
+  "source_tree": "fbfa8322675375af402c4206ce25899a8d49edcb",
+  "validated_local_source_commit": "78eddfba9283e501cf5ff43dfcaaa051028b0f64",
+  "scheduler_passed": 11,
+  "release_entropy_passed": 7,
+  "release_arithmetic_passed": 3,
+  "distribution_controls_passed": 10,
+  "existing_parameter_controls_passed": 10,
+  "audit_controls_passed": 8,
+  "parameter_semantics_unchanged": true,
+  "graph_only_changed_field": "key_publication_fingerprint",
+  "panic_ratchet": {
+    "status": "failed",
+    "expect_baseline": 77,
+    "observed_expects": 79,
+    "panic_baseline_unchanged": true
+  },
+  "sha256": {
+    "audit-controls.log": "63e57b262f40654effea63c2636e1610d094449aaf23f64dda68b108c1121ed0",
+    "claim-registry.log": "9a7345b95eab80d903a39aeb2ade5b7f7e8744fc26ce62602da3e93cd3fbb507",
+    "distribution-controls.log": "7d632b6c2b056652698a7899982545bbef2bffca1576b4fadacbfd2e7fffea7b",
+    "key-graph-audit.json": "dcdcbc3a29d23946d7cdc4d6df1ec14ce4a7d8b4ed570cf57d0037ab298e7d23",
+    "modulus-audit.log": "4b64c0bf8264ae5b761b9aa691b2733bf9d9345000900cacea62905ad76b3f94",
+    "packet-build.log": "b49879cdd8c82004cfe01939421b15a0dd6d60ac4ee0ab31062da0c6779bd8fb",
+    "panics.log": "8b90a3c96af3c3f57f8e9a37bc5b85fec0329538235778440819c2274acf09e2",
+    "parameter-distributions.json": "9eea217cbf86df6f47e9f746475464b846ab7265536031480cded9987d2cd3db",
+    "release.log": "6dbecbbd52aa126d36cbf6d9ea799bf6afa5d66988cdeba221c4ec8d7083795a",
+    "review-packet.json": "d7e7687853587e505ebeae4f9521df72d198f62f85a1e29d4014f504d28a36d3",
+    "scheduler.log": "c4901ac1b90c69eafc21b670bb3d7fc232ccf9ee8a0f9366cf0d9195faffebff",
+    "security-controls.log": "d5ee292a5609fafe7e4cb25674fbee175f6f1a398b2eea9ed9ecb7335f94e847",
+    "status-controls.log": "8335cad54c4ba56f941d765c6e6721b583978f642acd564c629249e3c3df878c"
+  }
+}

@@ -1,0 +1,32 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/shared/nine65-final-integration/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/shared/nine65-final-integration/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/shared/nine65-final-integration/crates/nine65)
+   Compiling mana v0.1.0 (/workspace/shared/nine65-final-integration/crates/mana)
+   Compiling clockwork-core v0.1.0 (/workspace/shared/nine65-final-integration/crates/clockwork-core)
+   Compiling unhal v0.1.0 (/workspace/shared/nine65-final-integration/crates/unhal)
+   Compiling nexgen_rational v0.1.0 (/workspace/shared/nine65-final-integration/crates/nexgen_rational)
+   Compiling exact_transcendentals v1.0.0 (/workspace/shared/nine65-final-integration/crates/exact_transcendentals)
+    Finished `release` profile [optimized] target(s) in 1m 11s
+     Running tests/native_key_entropy.rs (/workspace/shared/nine65-ci/target/release/deps/native_key_entropy-6957a7aaee883841)
+
+running 7 tests
+test release_secret_key_refuses_shadow_before_sampling ... ok
+test release_keyset_refuses_shadow_before_sampling ... ok
+test release_public_key_refuses_shadow_before_sampling ... ok
+test release_evaluation_key_refuses_shadow_before_sampling ... ok
+test release_encryption_refuses_all_shadow_entrypoints ... ok
+test secure_encryption_entrypoints_preserve_roundtrips_and_input_errors ... ok
+test secure_key_constructors_remain_available ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests/single_modulus_admission.rs (/workspace/shared/nine65-ci/target/release/deps/single_modulus_admission-2db6db941104eb70)
+
+running 3 tests
+test scalar_preflight_uses_the_requested_scalar_and_retired_mul_has_no_depth ... ok
+test unused_rns_primes_cannot_fund_single_modulus_scalar_multiplication ... ok
+test funded_single_modulus_preserves_full_plaintext_scalar_domain ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+

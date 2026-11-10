@@ -1,0 +1,18 @@
+
+running 11 tests
+test ops::public_refresh_circuit::scheduler::tests::numeric_forecasts_reject_wide_unadmitted_bounds ... ok
+test ops::public_refresh_circuit::scheduler::tests::scheduler_backend_failure_is_typed_and_never_falls_back ... ok
+test ops::public_refresh_circuit::scheduler::tests::scheduler_addition_refreshes_before_losing_source_support ... ok
+test ops::public_refresh_circuit::scheduler::tests::scheduler_binary_refresh_forecast_counts_actual_work ... ok
+test ops::public_refresh_circuit::scheduler::tests::scheduler_budget_refuses_before_work_and_rechecks_stale_forecasts ... ok
+test ops::public_refresh_circuit::scheduler::tests::scheduler_cannot_recover_a_history_already_outside_source_support ... ok
+test ops::public_refresh_circuit::scheduler::tests::scheduler_forecasts_match_real_arithmetic_and_bind_histories ... ok
+test ops::public_refresh_circuit::scheduler::tests::scheduler_rejects_foreign_family_before_any_refresh ... ok
+scheduler seed 91548440413186: 12 encrypted squares, 3 real refreshes, 96 coefficient comparisons
+test ops::public_refresh_circuit::scheduler::tests::scheduler_second_refresh_failure_keeps_partial_work_accounted ... ok
+test ops::public_refresh_circuit::scheduler::tests::scheduler_two_refresh_schedule_reserves_the_whole_budget ... ok
+scheduler seed 91548440413187: 12 encrypted squares, 3 real refreshes, 96 coefficient comparisons
+test ops::public_refresh_circuit::scheduler::tests::scheduler_repeated_encrypted_squares_use_real_refresh_once_per_input ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 1392 filtered out; finished in 4.18s
+

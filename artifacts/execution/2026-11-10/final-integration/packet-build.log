@@ -1,0 +1,13 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/shared/nine65-final-integration/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/shared/nine65-final-integration/Cargo.toml
+   Compiling mana v0.1.0 (/workspace/shared/nine65-final-integration/crates/mana)
+   Compiling nine65 v0.1.0 (/workspace/shared/nine65-final-integration/crates/nine65)
+   Compiling unty v0.0.4
+   Compiling clockwork-core v0.1.0 (/workspace/shared/nine65-final-integration/crates/clockwork-core)
+   Compiling bincode v2.0.1
+   Compiling unhal v0.1.0 (/workspace/shared/nine65-final-integration/crates/unhal)
+   Compiling nexgen_rational v0.1.0 (/workspace/shared/nine65-final-integration/crates/nexgen_rational)
+   Compiling exact_transcendentals v1.0.0 (/workspace/shared/nine65-final-integration/crates/exact_transcendentals)
+    Finished `dev` profile [unoptimized] target(s) in 10.99s
+     Running `/workspace/shared/nine65-claude-recovered/target/debug/examples/public_refresh_review_packet`
