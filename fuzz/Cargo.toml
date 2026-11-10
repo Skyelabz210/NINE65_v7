@@ -50,3 +50,11 @@ path = "fuzz_targets/fuzz_ntt.rs"
 test = false
 doc = false
 bench = false
+
+# Seeded arithmetic fuzzing is research, not a release-entropy bypass. Keep
+# debug assertions enabled so the library admits deterministic test streams,
+# while optimizing the hot arithmetic paths for a useful fuzzing budget.
+[profile.dev]
+opt-level = 3
+debug-assertions = true
+overflow-checks = true

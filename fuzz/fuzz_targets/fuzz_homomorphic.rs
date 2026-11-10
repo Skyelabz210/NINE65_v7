@@ -1,5 +1,8 @@
 #![no_main]
 
+#[cfg(not(debug_assertions))]
+compile_error!("seeded arithmetic fuzzing requires `cargo fuzz run --dev`; release entropy guards stay enabled");
+
 use arbitrary::Arbitrary;
 use libfuzzer_sys::fuzz_target;
 use nine65::prelude::*;

@@ -79,7 +79,10 @@ jobs:
           set -euo pipefail
           seconds='${{ github.event.inputs.seconds_per_target }}'
           seconds="${seconds:-60}"
-          cargo fuzz run '${{ matrix.target }}' --release -- \
+          # Two seeded arithmetic targets intentionally use test entropy.
+          # fuzz/Cargo.toml optimizes dev while preserving entropy-policy
+          # debug assertions; production release guards stay unchanged.
+          cargo fuzz run '${{ matrix.target }}' --dev -- \
             -max_total_time="$seconds"
 
       - name: Preserve failing fuzz artifacts

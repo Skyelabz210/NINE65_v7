@@ -3,7 +3,11 @@
 # 'bash scripts/check_no_panics.sh generate-baseline' after reviewing
 # that a count change is a real, reviewed fix or addition — never to
 # silence a ratchet failure without looking at what regressed.
-crates/nine65/src|panic!|33
+# Reviewed 2026-11-10: two infallible polynomial-encryption wrappers now
+# panic on the typed entropy-policy errors returned by their new try_* APIs.
+# These preserve the existing API signatures and fail closed. See
+# docs/execution/2026-11-10/CI_ENTROPY_FOLLOWUP.md; other budgets are unchanged.
+crates/nine65/src|panic!|35
 crates/nine65/src|\.unwrap()|0
 crates/nine65/src|\.expect(|77
 crates/fhe-service/src|panic!|0

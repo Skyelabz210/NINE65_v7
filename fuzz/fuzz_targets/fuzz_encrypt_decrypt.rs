@@ -1,5 +1,8 @@
 #![no_main]
 
+#[cfg(not(debug_assertions))]
+compile_error!("seeded arithmetic fuzzing requires `cargo fuzz run --dev`; release entropy guards stay enabled");
+
 use arbitrary::Arbitrary;
 use libfuzzer_sys::fuzz_target;
 use nine65::prelude::*;
@@ -15,7 +18,7 @@ struct EncryptInput {
 // - Encryption doesn't panic
 // - Decryption correctly recovers the plaintext (mod t)
 fuzz_target!(|input: EncryptInput| {
-    // Use a fixed secure config to avoid parameter fuzzing overhead
+    // Use a fixed arithmetic fixture to avoid parameter fuzzing overhead
     let config = FHEConfig::for_depth(1, 4096, 0).expect("depth-one fuzz configuration");
 
     // Bound plaintext to valid range
