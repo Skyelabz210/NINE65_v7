@@ -1,0 +1,110 @@
+{
+  "source_commit": "7ada6503634a824e80bc4bcfd6231ad0178d7ed3",
+  "final_inspected_main": "676c4ec68ec497ff5ef2bbc4697393ec9090a7bc",
+  "bound_files": [
+    {
+      "path": "Cargo.lock",
+      "source_sha256": "cfe3bdbced103df767be8d03ec7c57aefb0e84a878dc1ee6f7a2a099ac5003f5",
+      "new_main_sha256": "cfe3bdbced103df767be8d03ec7c57aefb0e84a878dc1ee6f7a2a099ac5003f5",
+      "identical": true
+    },
+    {
+      "path": "artifacts/execution/parameter_registry.json",
+      "source_sha256": "5ddb248612358a7f02cfc98118e0b7242e33c60f1766d3148efde96aadfe6138",
+      "new_main_sha256": "5ddb248612358a7f02cfc98118e0b7242e33c60f1766d3148efde96aadfe6138",
+      "identical": true
+    },
+    {
+      "path": "crates/nine65/src/entropy/rng_trait.rs",
+      "source_sha256": "03d51ef26249414f4f95e2c2ef52123d54e2f2f3fe386aaa2a42824f2c4d90a2",
+      "new_main_sha256": "eca9e057374b69d7ccf3a393e820060062baa83813568190763112bb9ccb6de2",
+      "identical": false
+    },
+    {
+      "path": "crates/nine65/src/entropy/secure.rs",
+      "source_sha256": "9d8594da22e2df906eef969772cc1919879f2a1058a30d6219e145a6634eeaee",
+      "new_main_sha256": "9d8594da22e2df906eef969772cc1919879f2a1058a30d6219e145a6634eeaee",
+      "identical": true
+    },
+    {
+      "path": "crates/nine65/src/keys/bootstrap.rs",
+      "source_sha256": "32ab87eb27a698f39729264b7ac8f0e2141915b87b170f816c012d3647fa4272",
+      "new_main_sha256": "32ab87eb27a698f39729264b7ac8f0e2141915b87b170f816c012d3647fa4272",
+      "identical": true
+    },
+    {
+      "path": "crates/nine65/src/ops/bootstrap.rs",
+      "source_sha256": "22fb911968cfc73d5c64358f2626a0ce244bdd68fbb66f1f4d1210926da532e9",
+      "new_main_sha256": "22fb911968cfc73d5c64358f2626a0ce244bdd68fbb66f1f4d1210926da532e9",
+      "identical": true
+    },
+    {
+      "path": "crates/nine65/src/ops/direct_slot_phase.rs",
+      "source_sha256": "15cb1dee8f8816551854478571959d882db95379fb8ed1da4f81a44f2b0e189a",
+      "new_main_sha256": "15cb1dee8f8816551854478571959d882db95379fb8ed1da4f81a44f2b0e189a",
+      "identical": true
+    },
+    {
+      "path": "crates/nine65/src/ops/exact_mul.rs",
+      "source_sha256": "228d23cc8c86eeba566f8d53ced1cc3f7f86445c6bcc4e5828e30df338ea9d2a",
+      "new_main_sha256": "228d23cc8c86eeba566f8d53ced1cc3f7f86445c6bcc4e5828e30df338ea9d2a",
+      "identical": true
+    },
+    {
+      "path": "crates/nine65/src/ops/public_refresh_circuit.rs",
+      "source_sha256": "7401cb1c508644fd86d3671a488b284765dd2a12091456381c1dbb978adb8c37",
+      "new_main_sha256": "8894f47baf9b277a59fd7f1c722a7556688a4ace8f91f7f46cf470b62baed26f",
+      "identical": false
+    },
+    {
+      "path": "crates/nine65/src/ops/public_refresh_return.rs",
+      "source_sha256": "df4278e9c2e7bd3d032394872ecef368940bb677db9953f7cb10f41fb885d56f",
+      "new_main_sha256": "df4278e9c2e7bd3d032394872ecef368940bb677db9953f7cb10f41fb885d56f",
+      "identical": true
+    },
+    {
+      "path": "crates/nine65/src/ops/public_refresh_source.rs",
+      "source_sha256": "49e62894b56aba911261c36a842c4be639892f09d2e30c39d866a37be73639a2",
+      "new_main_sha256": "3471fda4d5d3e516111149331cb0b02ec17f8136972b2577ebf7b44153c58ef2",
+      "identical": false
+    },
+    {
+      "path": "crates/nine65/src/ops/public_refresh_source_kernels.rs",
+      "source_sha256": "ef946e6c0691a877b5eb3c11a888b609d6ec6395b40cc4e335f7b41aed51ecc7",
+      "new_main_sha256": "ef946e6c0691a877b5eb3c11a888b609d6ec6395b40cc4e335f7b41aed51ecc7",
+      "identical": true
+    },
+    {
+      "path": "crates/nine65/src/ops/public_refresh_source_plan.rs",
+      "source_sha256": "f436f3e62c0330d85d1e98cc5599cf200955435997f3e5c6795101e32052d120",
+      "new_main_sha256": "730e6cfc956d704345bc5c93a85ad8c7916a87960e1ad4e715d552ddd87643ad",
+      "identical": false
+    },
+    {
+      "path": "crates/nine65/src/ops/rns_fhe.rs",
+      "source_sha256": "cada065964ae9bae9ff0698f004f364e592f2d3d7098fcb81c6b5f08b715f829",
+      "new_main_sha256": "cada065964ae9bae9ff0698f004f364e592f2d3d7098fcb81c6b5f08b715f829",
+      "identical": true
+    },
+    {
+      "path": "crates/nine65/src/ops/rns_galois.rs",
+      "source_sha256": "4fc8ecb632f52eb9312efd3631beead3c3ce25ff4f0c57a190d2becc9cc66bf6",
+      "new_main_sha256": "4fc8ecb632f52eb9312efd3631beead3c3ce25ff4f0c57a190d2becc9cc66bf6",
+      "identical": true
+    },
+    {
+      "path": "crates/nine65/src/params/secure_configs.rs",
+      "source_sha256": "38e01b8dc2fd05aaa0bb08f8ddeb7d14f46704e7010ead1761d6e34d7ed05c41",
+      "new_main_sha256": "38e01b8dc2fd05aaa0bb08f8ddeb7d14f46704e7010ead1761d6e34d7ed05c41",
+      "identical": true
+    },
+    {
+      "path": "rust-toolchain.toml",
+      "source_sha256": "a93527593d1f1e9a134e588cadec40ac33c2b08194b7342c9d24cf05b128a0d5",
+      "new_main_sha256": "a93527593d1f1e9a134e588cadec40ac33c2b08194b7342c9d24cf05b128a0d5",
+      "identical": true
+    }
+  ],
+  "identical_bound_files": false,
+  "note": "No new main commit executed; frozen evidence source remains recorded explicitly."
+}

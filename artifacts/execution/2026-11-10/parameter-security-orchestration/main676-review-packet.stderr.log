@@ -1,0 +1,11 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /tmp/nine65-evidence-main676/crates/exact_transcendentals/Cargo.toml
+workspace: /tmp/nine65-evidence-main676/Cargo.toml
+   Compiling mana v0.1.0 (/tmp/nine65-evidence-main676/crates/mana)
+   Compiling nine65 v0.1.0 (/tmp/nine65-evidence-main676/crates/nine65)
+   Compiling unhal v0.1.0 (/tmp/nine65-evidence-main676/crates/unhal)
+   Compiling clockwork-core v0.1.0 (/tmp/nine65-evidence-main676/crates/clockwork-core)
+   Compiling exact_transcendentals v1.0.0 (/tmp/nine65-evidence-main676/crates/exact_transcendentals)
+   Compiling nexgen_rational v0.1.0 (/tmp/nine65-evidence-main676/crates/nexgen_rational)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 23.69s
+     Running `/tmp/nine65-parameter-target/debug/examples/public_refresh_review_packet`

@@ -1,0 +1,290 @@
+{
+  "excluded_claims": [
+    "joint confidentiality established",
+    "external attestation obtained",
+    "probabilistic failure bound derived",
+    "constant-time established"
+  ],
+  "key_publication_fingerprint": "06f0736c15f31fb061cbac0ff53c4539ce0a536d7b52b989532f9211b56662cf",
+  "named_profiles": [
+    {
+      "eta": 3,
+      "n": 8192,
+      "name": "secure_128",
+      "nominal_security_bits": 128,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049"
+      ],
+      "t": 65537
+    },
+    {
+      "eta": 3,
+      "n": 8192,
+      "name": "secure_128_deep",
+      "nominal_security_bits": 128,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049"
+      ],
+      "t": 65537
+    },
+    {
+      "eta": 4,
+      "n": 16384,
+      "name": "secure_192",
+      "nominal_security_bits": 192,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049",
+        "167772161"
+      ],
+      "t": 65537
+    },
+    {
+      "eta": 5,
+      "n": 16384,
+      "name": "secure_256",
+      "nominal_security_bits": 256,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049",
+        "167772161",
+        "595591169"
+      ],
+      "t": 65537
+    }
+  ],
+  "native_domains": [
+    {
+      "cbd_eta": 3,
+      "domain": "Work",
+      "n": 8192,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049"
+      ],
+      "plaintext_moduli_decimal": [
+        "65537"
+      ],
+      "secret_sampler": "dense ternary via next_u64()%3",
+      "source_weight": null
+    },
+    {
+      "cbd_eta": 3,
+      "domain": "Source",
+      "n": 8192,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441"
+      ],
+      "plaintext_moduli_decimal": [
+        "65537"
+      ],
+      "secret_sampler": "balanced sparse ternary; hidden support",
+      "source_weight": 96
+    },
+    {
+      "cbd_eta": 3,
+      "domain": "Outer",
+      "n": 32768,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049",
+        "576460752301785089",
+        "576460752301391873",
+        "576460752300015617",
+        "576460752298835969",
+        "576460752298180609",
+        "576460752293134337",
+        "576460752291954689",
+        "576460752290775041",
+        "575870995836829697"
+      ],
+      "plaintext_moduli_decimal": [
+        "65537",
+        "4295098369"
+      ],
+      "secret_sampler": "dense ternary via FheRng::ternary_vector",
+      "source_weight": null
+    }
+  ],
+  "native_relations": [
+    {
+      "encryption_secret": "Work",
+      "message_secret": null,
+      "published_ciphertexts": 1,
+      "purpose": "work public key: zero"
+    },
+    {
+      "encryption_secret": "Work",
+      "message_secret": "Work",
+      "published_ciphertexts": 12,
+      "purpose": "work relinearization: gadget*W^2"
+    },
+    {
+      "encryption_secret": "Source",
+      "message_secret": "Work",
+      "published_ciphertexts": 20,
+      "purpose": "source switch: gadget*embedded W"
+    },
+    {
+      "encryption_secret": "Outer",
+      "message_secret": "Source",
+      "published_ciphertexts": 256,
+      "purpose": "phase bank: shifted S, independent p^2/p encodings"
+    },
+    {
+      "encryption_secret": "Outer",
+      "message_secret": "Outer",
+      "published_ciphertexts": 66,
+      "purpose": "outer relinearization: gadget*B^2"
+    },
+    {
+      "encryption_secret": "Outer",
+      "message_secret": "Outer",
+      "published_ciphertexts": 264,
+      "purpose": "phase/inverse automorphisms: gadget*sigma(B)"
+    },
+    {
+      "encryption_secret": "Work",
+      "message_secret": "Outer",
+      "published_ciphertexts": 40,
+      "purpose": "return: gadget*B under embedded W"
+    }
+  ],
+  "production_admitted": false,
+  "requires_joint_key_review": true,
+  "return_effective_secret_degree": 8192,
+  "review_requirements": [
+    "exact factorized ring tuples and secret/error distributions",
+    "full classical and quantum attack-model coverage",
+    "joint and key-dependent setup confidentiality",
+    "sampler bias and correctness of modeling assumptions",
+    "independent reviewer identity, pinned tools, raw outputs and signed conclusion"
+  ],
+  "schema": "nine65-independent-review-inputs-v1",
+  "status": "unsigned_review_inputs_not_attestation",
+  "legacy_clockwork_bootstrap_profiles": [
+    {
+      "bootstrap_key_encryption_u_distribution": "word_mod3_ternary",
+      "circular_key_independent_of_work": false,
+      "circular_secret_distribution": "same_original_work_coefficients_reencoded",
+      "error_distribution": "cbd_3",
+      "eta": 3,
+      "exact_q_bits": 146,
+      "independent_boot_secret_distribution": "word_mod3_minus_one_heavy_ternary",
+      "key_generation_does_not_enable_refresh": true,
+      "legacy_refresh_gate_enabled": false,
+      "n": 8192,
+      "nominal_security_label_bits": 128,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049",
+        "167772161"
+      ],
+      "owner_profile": "secure_128",
+      "public_and_switch_key_mask": "canonical_full_Q_rejection_uniform",
+      "q_decimal": "58545681590027521508543467009573734775259137",
+      "q_hex": "0x2a0124b80e123c835c6603bc46000c9400001",
+      "t_decimal": "65537"
+    },
+    {
+      "bootstrap_key_encryption_u_distribution": "word_mod3_ternary",
+      "circular_key_independent_of_work": false,
+      "circular_secret_distribution": "same_original_work_coefficients_reencoded",
+      "error_distribution": "cbd_3",
+      "eta": 3,
+      "exact_q_bits": 146,
+      "independent_boot_secret_distribution": "word_mod3_minus_one_heavy_ternary",
+      "key_generation_does_not_enable_refresh": true,
+      "legacy_refresh_gate_enabled": false,
+      "n": 8192,
+      "nominal_security_label_bits": 128,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049",
+        "167772161"
+      ],
+      "owner_profile": "secure_128_deep",
+      "public_and_switch_key_mask": "canonical_full_Q_rejection_uniform",
+      "q_decimal": "58545681590027521508543467009573734775259137",
+      "q_hex": "0x2a0124b80e123c835c6603bc46000c9400001",
+      "t_decimal": "65537"
+    },
+    {
+      "bootstrap_key_encryption_u_distribution": "word_mod3_ternary",
+      "circular_key_independent_of_work": false,
+      "circular_secret_distribution": "same_original_work_coefficients_reencoded",
+      "error_distribution": "cbd_4",
+      "eta": 4,
+      "exact_q_bits": 177,
+      "independent_boot_secret_distribution": "word_mod3_minus_one_heavy_ternary",
+      "key_generation_does_not_enable_refresh": true,
+      "legacy_refresh_gate_enabled": false,
+      "n": 16384,
+      "nominal_security_label_bits": 192,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049",
+        "167772161",
+        "1811939329"
+      ],
+      "owner_profile": "secure_192",
+      "public_and_switch_key_mask": "canonical_full_Q_rejection_uniform",
+      "q_decimal": "106081223016082120413723317380660669564707006496899073",
+      "q_hex": "0x11b87b7dcff0d63f790d4616c9ee090ab600135400001",
+      "t_decimal": "65537"
+    },
+    {
+      "bootstrap_key_encryption_u_distribution": "word_mod3_ternary",
+      "circular_key_independent_of_work": false,
+      "circular_secret_distribution": "same_original_work_coefficients_reencoded",
+      "error_distribution": "cbd_5",
+      "eta": 5,
+      "exact_q_bits": 206,
+      "independent_boot_secret_distribution": "word_mod3_minus_one_heavy_ternary",
+      "key_generation_does_not_enable_refresh": true,
+      "legacy_refresh_gate_enabled": false,
+      "n": 16384,
+      "nominal_security_label_bits": 256,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049",
+        "167772161",
+        "1811939329",
+        "595591169"
+      ],
+      "owner_profile": "secure_256",
+      "public_and_switch_key_mask": "canonical_full_Q_rejection_uniform",
+      "q_decimal": "63181039625098055897208234241305706178366567141978713763086337",
+      "q_hex": "0x2751520040e61339d3a2d77a20dc857c62b0bb8dc00158c00001",
+      "t_decimal": "65537"
+    }
+  ],
+  "legacy_tuple_provenance": {
+    "source_packet_relative_path": "artifacts/execution/2026-11-10/parameter-distribution/parameter-distributions.json",
+    "source_packet_sha256": "543ecda68277c7d1323b9b4009b2586bc2f81ead970d4d6a7d0c64db1d26fcd4",
+    "schema": "nine65-parameter-distribution-evidence-v1"
+  }
+}

@@ -1,0 +1,6 @@
+FAIL: ops::public_refresh_circuit::key_graph::tests::native_inventory_is_exact_and_requires_joint_key_review (0.00725s)
+FAIL: ops::public_refresh_circuit::key_graph::tests::publication_fingerprint_binds_order_and_key_schedule (0.006518s)
+FAIL: ops::public_refresh_circuit::key_graph::tests::breaking_return_cycle_still_leaves_self_key_dependencies (0.001228s)
+FAIL: ops::rns_galois::tests::prepared_galois_is_bit_identical_and_reusable_across_plaintext_trays (0.001105s)
+FAIL: ops::public_refresh_circuit::tests::public_refresh_conforms_on_full_polynomials_histories_and_forks_across_seeds (0.001999s)
+FAIL: ops::public_refresh_return::tests::public_return_restores_dense_work_and_preserves_history (0.000704s)

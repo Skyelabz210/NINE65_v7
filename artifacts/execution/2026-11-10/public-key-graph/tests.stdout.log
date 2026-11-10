@@ -1,0 +1,6 @@
+PASS: ops::public_refresh_circuit::key_graph::tests::native_inventory_is_exact_and_requires_joint_key_review (157.296638s)
+PASS: ops::public_refresh_circuit::key_graph::tests::publication_fingerprint_binds_order_and_key_schedule (4.653265s)
+PASS: ops::public_refresh_circuit::key_graph::tests::breaking_return_cycle_still_leaves_self_key_dependencies (4.869336s)
+PASS: ops::rns_galois::tests::prepared_galois_is_bit_identical_and_reusable_across_plaintext_trays (0.152624s)
+PASS: ops::public_refresh_circuit::tests::public_refresh_conforms_on_full_polynomials_histories_and_forks_across_seeds (1.298366s)
+PASS: ops::public_refresh_return::tests::public_return_restores_dense_work_and_preserves_history (0.154713s)

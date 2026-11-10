@@ -1,0 +1,225 @@
+{
+  "schema": "nine65-public-key-graph-evidence-v1",
+  "source_commit": "7ada6503634a824e80bc4bcfd6231ad0178d7ed3",
+  "runtime_generator_hashes_match_source_commit": true,
+  "packet_sha256": "f1d2ce036ab6e3bf1e2339f4fc09b5425911128367a65a677b6e0fe4ad2f1d18",
+  "key_publication_fingerprint_recomputed": "06f0736c15f31fb061cbac0ff53c4539ce0a536d7b52b989532f9211b56662cf",
+  "bound_source_sha256": {
+    "crates/nine65/src/ops/public_refresh_circuit.rs": "7401cb1c508644fd86d3671a488b284765dd2a12091456381c1dbb978adb8c37",
+    "crates/nine65/src/ops/public_refresh_source.rs": "49e62894b56aba911261c36a842c4be639892f09d2e30c39d866a37be73639a2",
+    "crates/nine65/src/ops/public_refresh_source_kernels.rs": "ef946e6c0691a877b5eb3c11a888b609d6ec6395b40cc4e335f7b41aed51ecc7",
+    "crates/nine65/src/ops/direct_slot_phase.rs": "15cb1dee8f8816551854478571959d882db95379fb8ed1da4f81a44f2b0e189a",
+    "crates/nine65/src/ops/public_refresh_slots.rs": "9e03926b3852fa779f73ed41888205e4d231347deef6d58104874e1bbf07ec7b",
+    "crates/nine65/src/ops/public_refresh_return.rs": "df4278e9c2e7bd3d032394872ecef368940bb677db9953f7cb10f41fb885d56f",
+    "crates/nine65/src/ops/rns_fhe.rs": "cada065964ae9bae9ff0698f004f364e592f2d3d7098fcb81c6b5f08b715f829",
+    "crates/nine65/src/ops/exact_mul.rs": "228d23cc8c86eeba566f8d53ced1cc3f7f86445c6bcc4e5828e30df338ea9d2a",
+    "crates/nine65/src/ops/rns_galois.rs": "4fc8ecb632f52eb9312efd3631beead3c3ce25ff4f0c57a190d2becc9cc66bf6",
+    "crates/nine65/src/entropy/rng_trait.rs": "03d51ef26249414f4f95e2c2ef52123d54e2f2f3fe386aaa2a42824f2c4d90a2",
+    "crates/nine65/src/entropy/secure.rs": "9d8594da22e2df906eef969772cc1919879f2a1058a30d6219e145a6634eeaee",
+    "crates/nine65/src/ops/public_refresh_key_graph.rs": "9cb904434366b41984fdce140f0bc356343f2cf555ade47a576eda2b9d77dd83"
+  },
+  "native_domains": [
+    {
+      "cbd_eta": 3,
+      "domain": "Work",
+      "n": 8192,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049"
+      ],
+      "plaintext_moduli_decimal": [
+        "65537"
+      ],
+      "secret_sampler": "dense ternary via next_u64()%3",
+      "source_weight": null,
+      "q_product_decimal": "348959453350711275087786864768188417",
+      "q_product_bits": 119,
+      "prime_bits": [
+        30,
+        30,
+        30,
+        29
+      ]
+    },
+    {
+      "cbd_eta": 3,
+      "domain": "Source",
+      "n": 8192,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441"
+      ],
+      "plaintext_moduli_decimal": [
+        "65537"
+      ],
+      "secret_sampler": "balanced sparse ternary; hidden support",
+      "source_weight": 96,
+      "q_product_decimal": "983930967448092673",
+      "q_product_bits": 60,
+      "prime_bits": [
+        30,
+        30
+      ]
+    },
+    {
+      "cbd_eta": 3,
+      "domain": "Outer",
+      "n": 32768,
+      "ordered_primes_decimal": [
+        "998244353",
+        "985661441",
+        "754974721",
+        "469762049",
+        "576460752301785089",
+        "576460752301391873",
+        "576460752300015617",
+        "576460752298835969",
+        "576460752298180609",
+        "576460752293134337",
+        "576460752291954689",
+        "576460752290775041",
+        "575870995836829697"
+      ],
+      "plaintext_moduli_decimal": [
+        "65537",
+        "4295098369"
+      ],
+      "secret_sampler": "dense ternary via FheRng::ternary_vector",
+      "source_weight": null,
+      "q_product_decimal": "2450519297043026530784017971340570014951985121632074702986454462157525270706364094852879576226735969912687516334462104970737581750658613165694144615248489240740832218056472363339254831533321551873",
+      "q_product_bits": 650,
+      "prime_bits": [
+        30,
+        30,
+        30,
+        29,
+        59,
+        59,
+        59,
+        59,
+        59,
+        59,
+        59,
+        59,
+        59
+      ]
+    }
+  ],
+  "native_relations": [
+    {
+      "encryption_secret": "Work",
+      "message_secret": null,
+      "published_ciphertexts": 1,
+      "purpose": "work public key: zero"
+    },
+    {
+      "encryption_secret": "Work",
+      "message_secret": "Work",
+      "published_ciphertexts": 12,
+      "purpose": "work relinearization: gadget*W^2"
+    },
+    {
+      "encryption_secret": "Source",
+      "message_secret": "Work",
+      "published_ciphertexts": 20,
+      "purpose": "source switch: gadget*embedded W"
+    },
+    {
+      "encryption_secret": "Outer",
+      "message_secret": "Source",
+      "published_ciphertexts": 256,
+      "purpose": "phase bank: shifted S, independent p^2/p encodings"
+    },
+    {
+      "encryption_secret": "Outer",
+      "message_secret": "Outer",
+      "published_ciphertexts": 66,
+      "purpose": "outer relinearization: gadget*B^2"
+    },
+    {
+      "encryption_secret": "Outer",
+      "message_secret": "Outer",
+      "published_ciphertexts": 264,
+      "purpose": "phase/inverse automorphisms: gadget*sigma(B)"
+    },
+    {
+      "encryption_secret": "Work",
+      "message_secret": "Outer",
+      "published_ciphertexts": 40,
+      "purpose": "return: gadget*B under embedded W"
+    }
+  ],
+  "gadget_digits_per_lane": {
+    "work_relin_base10": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "source_switch_base3": [
+      10,
+      10
+    ],
+    "outer_relin_and_each_galois_base10": [
+      3,
+      3,
+      3,
+      3,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6
+    ],
+    "return_base3": [
+      10,
+      10,
+      10,
+      10
+    ]
+  },
+  "native_galois_exponents": {
+    "phase_giant": 49665,
+    "inverse_baby": 31745,
+    "inverse_giant": 5,
+    "inverse_conjugate": 65535
+  },
+  "published_ring_ciphertexts": 659,
+  "coefficient_equation_count_before_CRT_expansion": 20783104,
+  "work_receiver_ring_channels": {
+    "direct_degree8192_rows": 13,
+    "return_outer_rows": 40,
+    "return_channels_per_outer_row": 4,
+    "return_degree8192_channels": 160,
+    "total_degree8192_channels_sharing_W": 173
+  },
+  "cycle_controls": {
+    "full_graph": true,
+    "without_return": true,
+    "without_self_relations": true,
+    "without_return_or_self_relations": false
+  },
+  "embedded_channel_witness": {
+    "work_degree": 4,
+    "stride": 4,
+    "ternary_secrets": 81,
+    "mask_basis_vectors_per_secret": 16,
+    "basis_products_checked": 1296,
+    "channel_equalities_checked": 5184,
+    "scope": "independent finite algebra witness; not native encrypted execution or Rust refinement"
+  },
+  "limitations": [
+    "Ciphertext and channel counts are bookkeeping, not independent LWE samples or a security bound.",
+    "CRT lanes share one signed error vector in each ciphertext.",
+    "All gadgets and phase-bank plaintexts are correlated secret-dependent messages.",
+    "Fingerprint covers enumerated source files, not all dependencies, a full build, or remote execution.",
+    "No keys are generated by this audit; encrypted tests need separately identified execution.",
+    "Joint/KDM confidentiality and production admission remain unestablished."
+  ]
+}

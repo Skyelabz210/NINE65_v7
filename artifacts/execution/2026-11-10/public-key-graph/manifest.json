@@ -1,0 +1,188 @@
+{
+  "schema": "nine65-public-key-graph-evidence-manifest-v1",
+  "source_commit": "7ada6503634a824e80bc4bcfd6231ad0178d7ed3",
+  "scope": "bounded graph/setup evidence; no native encrypted rerun or confidentiality/security claim",
+  "environment": {
+    "PATH_prefix": "/workspace/.tooling/rustup/toolchains/1.89.0-x86_64-unknown-linux-gnu/bin:/workspace/.tooling/cargo/bin",
+    "CARGO_HOME": "/workspace/.tooling/cargo",
+    "RUSTUP_HOME": "/workspace/.tooling/rustup",
+    "CARGO_TARGET_DIR": "/tmp/nine65-parameter-target"
+  },
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-j2",
+        "-p",
+        "nine65",
+        "--features",
+        "allow_insecure",
+        "--example",
+        "public_refresh_review_packet"
+      ],
+      "exit_code": 101,
+      "stdout": "review_packet.missing-serde.stdout.log",
+      "stderr": "review_packet.missing-serde.stderr.log"
+    },
+    {
+      "argv": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-j2",
+        "-p",
+        "nine65",
+        "--features",
+        "allow_insecure serde",
+        "--example",
+        "public_refresh_review_packet"
+      ],
+      "exit_code": 0,
+      "stdout": "public_refresh_review_packet.json",
+      "stderr": "review_packet.stderr.log"
+    },
+    {
+      "argv": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-j2",
+        "-p",
+        "nine65",
+        "--features",
+        "allow_insecure",
+        "--example",
+        "public_refresh_circuit",
+        "--",
+        "--describe"
+      ],
+      "exit_code": 0,
+      "stdout": "describe.stdout.log",
+      "stderr": "describe.stderr.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/check_public_key_graph_evidence.py",
+        "--packet",
+        "artifacts/execution/2026-11-10/public-key-graph/public_refresh_review_packet.json",
+        "--output",
+        "artifacts/execution/2026-11-10/public-key-graph/key_graph_audit.source-bound.json",
+        "--source-commit",
+        "7ada6503634a824e80bc4bcfd6231ad0178d7ed3"
+      ],
+      "exit_code": 0,
+      "stdout": "key_graph_audit.source-bound.stdout.log",
+      "stderr": "key_graph_audit.source-bound.stderr.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/check_public_key_graph_evidence.py",
+        "--packet",
+        "artifacts/execution/2026-11-10/public-key-graph/public_refresh_review_packet.json",
+        "--output",
+        "artifacts/execution/2026-11-10/public-key-graph/key_graph_audit.source-bound.json",
+        "--check"
+      ],
+      "exit_code": 0,
+      "stdout": "key_graph_audit.check.stdout.log",
+      "stderr": "key_graph_audit.check.stderr.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/run_public_key_graph_evidence.py",
+        "--output-dir",
+        "artifacts/execution/2026-11-10/public-key-graph/final-tests",
+        "--timeout-seconds",
+        "300"
+      ],
+      "exit_code": 0,
+      "stdout": "final-tests.stdout.log",
+      "stderr": "final-tests.stderr.log",
+      "exact_tests": "final-tests/test-manifest.json",
+      "runner_note": "Later source-snapshot/error-path refinements are separately covered by harness-controls; no third encrypted run."
+    }
+  ],
+  "final_test_passes": 6,
+  "source_bound_audit": "key_graph_audit.source-bound.json",
+  "controls": "harness-controls/controls.json",
+  "files": {
+    "describe.stderr.log": "918e05e0a3c3975a3e6faf7df80e2c36f9210e6a04f492365d51e7bea09f4e13",
+    "describe.stdout.log": "8c8128d9283dfb7925e51e4bf21b5d1aaa02231dbf1fd52d29c6d89144453213",
+    "final-tests/test-01.log": "c60b473405a473cfbf704d0d6ebc8f045bea3ccab7343c295337172c1d3362b8",
+    "final-tests/test-02.log": "19035953927ae7b101d65b40cd91d4aeea751e5b1853f691e96f17e57b242cc1",
+    "final-tests/test-03.log": "4cd01c9b5a8c9e8f09849896bb74de2c97823ebd72ffee47a96accb0d93adb89",
+    "final-tests/test-04.log": "fd2894adb1fa888839438550a3e89cf419f76e65bb96b60273a51bf7f29240c3",
+    "final-tests/test-05.log": "021620fa92674a185a1c0086b38f5dea74ba1f2b59163258165f05185f7e904e",
+    "final-tests/test-06.log": "da5585863848013fef5152009e3601a7fce1589ed523848e39d2c654a2d3475a",
+    "final-tests/test-manifest.json": "20633b51d2e23ba088deb478d81b0813b4ee8b3b482fbb2f8c4e1fbb24669651",
+    "final-tests.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "final-tests.stdout.log": "0117941a92901d0f477d951e42ada1a63117342bf8c29a40bd6e3a8f34004a71",
+    "harness-controls/controls.json": "891a3a62d32629f033d377b62a7f6d0c4962cb1a4ddaccbb2f66126d6de377c8",
+    "harness-controls/initial-control-collection-error.log": "86282e6332650039fee0a153ffb71eaefdf2bdbd200b83371f15c7d5eb85e29a",
+    "harness-controls/missing-cargo/test-01.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "harness-controls/missing-cargo/test-02.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "harness-controls/missing-cargo/test-03.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "harness-controls/missing-cargo/test-04.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "harness-controls/missing-cargo/test-05.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "harness-controls/missing-cargo/test-06.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "harness-controls/missing-cargo/test-manifest.json": "dc799616a566f792f33afeece94e0d5e41b0dfd723b480d061e01f46f2f3d1d9",
+    "harness-controls/missing-cargo.stdout.log": "51a7085142811ad75fc262e9942cf4db7ccc6e41cdfd3a7f97d225b188876eb3",
+    "harness-controls/preservation.stderr.log": "9a45d7c6a32f699aec8b196d75ca890bfab38c07120a17050db5f1b8b9623f98",
+    "harness-controls/tampered-packet.json": "481d2ab5c59162af1c971cfee0cbe548fced5b80309c411f318b65fc3d4ce6c6",
+    "harness-controls/timeout/test-01.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "harness-controls/timeout/test-02.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "harness-controls/timeout/test-03.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "harness-controls/timeout/test-04.log": "c6f1f1cd0870454782b2557f0aa213d9c0eb7b27f49af4ce0e3eb7668ca0eeb4",
+    "harness-controls/timeout/test-05.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "harness-controls/timeout/test-06.log": "b5fb68caf4fb5fda73d988b381d260aaa274411c426dfd23dbd9b66a3b930519",
+    "harness-controls/timeout/test-manifest.json": "ddad1d444e9ae411e1772e281cbd46985b77a3f3538e6579fb1f314184b0d363",
+    "harness-controls/timeout-child-confirmation/test-01.log": "9578b704873ebef75e10803346cea73463a08338fbe856c22ed96231eac6a40e",
+    "harness-controls/timeout-child-confirmation/test-manifest.json": "febcc15e389d3eadc8c08662e86124abf7bb344e960ccc41e2b28c2a531361fa",
+    "harness-controls/timeout-child-confirmation.stdout.log": "cf6b868eafeb6a5859159299272afaa7e06d4f65e3c65f41fa7f99237687cd75",
+    "harness-controls/timeout.stdout.log": "892d71d40c058d9bd2b85ced0b66c76808757ed10bf9bc8014bdf887ab42741e",
+    "key_graph_audit.check.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "key_graph_audit.check.stdout.log": "9c1a3fbdfc86f7b4bf9c3440d9dd4689b06187632c88691b6331ea19038596e2",
+    "key_graph_audit.json": "edcfe3749cbde47e4aae54772606e691440f705a3e8638965c13bad74147235e",
+    "key_graph_audit.source-bound.json": "c7e155676627bff4a62d837956512b43cc0d9e6bc0a31c4368b890f70d8903a2",
+    "key_graph_audit.source-bound.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "key_graph_audit.source-bound.stdout.log": "9c1a3fbdfc86f7b4bf9c3440d9dd4689b06187632c88691b6331ea19038596e2",
+    "key_graph_audit.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "key_graph_audit.stdout.log": "9c1a3fbdfc86f7b4bf9c3440d9dd4689b06187632c88691b6331ea19038596e2",
+    "public_refresh_review_packet.json": "f1d2ce036ab6e3bf1e2339f4fc09b5425911128367a65a677b6e0fe4ad2f1d18",
+    "review_packet.missing-serde.stderr.log": "bb518abf2269ab3de262f5a71c6680b6042156fe63da5e4b02362ce5e593b48f",
+    "review_packet.missing-serde.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "review_packet.stderr.log": "453a2f42ca8d4ad88509904f19f8a774c342a36cdc2c80304943637c5f483e59",
+    "test-01.log": "4087785a06c62b72937dd2404a6a2a17c8e1965ca54685fea60b67f69a0d3b9a",
+    "test-02.log": "a7a51b7ef14ec82349e99be0b3856a6431d67de056d62efdb94ea75e2652c11b",
+    "test-03.log": "fff0b1095a372f343634675d96ee08283283eb63d7e32a75e066bd1792b21c54",
+    "test-04.log": "64f1cf8a8a96f067d7d78b34751f73fac81b43c5de41221dfe2391ab8ab60799",
+    "test-05.log": "63380b43d2f15ceeceb6dc8b59c62f43cfc15561cb5d431be02cd40575d4b84e",
+    "test-06.log": "8bbf6b5ad759fca286ef5d0daa1fccc7506d0169b28f524b308ac16bef7daea2",
+    "test-manifest.json": "dd3ce3718dfd2a0840ec9aa14783b830edf7b50cb509a39dc4a59d4944aa7d3a",
+    "tests.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tests.stdout.log": "0d570d76fe2fc8f5befb33e23e040b57a9353f92ad8899b0e2b27c72f3d2f3be"
+  },
+  "deliverable_sha256": {
+    "scripts/check_public_key_graph_evidence.py": "00d226150a74bfd2218e64049d0baee410dc92f93755645a08f60305762f5934",
+    "scripts/run_public_key_graph_evidence.py": "b8ab965e68f82f448859c6f903286e5f780a260d42354bdd3f7030644648a298",
+    "docs/execution/2026-11-10/PUBLIC_KEY_GRAPH_EVIDENCE.md": "e55ba4e685dd98eb91aca3f126fb1a051e1a677d895388a6341ea67a6d541e88"
+  },
+  "blockers": [
+    "Joint/KDM confidentiality premise remains unestablished; no tool/action approval blocker."
+  ],
+  "excluded_actions": [
+    "merge",
+    "push",
+    "publication",
+    "purchases",
+    "account/security-setting changes"
+  ]
+}

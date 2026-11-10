@@ -1,0 +1,95 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+   Compiling proc-macro2 v1.0.103
+   Compiling quote v1.0.42
+   Compiling unicode-ident v1.0.22
+   Compiling cfg-if v1.0.4
+   Compiling libc v0.2.178
+   Compiling zerocopy v0.8.31
+   Compiling getrandom v0.3.4
+   Compiling typenum v1.19.0
+   Compiling version_check v0.9.5
+   Compiling generic-array v0.14.7
+   Compiling syn v2.0.111
+   Compiling serde_core v1.0.228
+   Compiling crossbeam-utils v0.8.21
+   Compiling autocfg v1.5.0
+   Compiling crossbeam-epoch v0.9.21
+   Compiling num-traits v0.2.19
+   Compiling rustix v1.1.3
+   Compiling serde v1.0.228
+   Compiling rand_core v0.9.3
+   Compiling crc32fast v1.5.0
+   Compiling either v1.15.0
+   Compiling regex-syntax v0.8.8
+   Compiling linux-raw-sys v0.11.0
+   Compiling rayon-core v1.13.0
+   Compiling bitflags v2.10.0
+   Compiling once_cell v1.21.3
+   Compiling serde_json v1.0.147
+   Compiling crossbeam-deque v0.8.6
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling plotters-backend v0.3.7
+   Compiling itoa v1.0.16
+   Compiling memchr v2.7.6
+   Compiling fastrand v2.3.0
+   Compiling zmij v0.1.7
+   Compiling zerocopy-derive v0.8.31
+   Compiling zeroize_derive v1.4.2
+   Compiling serde_derive v1.0.228
+   Compiling anstyle v1.0.13
+   Compiling thiserror v1.0.69
+   Compiling clap_lex v0.7.6
+   Compiling zeroize v1.8.2
+   Compiling ciborium-io v0.2.2
+   Compiling mana v0.1.0 (/workspace/NINE65_v7/crates/mana)
+   Compiling clap_builder v4.5.53
+   Compiling ppv-lite86 v0.2.21
+   Compiling half v2.7.1
+   Compiling thiserror-impl v1.0.69
+   Compiling ciborium-ll v0.2.2
+   Compiling tempfile v3.24.0
+   Compiling plotters-svg v0.3.7
+   Compiling digest v0.10.7
+   Compiling regex-automata v0.4.13
+   Compiling itertools v0.10.5
+   Compiling wait-timeout v0.2.1
+   Compiling subtle v2.6.1
+   Compiling nine65 v0.1.0 (/workspace/NINE65_v7/crates/nine65)
+   Compiling bit-vec v0.8.0
+   Compiling cpufeatures v0.2.17
+   Compiling quick-error v1.2.3
+   Compiling same-file v1.0.6
+   Compiling cast v0.3.0
+   Compiling fnv v1.0.7
+   Compiling walkdir v2.5.0
+   Compiling criterion-plot v0.5.0
+   Compiling regex v1.12.2
+   Compiling rusty-fork v0.3.1
+   Compiling sha2 v0.10.9
+   Compiling bit-set v0.8.0
+   Compiling clockwork-core v0.1.0 (/workspace/NINE65_v7/crates/clockwork-core)
+   Compiling rayon v1.11.0
+   Compiling plotters v0.3.7
+   Compiling ciborium v0.2.2
+   Compiling tinytemplate v1.2.1
+   Compiling rand_chacha v0.9.0
+   Compiling clap v4.5.53
+   Compiling unhal v0.1.0 (/workspace/NINE65_v7/crates/unhal)
+   Compiling rand_xorshift v0.4.0
+   Compiling rand v0.9.5
+   Compiling getrandom v0.2.16
+   Compiling is-terminal v0.4.17
+   Compiling nexgen_rational v0.1.0 (/workspace/NINE65_v7/crates/nexgen_rational)
+   Compiling oorandom v11.1.5
+   Compiling rand_core v0.6.4
+   Compiling exact_transcendentals v1.0.0 (/workspace/NINE65_v7/crates/exact_transcendentals)
+   Compiling unarray v0.1.4
+   Compiling anes v0.1.6
+   Compiling proptest v1.9.0
+   Compiling rand_chacha v0.3.1
+   Compiling criterion v0.5.1
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 47.63s
+     Running `/tmp/nine65-parameter-target/debug/examples/export_parameter_registry`

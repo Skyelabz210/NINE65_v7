@@ -1,0 +1,23 @@
+{
+  "initial_probe_exit_code": 2,
+  "initial_probe_reason": "image entrypoint shell wrapper flattened the -c string; retained runtime-probe.log",
+  "corrected_probe_client_timeout_seconds": 60,
+  "corrected_probe_timeout_reason": "Docker client timed out while creating container writable layer",
+  "checked_container_id": "61425194f88f",
+  "checked_state": {
+    "Status": "created",
+    "Running": false,
+    "Pid": 0,
+    "StartedAt": "0001-01-01T00:00:00Z"
+  },
+  "recovery_command": [
+    "docker",
+    "--host=unix:///var/run/docker.sock",
+    "start",
+    "-a",
+    "61425194f88f"
+  ],
+  "observed_stdout": "10.6\n3.12.5 (main, Apr  1 2025, 01:06:51) [GCC 11.4.0]\n1.15.2\n",
+  "outcome": "runtime started and version probe succeeded; no operation was approval-denied",
+  "final_run_entrypoint": "sage"
+}

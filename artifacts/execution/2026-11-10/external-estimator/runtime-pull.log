@@ -1,0 +1,46 @@
+docker.io/sagemath/sagemath@sha256:19995db6194f4a4bab18ce9a88556fd15b9ed5e916b4504fefe618a7796ddbdb: Pulling from sagemath/sagemath
+9cb31e2e37ea: Pulling fs layer
+95196ab8b4d7: Pulling fs layer
+d5b5226fa347: Pulling fs layer
+b1f7e16221bb: Pulling fs layer
+4ed3a858aa77: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+bfe7b0d67bbb: Pulling fs layer
+b8c8dc23623d: Pulling fs layer
+c691011bd802: Pulling fs layer
+4f4fb700ef54: Waiting
+bfe7b0d67bbb: Waiting
+b8c8dc23623d: Waiting
+c691011bd802: Waiting
+b1f7e16221bb: Waiting
+4ed3a858aa77: Waiting
+95196ab8b4d7: Verifying Checksum
+95196ab8b4d7: Download complete
+d5b5226fa347: Verifying Checksum
+d5b5226fa347: Download complete
+4ed3a858aa77: Verifying Checksum
+4ed3a858aa77: Download complete
+4f4fb700ef54: Verifying Checksum
+4f4fb700ef54: Download complete
+9cb31e2e37ea: Verifying Checksum
+9cb31e2e37ea: Download complete
+b8c8dc23623d: Verifying Checksum
+b8c8dc23623d: Download complete
+c691011bd802: Verifying Checksum
+c691011bd802: Download complete
+9cb31e2e37ea: Pull complete
+95196ab8b4d7: Pull complete
+d5b5226fa347: Pull complete
+b1f7e16221bb: Verifying Checksum
+b1f7e16221bb: Download complete
+b1f7e16221bb: Pull complete
+4ed3a858aa77: Pull complete
+4f4fb700ef54: Pull complete
+bfe7b0d67bbb: Verifying Checksum
+bfe7b0d67bbb: Download complete
+bfe7b0d67bbb: Pull complete
+b8c8dc23623d: Pull complete
+c691011bd802: Pull complete
+Digest: sha256:19995db6194f4a4bab18ce9a88556fd15b9ed5e916b4504fefe618a7796ddbdb
+Status: Downloaded newer image for sagemath/sagemath@sha256:19995db6194f4a4bab18ce9a88556fd15b9ed5e916b4504fefe618a7796ddbdb
+docker.io/sagemath/sagemath@sha256:19995db6194f4a4bab18ce9a88556fd15b9ed5e916b4504fefe618a7796ddbdb

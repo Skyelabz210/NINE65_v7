@@ -1,0 +1,6 @@
+Read-only Sol6.1ultra evidence review, 2026-11-10.
+Reviewer inspected new parameter/distribution, graph, and estimator evidence scripts during authoring.
+Exact PMFs, legacy bootstrap tuples, return Q/effective N8192 embedding, 659-ciphertext inventory, cycles and 160 return channels checked; no material arithmetic/modeling findings.
+Recomputed graph audit matched saved JSON; eight modeled tuples had correct N/Q/eta and alias grouping.
+Coordinated fixes: exporter post-commit source binding, estimator input/source SHA locks and per-task error capture, Cargo process-group deadline handling and per-task launch errors.
+Scope: evidence-contract/code review, not independent cryptographic attestation, no heavyweight execution. Final estimator outputs and hashes require separate orchestration verification.

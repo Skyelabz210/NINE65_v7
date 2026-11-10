@@ -1,0 +1,180 @@
+{
+  "schema": 1,
+  "registry_kind": "current_source_parameter_snapshot",
+  "integer_arithmetic_only": true,
+  "main_modulus_width_method": "bit_length_of_exact_product",
+  "security_note": "Declared source claim bits are metadata only; this registry performs no security screen, attestation, or acceptance claim.",
+  "modulus_roles": {
+    "priming_roots": [
+      {"name": "S8", "role": "source_identity_priming_root", "contract": "docs/execution/2026-10-03/PRIMING_ROOT_CONTRACT.md", "value": null, "ordered_factors": [2, 3, 5, 7, 11, 13, 17, 19], "value_policy": "The contract-defined root is a role, not a modulus; it is not expanded as total dynamic range.", "must_not_substitute_for": ["total_dynamic_range", "rlwe_ciphertext_modulus", "rlwe_parameter"]}
+    ],
+    "plaintext_payload_moduli": [
+      {"name": "secure_128.plaintext_payload", "role": "bfv_plaintext_payload_modulus", "owner_config": "secure_128", "value": 65537, "is_rlwe_ciphertext_modulus": false, "is_dependent_view_modulus": false},
+      {"name": "secure_128_deep.plaintext_payload", "role": "bfv_plaintext_payload_modulus", "owner_config": "secure_128_deep", "value": 65537, "is_rlwe_ciphertext_modulus": false, "is_dependent_view_modulus": false},
+      {"name": "secure_192.plaintext_payload", "role": "bfv_plaintext_payload_modulus", "owner_config": "secure_192", "value": 65537, "is_rlwe_ciphertext_modulus": false, "is_dependent_view_modulus": false},
+      {"name": "secure_256.plaintext_payload", "role": "bfv_plaintext_payload_modulus", "owner_config": "secure_256", "value": 65537, "is_rlwe_ciphertext_modulus": false, "is_dependent_view_modulus": false}
+    ],
+    "rlwe_ciphertext_moduli": [
+      {"name": "secure_128.rlwe_ciphertext_main", "role": "main_rlwe_ciphertext_modulus", "owner_config": "secure_128", "value_hex": "0x433507862acfa0344be000bf400001", "product_bits": 119, "width_method": "exact_product", "is_plaintext_payload_modulus": false, "is_dependent_view_modulus": false},
+      {"name": "secure_128_deep.rlwe_ciphertext_main", "role": "main_rlwe_ciphertext_modulus", "owner_config": "secure_128_deep", "value_hex": "0x433507862acfa0344be000bf400001", "product_bits": 119, "width_method": "exact_product", "is_plaintext_payload_modulus": false, "is_dependent_view_modulus": false},
+      {"name": "secure_192.rlwe_ciphertext_main", "role": "main_rlwe_ciphertext_modulus", "owner_config": "secure_192", "value_hex": "0x2a0124b80e123c835c6603bc46000c9400001", "product_bits": 146, "width_method": "exact_product", "is_plaintext_payload_modulus": false, "is_dependent_view_modulus": false},
+      {"name": "secure_256.rlwe_ciphertext_main", "role": "main_rlwe_ciphertext_modulus", "owner_config": "secure_256", "value_hex": "0x5d32897aff4ac1c45626207f81b057acc000ecc00001", "product_bits": 175, "width_method": "exact_product", "is_plaintext_payload_modulus": false, "is_dependent_view_modulus": false}
+    ],
+    "dependent_view_moduli": [
+      {"name": "secure_128.derived_transient_auxiliary_view", "role": "derived_transient_exact_multiply_view", "owner_config": "secure_128", "auxiliary_moduli": [
+        2013265921,
+        2281701377,
+        2483027969,
+        2885681153,
+        3221225473
+      ], "auxiliary_product_bits": 157, "required_capacity_bits": 148, "operand_bound_over_q_squared": 4096, "is_plaintext_payload_modulus": false, "is_published_rlwe_ciphertext_modulus": false, "is_rlwe_parameter": false, "depends_on": ["ordered main primes", "plaintext payload modulus", "N/2 operand bound"]},
+      {"name": "secure_128_deep.derived_transient_auxiliary_view", "role": "derived_transient_exact_multiply_view", "owner_config": "secure_128_deep", "auxiliary_moduli": [
+        2013265921,
+        2281701377,
+        2483027969,
+        2885681153,
+        3221225473
+      ], "auxiliary_product_bits": 157, "required_capacity_bits": 148, "operand_bound_over_q_squared": 4096, "is_plaintext_payload_modulus": false, "is_published_rlwe_ciphertext_modulus": false, "is_rlwe_parameter": false, "depends_on": ["ordered main primes", "plaintext payload modulus", "N/2 operand bound"]},
+      {"name": "secure_192.derived_transient_auxiliary_view", "role": "derived_transient_exact_multiply_view", "owner_config": "secure_192", "auxiliary_moduli": [
+        2013265921,
+        2281701377,
+        2483027969,
+        2885681153,
+        3221225473,
+        3221422081
+      ], "auxiliary_product_bits": 188, "required_capacity_bits": 176, "operand_bound_over_q_squared": 8192, "is_plaintext_payload_modulus": false, "is_published_rlwe_ciphertext_modulus": false, "is_rlwe_parameter": false, "depends_on": ["ordered main primes", "plaintext payload modulus", "N/2 operand bound"]},
+      {"name": "secure_256.derived_transient_auxiliary_view", "role": "derived_transient_exact_multiply_view", "owner_config": "secure_256", "auxiliary_moduli": [
+        2013265921,
+        2281701377,
+        2483027969,
+        2885681153,
+        3221225473,
+        3221422081,
+        3222306817
+      ], "auxiliary_product_bits": 220, "required_capacity_bits": 205, "operand_bound_over_q_squared": 8192, "is_plaintext_payload_modulus": false, "is_published_rlwe_ciphertext_modulus": false, "is_rlwe_parameter": false, "depends_on": ["ordered main primes", "plaintext payload modulus", "N/2 operand bound"]}
+    ]
+  },
+  "configurations": [
+    {
+      "name": "secure_128",
+      "status": "current",
+      "source_constructor": "SecureConfig::secure_128",
+      "ring_degree": 8192,
+      "main_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049
+      ],
+      "main_modulus_hex": "0x433507862acfa0344be000bf400001",
+      "main_modulus_product_bits": 119,
+      "plaintext_modulus": 65537,
+      "eta": 3,
+      "declared_security_claim_bits": 128,
+      "context_fingerprint": {"algorithm": "fnv1a64-le-fields-n-prime-list-t-eta", "value_hex": "0xf5d08287c13d81b6"},
+      "route": {
+        "automatic_rns_route": "KElimDual",
+        "exact_evaluator_route": "DerivedTransientExact"
+      },
+      "alias_relation": {
+        "kind": "identical_current_tuple",
+        "canonical_name": "secure_128",
+        "aliases": [
+          "secure_128_deep"
+        ]
+      },
+      "dependent_view_modulus_name": "secure_128.derived_transient_auxiliary_view"
+    },
+    {
+      "name": "secure_128_deep",
+      "status": "current",
+      "source_constructor": "SecureConfig::secure_128_deep",
+      "ring_degree": 8192,
+      "main_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049
+      ],
+      "main_modulus_hex": "0x433507862acfa0344be000bf400001",
+      "main_modulus_product_bits": 119,
+      "plaintext_modulus": 65537,
+      "eta": 3,
+      "declared_security_claim_bits": 128,
+      "context_fingerprint": {"algorithm": "fnv1a64-le-fields-n-prime-list-t-eta", "value_hex": "0xf5d08287c13d81b6"},
+      "route": {
+        "automatic_rns_route": "KElimDual",
+        "exact_evaluator_route": "DerivedTransientExact"
+      },
+      "alias_relation": {
+        "kind": "identical_current_tuple",
+        "canonical_name": "secure_128",
+        "aliases": [
+          "secure_128"
+        ]
+      },
+      "dependent_view_modulus_name": "secure_128_deep.derived_transient_auxiliary_view"
+    },
+    {
+      "name": "secure_192",
+      "status": "current",
+      "source_constructor": "SecureConfig::secure_192",
+      "ring_degree": 16384,
+      "main_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161
+      ],
+      "main_modulus_hex": "0x2a0124b80e123c835c6603bc46000c9400001",
+      "main_modulus_product_bits": 146,
+      "plaintext_modulus": 65537,
+      "eta": 4,
+      "declared_security_claim_bits": 192,
+      "context_fingerprint": {"algorithm": "fnv1a64-le-fields-n-prime-list-t-eta", "value_hex": "0x62972596f3cc51ab"},
+      "route": {
+        "automatic_rns_route": "KElimDual",
+        "exact_evaluator_route": "DerivedTransientExact"
+      },
+      "alias_relation": {
+        "kind": "unique_current_tuple",
+        "canonical_name": "secure_192",
+        "aliases": [
+        ]
+      },
+      "dependent_view_modulus_name": "secure_192.derived_transient_auxiliary_view"
+    },
+    {
+      "name": "secure_256",
+      "status": "current",
+      "source_constructor": "SecureConfig::secure_256",
+      "ring_degree": 16384,
+      "main_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        595591169
+      ],
+      "main_modulus_hex": "0x5d32897aff4ac1c45626207f81b057acc000ecc00001",
+      "main_modulus_product_bits": 175,
+      "plaintext_modulus": 65537,
+      "eta": 5,
+      "declared_security_claim_bits": 256,
+      "context_fingerprint": {"algorithm": "fnv1a64-le-fields-n-prime-list-t-eta", "value_hex": "0x5cc15c3e3aae2fd5"},
+      "route": {
+        "automatic_rns_route": "KElimDual",
+        "exact_evaluator_route": "DerivedTransientExact"
+      },
+      "alias_relation": {
+        "kind": "unique_current_tuple",
+        "canonical_name": "secure_256",
+        "aliases": [
+        ]
+      },
+      "dependent_view_modulus_name": "secure_256.derived_transient_auxiliary_view"
+    }
+  ]
+}

@@ -1,0 +1,240 @@
+{
+  "schema": "nine65-parameter-track-github-audit-v1",
+  "captured_at_utc": "2026-11-10T04:24:52.570Z",
+  "repository": "Skyelabz210/NINE65_v7",
+  "open_pr_search": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Action completed."
+        }
+      ],
+      "structuredContent": {
+        "issues": []
+      },
+      "isError": false
+    }
+  },
+  "pull_requests": {
+    "201": {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Action completed."
+          }
+        ],
+        "structuredContent": {
+          "url": "https://github.com/Skyelabz210/NINE65_v7/pull/201",
+          "number": 201,
+          "state": "closed",
+          "merged": true,
+          "mergeable": false,
+          "draft": false,
+          "body": "The legacy Clockwork route remains gated. This PR integrates the separate encrypted research refresh backend, recumbent arithmetic from #195, conflict-resolved updates from #187, and the workflow repairs already merged in #197/#198.\n\nThe research backend computes the bounded carry under encryption, restores the message, returns to the work key and preserves a sealed canonical plaintext-root capability. Archived native evidence records five refresh/square cycles and 81,920 coefficient comparisons on an identified older arithmetic snapshot. The current fused return bound is 562 bits, against a 633-bit threshold. This is not a latest-head native rerun or production-security approval.\n\nIntegration repairs use exact/checked modulus metadata, replace the obsolete metadata checker with negative controls, propagate research errors, validate NTT constructors, and complete the wide clock-window helper. Symmetric multiplication uses centered exact BFV tensor scaling before secret-key relinearization. Experimental GSO APIs now expose read-only inner() access and checked try_mul_symmetric; private local bounds refuse exhausted or unknown histories before arithmetic. The bound assumes well-formed matching keys. Public GSO multiplication remains unadmitted.\n\nEncrypted sister-tray counterexamples now verify the exact source phase/scale/error identity and refuse an unbound correction. The triple prototype retains its actual 138/137-bit square refusal. Chain fixtures prove their noise capacity and keep every original plaintext oracle. Float scans operate on Rust tokens, and the current modulus ledger is separated from the incoming historical snapshot. Full-width reference arithmetic now preserves Montgomery's 129th carry, avoids WASSAN reconstruction overflow and compares rationals without overflowing cross-products, with boundary regressions. Research commands use supported optimized debug/test profiles; the release `allow_insecure` prohibition remains intact. No panic ratchet baseline or production admission threshold was raised.\n\nLocal validation: 1,129 library tests passed with zero failures; workspace/all-target Clippy passes with warnings denied. Full workspace execution reached every target, with affected library/service targets successfully rerun. Focused arithmetic, GSO, optional integration, metadata and routing/claim controls pass. Hosted results attach to the exact PR head. See docs/maintenance/PR_INTEGRATION_2026-11-01.md.\n\nThe security pack in docs/security and docs/status/CURRENT.json records the related-key, external-attestation and constant-time non-claims, with a mutation-tested claim gate. Joint/KDM confidentiality and production security remain unestablished. Independent encrypted S8 remainder emission remains separate from logical root preservation.\n\nIssues #92 and #95 remain open and outside this merge's admission scope. Issue #117 was already closed on October 18 and remains a historical regression reference; this merge does not enable the legacy route.\n\nCloses #200.",
+          "title": "Integrate research public refresh, recumbent arithmetic and verified PR fixes",
+          "base": "main",
+          "base_sha": "3ce5de895512080184fc1a766ddb781526b551d7",
+          "head": "fix/public-refresh-research-gates",
+          "head_sha": "1924d643a52d0e8bcd4683883963ec041eb4c9c9",
+          "head_repo_id": 1162571814,
+          "head_repo_full_name": "Skyelabz210/NINE65_v7",
+          "merge_commit_sha": "77e68882c8e78fcd337da1912f0a01d2e271909e",
+          "user": {
+            "login": "Skyelabz210",
+            "name": "Skyelabz210",
+            "email": null,
+            "avatar_url": "https://avatars.githubusercontent.com/u/198164091?v=4",
+            "id": 198164091
+          },
+          "requested_reviewers": null,
+          "requested_team_reviewers": null,
+          "diff": null,
+          "comments": null,
+          "created_at": "2026-11-01T10:23:58Z",
+          "updated_at": "2026-11-01T12:53:40Z",
+          "closed_at": "2026-11-01T12:50:09Z",
+          "merged_at": "2026-11-01T12:50:09Z",
+          "commits": 90,
+          "changed_files": 639,
+          "additions": 75370,
+          "deletions": 3310,
+          "display_url": "https://github.com/Skyelabz210/NINE65_v7/pull/201",
+          "display_title": "Integrate research public refresh, recumbent arithmetic and verified PR fixes"
+        },
+        "isError": false
+      }
+    },
+    "204": {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Action completed."
+          }
+        ],
+        "structuredContent": {
+          "url": "https://github.com/Skyelabz210/NINE65_v7/pull/204",
+          "number": 204,
+          "state": "closed",
+          "merged": true,
+          "mergeable": false,
+          "draft": false,
+          "body": "Enable prepared-key FPD multiplication and add public encrypted unsigned integer division with quotient, remainder, and encrypted divide-by-zero status. `CramPublicEvaluator::divide_integer` operates on sealed encrypted bit words: n=q*d+r for d>0; d=0 returns (0,n,1) without evaluator decryption.\n\nThe service prepares and reuses hybrid relinearization keys instead of repeating raw-key work. Two release runs measured 2.10–2.53x faster prepared versus raw-key FPD multiplication across three profiles. This is a multiplication benchmark, not a division speedup. Default features now include exact_rational, Clockwork helpers, and adaptive/shadow monitoring, with two monitor fixes. Legacy refresh correctness gates remain intact.\n\nPR #206 is merged into this branch. Integer circuits use admitted main-Q BFV operations, preserve immutable key/noise history, and reject insufficient budgets before evaluation. The legacy scalar `exact_divide` keeps its component semantics and nonunit rejection; callers must use explicit bit-word ingress for integer division.\n\nValidation and scope:\n- Division source 7740e6169199214610e00e9fe30c8d0de28a3e41 passed 1,209 core tests and 54 release service tests. The initial activation additionally passed 19 optional parallel-monitor tests.\n- Native N=8192 with explicit t=3 executes four-bit division; all 147,456 plaintext output coefficients in the native test are checked. Shared ciphertext-lane divisor 17 is exercised separately at N=2, across three seeds; this is reduced-ring functionality evidence, not a secure parameter claim.\n- Native diagnostic example times were approximately 18–22 seconds per division, with concurrent task activity. Unrestricted 64-bit execution, unlimited depth, and automatic refresh are not claimed. Original named t=65537 tuples admit tested fresh equal-width operands only through 1/2/4 bits for secure_128/192/256.\n- Hosted full workspace tests passed at 0740289. Integration now includes main de4c3a8 and its research-refresh/proof/harness updates. Follow-up source 5ede164 replaces four new unwrap/expect sites with typed internal-circuit errors; all eight division regressions, Clippy, formatting, panic ratchet, 21 comparison-contract controls, claim/status and route checks pass locally. Hosted workspace tests passed at 5ede164, but the release Clockwork step exposed a scheduling-sensitive signature-overhead benchmark (1,210 passed, one timing failure, 140 ignored).\n- Follow-up e4b9168 repairs that benchmark harness: opaque inputs/outputs, larger batches, alternating order, and nine paired median ratios. The strict <100% overhead threshold and default test coverage are unchanged. The original failed 24/40 contended runs; the revision passed 40/40 plus 20/20 serial runs. Deterministic controls reject sustained twofold slowdowns; all 21 shadow-module tests and Clippy pass. Evidence is archived in docs/FPD_INTEGRATION_FOLLOWUP_2026-11-02.md at head 6e8de9b. The exact full release Clockwork command also passes locally at final head 6e8de9b: 1,212 passed, 140 ignored, zero failures. Review follow-up bbcde3c additionally forces prepared-key execution to one worker under `sequential` and adds feature-specific CI coverage. The new regression reproduced four workers before the fix. Three prepared-key tests pass in both default and sequential builds; all eight encrypted-division regressions and Clippy pass with sequential enabled. Red/green evidence is archived in the integration note. The current review head is 8476a8c; its hosted results must be assessed separately.\n- The strict comparative scale sweep retains its existing failure on two unsupported legacy BFVEvaluator multiplication cases (#135). Current-main routing distinguishes these from wrong plaintexts and unexpected process failures. This PR does not weaken that capability gate.\n\nEvidence: docs/FEATURE_ACTIVATION_2026-11-02.md, docs/FPD_DIVISION_SCOPE_2026-11-02.md, docs/ENCRYPTED_INTEGER_DIVISION_2026-11-02.md, and artifacts/execution/2026-11-02/encrypted-integer-division/manifest.json. Historical measured snapshots and hashes are preserved. Independent cryptographic review, constant-time guarantees, and production security admission for the complete research refresh key setup remain unestablished.",
+          "title": "Enable prepared-key FPD and bounded encrypted integer division",
+          "base": "main",
+          "base_sha": "de4c3a85dc20167d2cafee71a429bdd10d09a8c0",
+          "head": "feat/enable-fpd-stack",
+          "head_sha": "8476a8c64fbd14e9a51990d7d95d4d9920d7c1fa",
+          "head_repo_id": 1162571814,
+          "head_repo_full_name": "Skyelabz210/NINE65_v7",
+          "merge_commit_sha": "69e2e00e679d4e8604a22b53c99babce5ebba50c",
+          "user": {
+            "login": "Skyelabz210",
+            "name": "Skyelabz210",
+            "email": null,
+            "avatar_url": "https://avatars.githubusercontent.com/u/198164091?v=4",
+            "id": 198164091
+          },
+          "requested_reviewers": null,
+          "requested_team_reviewers": null,
+          "diff": null,
+          "comments": null,
+          "created_at": "2026-11-02T18:13:18Z",
+          "updated_at": "2026-11-05T06:17:45Z",
+          "closed_at": "2026-11-05T06:17:44Z",
+          "merged_at": "2026-11-05T06:17:44Z",
+          "commits": 17,
+          "changed_files": 62,
+          "additions": 6152,
+          "deletions": 144,
+          "display_url": "https://github.com/Skyelabz210/NINE65_v7/pull/204",
+          "display_title": "Enable prepared-key FPD and bounded encrypted integer division"
+        },
+        "isError": false
+      }
+    }
+  },
+  "issues": {
+    "75": {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Action completed."
+          }
+        ],
+        "structuredContent": {
+          "issue": {
+            "url": "https://github.com/Skyelabz210/NINE65_v7/issues/75",
+            "title": "[G1] Run external lattice-estimator attestation for all shipped parameter sets",
+            "issue_number": 75,
+            "body": "**Priority**: Critical / Blocking\n**Source**: NINE65 v7 Comprehensive Compendium (2026-08-30 audit), §8.1\n**Evidence**: `docs/CLAIM_SURFACE_AND_LIMITS` §2.5\n\n## Gap\nNo external lattice-estimator attestation. Security claims for shipped N=8192/16384 tuples are unverified.\n\n## Impact\nSecurity claims for shipped parameter sets cannot be independently confirmed.\n\n## Remediation\nRun `lattice-estimator` (SageMath) for each shipped tuple; archive raw input/output.\n\n## Acceptance Criterion\nArchived artifact with exact tuple, estimator version, and raw output for all 4 shipped parameter sets.",
+            "state": "open",
+            "user": {
+              "login": "Skyelabz210",
+              "name": "Skyelabz210",
+              "email": null,
+              "avatar_url": "https://avatars.githubusercontent.com/u/198164091?v=4",
+              "id": 198164091
+            },
+            "assignees": null,
+            "labels": [
+              {
+                "name": "gap-remediation",
+                "color": "ededed",
+                "description": null
+              },
+              {
+                "name": "critical",
+                "color": "ededed",
+                "description": null
+              },
+              {
+                "name": "security",
+                "color": "ededed",
+                "description": null
+              }
+            ],
+            "milestone": null,
+            "state_reason": null,
+            "comments": 2,
+            "created_at": "2026-08-30T22:14:27Z",
+            "updated_at": "2026-09-04T09:44:40Z",
+            "closed_at": null,
+            "display_url": "https://github.com/Skyelabz210/NINE65_v7/issues/75",
+            "display_title": "[G1] Run external lattice-estimator attestation for all shipped parameter sets"
+          },
+          "url": "https://github.com/Skyelabz210/NINE65_v7/issues/75",
+          "title": "[G1] Run external lattice-estimator attestation for all shipped parameter sets",
+          "display_url": "https://github.com/Skyelabz210/NINE65_v7/issues/75",
+          "display_title": "[G1] Run external lattice-estimator attestation for all shipped parameter sets"
+        },
+        "isError": false
+      }
+    },
+    "76": {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Action completed."
+          }
+        ],
+        "structuredContent": {
+          "issue": {
+            "url": "https://github.com/Skyelabz210/NINE65_v7/issues/76",
+            "title": "[H2] Resolve secure_256 naming vs MATZOV binding (240 vs 256)",
+            "issue_number": 76,
+            "body": "**Priority**: High\n**Source**: NINE65 v7 Comprehensive Compendium (2026-08-30 audit), §8.2\n**Evidence**: `docs/CLAIM_SURFACE_AND_LIMITS` §2\n\n## Gap\n`secure_256` falls 16 bits short under MATZOV model (240 vs 256 claimed). Documented but not resolved.\n\n## Impact\nName implies more security than the weakest model provides.\n\n## Remediation\nRename to `secure_240` or add MATZOV-gated constructor.\n\n## Acceptance Criterion\nNo name implies more security than the weakest model.",
+            "state": "closed",
+            "user": {
+              "login": "Skyelabz210",
+              "name": "Skyelabz210",
+              "email": null,
+              "avatar_url": "https://avatars.githubusercontent.com/u/198164091?v=4",
+              "id": 198164091
+            },
+            "assignees": null,
+            "labels": [
+              {
+                "name": "documentation",
+                "color": "0075ca",
+                "description": "Improvements or additions to documentation"
+              },
+              {
+                "name": "gap-remediation",
+                "color": "ededed",
+                "description": null
+              },
+              {
+                "name": "security",
+                "color": "ededed",
+                "description": null
+              }
+            ],
+            "milestone": null,
+            "state_reason": "completed",
+            "comments": 1,
+            "created_at": "2026-08-30T22:14:27Z",
+            "updated_at": "2026-10-04T04:12:22Z",
+            "closed_at": "2026-10-04T04:12:22Z",
+            "display_url": "https://github.com/Skyelabz210/NINE65_v7/issues/76",
+            "display_title": "[H2] Resolve secure_256 naming vs MATZOV binding (240 vs 256)"
+          },
+          "url": "https://github.com/Skyelabz210/NINE65_v7/issues/76",
+          "title": "[H2] Resolve secure_256 naming vs MATZOV binding (240 vs 256)",
+          "display_url": "https://github.com/Skyelabz210/NINE65_v7/issues/76",
+          "display_title": "[H2] Resolve secure_256 naming vs MATZOV binding (240 vs 256)"
+        },
+        "isError": false
+      }
+    }
+  }
+}

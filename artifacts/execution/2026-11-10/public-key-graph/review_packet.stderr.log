@@ -1,0 +1,10 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+   Compiling virtue v0.0.18
+   Compiling nine65 v0.1.0 (/workspace/NINE65_v7/crates/nine65)
+   Compiling unty v0.0.4
+   Compiling bincode_derive v2.0.1
+   Compiling bincode v2.0.1
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 25.43s
+     Running `/tmp/nine65-parameter-target/debug/examples/public_refresh_review_packet`

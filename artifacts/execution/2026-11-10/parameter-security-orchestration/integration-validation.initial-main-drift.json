@@ -1,0 +1,368 @@
+{
+  "schema": "nine65-parameter-security-integration-checks-v1",
+  "captured_at_utc": "2026-11-10T04:37:29.498522+00:00",
+  "source_commit": "7ada6503634a824e80bc4bcfd6231ad0178d7ed3",
+  "checks": [
+    {
+      "name": "source snapshot exact",
+      "passed": true
+    },
+    {
+      "name": "bound source crates/nine65/src/entropy/rng_trait.rs",
+      "passed": true
+    },
+    {
+      "name": "bound source crates/nine65/src/entropy/secure.rs",
+      "passed": true
+    },
+    {
+      "name": "bound source crates/nine65/src/keys/bootstrap.rs",
+      "passed": true
+    },
+    {
+      "name": "bound source crates/nine65/src/ops/bootstrap.rs",
+      "passed": true
+    },
+    {
+      "name": "bound source crates/nine65/src/ops/direct_slot_phase.rs",
+      "passed": true
+    },
+    {
+      "name": "bound source crates/nine65/src/ops/exact_mul.rs",
+      "passed": true
+    },
+    {
+      "name": "bound source crates/nine65/src/ops/public_refresh_circuit.rs",
+      "passed": true
+    },
+    {
+      "name": "bound source crates/nine65/src/ops/public_refresh_return.rs",
+      "passed": true
+    },
+    {
+      "name": "bound source crates/nine65/src/ops/public_refresh_source.rs",
+      "passed": true
+    },
+    {
+      "name": "bound source crates/nine65/src/ops/public_refresh_source_kernels.rs",
+      "passed": true
+    },
+    {
+      "name": "bound source crates/nine65/src/ops/public_refresh_source_plan.rs",
+      "passed": true
+    },
+    {
+      "name": "bound source crates/nine65/src/ops/rns_fhe.rs",
+      "passed": true
+    },
+    {
+      "name": "bound source crates/nine65/src/ops/rns_galois.rs",
+      "passed": true
+    },
+    {
+      "name": "bound source crates/nine65/src/params/secure_configs.rs",
+      "passed": true
+    },
+    {
+      "name": "combined estimator input hash",
+      "passed": true
+    },
+    {
+      "name": "distribution packet input hash",
+      "passed": true
+    },
+    {
+      "name": "Rust review packet input hash",
+      "passed": true
+    },
+    {
+      "name": "32 distinct finite model tasks",
+      "passed": true
+    },
+    {
+      "name": "non-claim joint_key_security_proven",
+      "passed": true
+    },
+    {
+      "name": "non-claim factorization_aware_ring_coverage_complete",
+      "passed": true
+    },
+    {
+      "name": "non-claim quantum_attack_coverage_complete",
+      "passed": true
+    },
+    {
+      "name": "non-claim external_parameter_attestation_obtained",
+      "passed": true
+    },
+    {
+      "name": "non-claim production_admitted",
+      "passed": true
+    },
+    {
+      "name": "executed estimator driver matches delivered driver",
+      "passed": true
+    },
+    {
+      "name": "six final exact Rust regressions pass",
+      "passed": true
+    },
+    {
+      "name": "Rust test log test-01.log",
+      "passed": true
+    },
+    {
+      "name": "Rust test log test-02.log",
+      "passed": true
+    },
+    {
+      "name": "Rust test log test-03.log",
+      "passed": true
+    },
+    {
+      "name": "Rust test log test-04.log",
+      "passed": true
+    },
+    {
+      "name": "Rust test log test-05.log",
+      "passed": true
+    },
+    {
+      "name": "Rust test log test-06.log",
+      "passed": true
+    },
+    {
+      "name": "local link PARAMETER_SECURITY_EXECUTION_PLAN.md ../../PUBLIC_REFRESH_STATUS.md",
+      "passed": true
+    },
+    {
+      "name": "local link PARAMETER_SECURITY_EXECUTION_PLAN.md ../../../artifacts/execution/2026-11-10/parameter-security-orchestration/",
+      "passed": true
+    },
+    {
+      "name": "local link PARAMETER_SECURITY_EXECUTION_PLAN.md EXTERNAL_ESTIMATOR_EVIDENCE.md",
+      "passed": true
+    },
+    {
+      "name": "local link EXTERNAL_ESTIMATOR_EVIDENCE.md ../../PUBLIC_REFRESH_STATUS.md",
+      "passed": true
+    },
+    {
+      "name": "local link EXTERNAL_ESTIMATOR_EVIDENCE.md ../../security/EXTERNAL_PARAMETER_ATTESTATION.md",
+      "passed": true
+    },
+    {
+      "name": "local link EXTERNAL_ESTIMATOR_EVIDENCE.md ../../../artifacts/execution/2026-11-10/external-estimator/exact-input-packet.json",
+      "passed": true
+    },
+    {
+      "name": "local link EXTERNAL_ESTIMATOR_EVIDENCE.md ../../../scripts/security/lattice_estimator_lock_20261110.json",
+      "passed": true
+    },
+    {
+      "name": "local link EXTERNAL_ESTIMATOR_EVIDENCE.md ../../../artifacts/execution/2026-11-10/external-estimator/attempts.json",
+      "passed": true
+    },
+    {
+      "name": "local link EXTERNAL_ESTIMATOR_EVIDENCE.md ../../../artifacts/execution/2026-11-10/external-estimator/selected-results-summary.json",
+      "passed": true
+    },
+    {
+      "name": "local link EXTERNAL_ESTIMATOR_EVIDENCE.md ../../../artifacts/execution/2026-11-10/external-estimator/focused-results.json",
+      "passed": true
+    },
+    {
+      "name": "local link EXTERNAL_ESTIMATOR_EVIDENCE.md ../../../artifacts/execution/2026-11-10/external-estimator/run-command.json",
+      "passed": true
+    },
+    {
+      "name": "local link EXTERNAL_ESTIMATOR_EVIDENCE.md ../../../artifacts/execution/2026-11-10/external-estimator/harness-controls.json",
+      "passed": true
+    },
+    {
+      "name": "local link EXTERNAL_ESTIMATOR_EVIDENCE.md ../../../scripts/security/check_external_estimator_20261110.py",
+      "passed": true
+    },
+    {
+      "name": "local link PARAMETER_DISTRIBUTION_EVIDENCE.md ../../../artifacts/execution/2026-11-10/parameter-distribution/parameter-distributions.json",
+      "passed": true
+    },
+    {
+      "name": "local link PARAMETER_DISTRIBUTION_EVIDENCE.md PUBLIC_KEY_GRAPH_EVIDENCE.md",
+      "passed": true
+    },
+    {
+      "name": "local link PARAMETER_DISTRIBUTION_EVIDENCE.md ../../../artifacts/execution/2026-11-10/parameter-distribution/manifest.json",
+      "passed": true
+    },
+    {
+      "name": "local link README.md ../../PUBLIC_REFRESH_STATUS.md",
+      "passed": true
+    },
+    {
+      "name": "local link README.md PARAMETER_SECURITY_EXECUTION_PLAN.md",
+      "passed": true
+    },
+    {
+      "name": "local link README.md PARAMETER_DISTRIBUTION_EVIDENCE.md",
+      "passed": true
+    },
+    {
+      "name": "local link README.md PUBLIC_KEY_GRAPH_EVIDENCE.md",
+      "passed": true
+    },
+    {
+      "name": "local link README.md EXTERNAL_ESTIMATOR_EVIDENCE.md",
+      "passed": true
+    },
+    {
+      "name": "local link README.md ../../../artifacts/execution/2026-11-10/",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../PUBLIC_REFRESH_STATUS.md",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../security/README.md",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../2026-10-31/PUBLIC_REFRESH_KEY_GRAPH.md",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../2026-10-31/PUBLIC_REFRESH_SECURITY_REDUCTION.md",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md PARAMETER_DISTRIBUTION_EVIDENCE.md",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../artifacts/execution/2026-11-10/public-key-graph/key_graph_audit.source-bound.json",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/rns_fhe.rs#L1677",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/public_refresh_source_kernels.rs#L43",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/entropy/rng_trait.rs#L52",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/entropy/secure.rs#L278",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/rns_fhe.rs#L6572",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/exact_mul.rs#L1124",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/direct_slot_phase.rs#L338",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/entropy/secure.rs#L300",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/rns_fhe.rs#L1399",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/entropy/secure.rs#L255",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/public_refresh_circuit.rs#L298",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/entropy/rng_trait.rs#L164",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/exact_mul.rs#L1091",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/direct_slot_phase.rs#L519",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/direct_slot_phase.rs#L96",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/direct_slot_phase.rs#L536",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/public_refresh_slots.rs#L98",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/public_refresh_slots.rs#L141",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/public_refresh_return.rs#L75",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/public_refresh_circuit.rs#L354",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/rns_fhe.rs#L1771",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/public_refresh_source.rs#L265",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/public_refresh_circuit.rs#L387",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../crates/nine65/src/ops/public_refresh_circuit.rs#L445",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../artifacts/execution/2026-11-10/public-key-graph/",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../artifacts/execution/2026-11-10/public-key-graph/public_refresh_review_packet.json",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../artifacts/execution/2026-11-10/public-key-graph/final-tests/test-manifest.json",
+      "passed": true
+    },
+    {
+      "name": "local link PUBLIC_KEY_GRAPH_EVIDENCE.md ../../../artifacts/execution/2026-11-10/public-key-graph/harness-controls/controls.json",
+      "passed": true
+    },
+    {
+      "name": "live main still equals inspected source",
+      "passed": false
+    }
+  ],
+  "passed": false,
+  "errors": [
+    "live main still equals inspected source"
+  ],
+  "scope": "artifact/source/contract consistency; no additional cryptographic security claim"
+}

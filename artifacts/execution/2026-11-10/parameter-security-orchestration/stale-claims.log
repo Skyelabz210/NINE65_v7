@@ -1,0 +1,22 @@
+=== Stale Claim Gate ===
+Registry: docs/CLAIM_REGISTRY.csv
+
+Retirement records: docs/CLAIM_RETIREMENTS_2026-07-13.md
+
+=== Check 1: registry inventory ===
+  Active claims:  25
+  Retired claims: 5
+
+=== Check 2: retired claims stay retired ===
+  [PASS] no retired ID reappears in the active registry
+
+=== Check 3: no live references to retired claims ===
+  [PASS] retired IDs appear only in the retirement records
+
+=== Check 4: active claim artifacts are real ===
+  [PASS] all 25 active claims resolve to non-empty artifacts
+
+Refresh status routing and historical evidence checks passed.
+PublicRefreshCircuit security claim gate passed.
+RESULT: stale claim check PASSED
+  25 active claims, 5 retired claims, no stale references.

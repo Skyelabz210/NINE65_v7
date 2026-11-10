@@ -1,0 +1,15 @@
+{
+  "verification_command": [
+    "docker",
+    "--host=unix:///var/run/docker.sock",
+    "ps",
+    "-a",
+    "--format",
+    "{{.ID}} {{.Status}} {{.Names}}"
+  ],
+  "exit_code": 0,
+  "stdout": "",
+  "final_named_container_auto_removed": true,
+  "canceled_container_cleanup_record": "aborted-container-cleanup.json",
+  "sage_image_cache_preserved": true
+}

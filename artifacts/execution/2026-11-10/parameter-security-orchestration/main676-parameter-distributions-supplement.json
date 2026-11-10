@@ -1,0 +1,42 @@
+{
+  "changed_bound_runtime_files": [
+    "crates/nine65/src/entropy/rng_trait.rs",
+    "crates/nine65/src/ops/public_refresh_circuit.rs",
+    "crates/nine65/src/ops/public_refresh_source.rs",
+    "crates/nine65/src/ops/public_refresh_source_plan.rs"
+  ],
+  "command": [
+    "python3",
+    "/workspace/NINE65_v7/scripts/export_parameter_distribution_evidence.py",
+    "--root",
+    "/tmp/nine65-evidence-main676",
+    "--source-ref",
+    "676c4ec68ec497ff5ef2bbc4697393ec9090a7bc",
+    "--output",
+    "/workspace/NINE65_v7/artifacts/execution/2026-11-10/parameter-security-orchestration/main676-parameter-distributions.json"
+  ],
+  "cwd": "/workspace/NINE65_v7",
+  "date_utc": "2026-11-10",
+  "elapsed_seconds": 0.262,
+  "exit_code": 0,
+  "frozen_packet_modified": false,
+  "frozen_packet_sha256": "543ecda68277c7d1323b9b4009b2586bc2f81ead970d4d6a7d0c64db1d26fcd4",
+  "frozen_source_sha": "7ada6503634a824e80bc4bcfd6231ad0178d7ed3",
+  "metadata_excluded_from_semantic_comparison": [
+    "source_sha",
+    "source_files_sha256",
+    "registry_sha256"
+  ],
+  "native_run_executed": false,
+  "new": "Source SHA and source hashes bind the current main snapshot; no new encrypted execution or security attestation.",
+  "packet_sha256": "fd1f74501918de2774e6c7cdcf67ca0f1cc27dc9f19bed0466c7d926fa69f189",
+  "registry_hash_unchanged": true,
+  "same": "Named RNS tuples; derived legacy Clockwork bootstrap tuples; native Work/Source/Outer/ReturnDestination tuples; exact secret/error distributions; mask producer descriptions; assumptions and non-admission claims.",
+  "schema": "nine65-parameter-distribution-freshness-supplement-v1",
+  "semantic_changed_top_level_keys": [],
+  "semantic_data_equal": true,
+  "source_sha": "676c4ec68ec497ff5ef2bbc4697393ec9090a7bc",
+  "stderr": "",
+  "stdout": "wrote /workspace/NINE65_v7/artifacts/execution/2026-11-10/parameter-security-orchestration/main676-parameter-distributions.json\nsource=676c4ec68ec497ff5ef2bbc4697393ec9090a7bc named_profiles=4 native_domains=4 distribution_laws=8\n",
+  "tests_executed": false
+}

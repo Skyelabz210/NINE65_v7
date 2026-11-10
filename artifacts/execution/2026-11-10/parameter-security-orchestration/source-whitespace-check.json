@@ -1,0 +1,22 @@
+{
+  "unfiltered_command": [
+    "git",
+    "diff",
+    "--cached",
+    "--check"
+  ],
+  "unfiltered_exit_code": 2,
+  "raw_log_eof_blank_lines_preserved": true,
+  "unfiltered_diagnostics": "raw-log-whitespace-check.log",
+  "source_command": [
+    "git",
+    "diff",
+    "--cached",
+    "--check",
+    "--",
+    ".",
+    ":(exclude)**/*.log"
+  ],
+  "source_exit_code": 0,
+  "source_output": ""
+}

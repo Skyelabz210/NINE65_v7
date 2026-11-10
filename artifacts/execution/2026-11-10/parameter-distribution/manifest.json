@@ -1,0 +1,148 @@
+{
+  "build_reuse": {
+    "cargo_home": "/workspace/.tooling/cargo",
+    "cargo_version": "cargo 1.89.0 (c24e10642 2025-06-23)",
+    "rustup_home": "/workspace/.tooling/rustup",
+    "target_dir": "/tmp/nine65-parameter-target"
+  },
+  "date_utc": "2026-11-10",
+  "files_sha256": {
+    "artifacts/execution/2026-11-10/parameter-distribution/distribution-controls.stderr.log": "6d49b2b01f719f19f2f8342346fb708a2abf878f2fe9f0b40f3509264edbf394",
+    "artifacts/execution/2026-11-10/parameter-distribution/distribution-controls.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "artifacts/execution/2026-11-10/parameter-distribution/distribution-export-check.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "artifacts/execution/2026-11-10/parameter-distribution/distribution-export-check.stdout.log": "7dccc94c8a4d9eb8980842ad667540fd0b8d4268de19de6795b008552c562cd3",
+    "artifacts/execution/2026-11-10/parameter-distribution/existing-parameter-controls.stderr.log": "69d3092e799b33eb7dca64bf94a3536ab4fa9fc5969f0629675edb863629b707",
+    "artifacts/execution/2026-11-10/parameter-distribution/existing-parameter-controls.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "artifacts/execution/2026-11-10/parameter-distribution/fresh-named-parameter-registry.json": "5ddb248612358a7f02cfc98118e0b7242e33c60f1766d3148efde96aadfe6138",
+    "artifacts/execution/2026-11-10/parameter-distribution/parameter-distributions.json": "543ecda68277c7d1323b9b4009b2586bc2f81ead970d4d6a7d0c64db1d26fcd4",
+    "artifacts/execution/2026-11-10/parameter-distribution/registry.stderr.log": "e44a4a267d3d660a195bccb7c4d6325c5afe2e1b55634fe127ec97452c0a6bca",
+    "artifacts/execution/2026-11-10/parameter-distribution/registry.stdout.log": "1ee05d697ddc50f94842597edf69ce6318400d20368d4040aacc7952855eb8df",
+    "artifacts/execution/2026-11-10/parameter-distribution/sampled_mask_anchor_lanes_agree_with_the_main_lanes.stderr.log": "a89344f04e0a1f59de0befc1a6fb6a28c8a9bf5bb8a2d1049b4a0d23066b80a0",
+    "artifacts/execution/2026-11-10/parameter-distribution/sampled_mask_anchor_lanes_agree_with_the_main_lanes.stdout.log": "d2014283172893d26c80f3562d46179526ed0d375410c1551277054a26c65066",
+    "artifacts/execution/2026-11-10/parameter-distribution/single_rns_uniform_sampler_covers_the_whole_main_modulus.stderr.log": "044c0d53cac5effccabebf3f74cb2e2d92b71a949d7fb6f3ebd657969701ed7a",
+    "artifacts/execution/2026-11-10/parameter-distribution/single_rns_uniform_sampler_covers_the_whole_main_modulus.stdout.log": "98fe71259c6071da20f6e2276f24a00bdcc0a686c2a1e5ab1fca43e2d48309fe",
+    "docs/execution/2026-11-10/PARAMETER_DISTRIBUTION_EVIDENCE.md": "85a7cc83fa8875be39abe2b8b6db7616bd49d2c2a0e324ef8b584b752181dbf6",
+    "scripts/export_parameter_distribution_evidence.py": "6a5ec902338f67d6b714876e6e461d40e89e9c3149f631817acceb6fc52b2228",
+    "scripts/test_parameter_distribution_evidence.py": "23cf8e64637e08f199d20028333e5e632883d60ded4154ac73713bb0301eef3e"
+  },
+  "limitations": [
+    "No encrypted refresh run or new key generation was performed by this track.",
+    "No attack estimator, external attestation, probabilistic failure bound, or entropy-quality claim.",
+    "Runtime source hashes and recorded source SHA must remain bound."
+  ],
+  "named_export": {
+    "argv": [
+      "cargo",
+      "run",
+      "--locked",
+      "--offline",
+      "--manifest-path",
+      "/workspace/NINE65_v7/Cargo.toml",
+      "-p",
+      "nine65",
+      "--example",
+      "export_parameter_registry"
+    ],
+    "cwd": "/tmp/nine65-parameter-export",
+    "exit_code": 0,
+    "output_byte_identical_to_preserved_registry": true,
+    "reported_build_seconds": "47.63",
+    "stderr_file": "registry.stderr.log",
+    "stdout_file": "registry.stdout.log"
+  },
+  "review": {
+    "independent_internal_source_review": "No material semantic issues; independently ran10 controls successfully; not external attestation",
+    "tracked_runtime_modified_by_this_track": false
+  },
+  "runs": [
+    {
+      "argv": [
+        "python3",
+        "scripts/export_parameter_distribution_evidence.py",
+        "--check"
+      ],
+      "cwd": "/workspace/NINE65_v7",
+      "elapsed_seconds": 0.318,
+      "exit_code": 0,
+      "id": "distribution-export-check",
+      "stderr_file": "distribution-export-check.stderr.log",
+      "stdout_file": "distribution-export-check.stdout.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/test_parameter_distribution_evidence.py"
+      ],
+      "cwd": "/workspace/NINE65_v7",
+      "elapsed_seconds": 1.82,
+      "exit_code": 0,
+      "id": "distribution-controls",
+      "stderr_file": "distribution-controls.stderr.log",
+      "stdout_file": "distribution-controls.stdout.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/test_parameter_evidence.py"
+      ],
+      "cwd": "/workspace/NINE65_v7",
+      "elapsed_seconds": 0.151,
+      "exit_code": 0,
+      "id": "existing-parameter-controls",
+      "stderr_file": "existing-parameter-controls.stderr.log",
+      "stdout_file": "existing-parameter-controls.stdout.log"
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--config",
+        "profile.dev.package.nine65.opt-level=2",
+        "-p",
+        "nine65",
+        "--features",
+        "allow_insecure",
+        "--lib",
+        "single_rns_uniform_sampler_covers_the_whole_main_modulus",
+        "--",
+        "--nocapture"
+      ],
+      "cwd": "/workspace/NINE65_v7",
+      "elapsed_seconds": 0.704,
+      "executed_matching_tests": 1,
+      "exit_code": 0,
+      "id": "single_rns_uniform_sampler_covers_the_whole_main_modulus",
+      "stderr_file": "single_rns_uniform_sampler_covers_the_whole_main_modulus.stderr.log",
+      "stdout_file": "single_rns_uniform_sampler_covers_the_whole_main_modulus.stdout.log"
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--config",
+        "profile.dev.package.nine65.opt-level=2",
+        "-p",
+        "nine65",
+        "--features",
+        "allow_insecure",
+        "--lib",
+        "sampled_mask_anchor_lanes_agree_with_the_main_lanes",
+        "--",
+        "--nocapture"
+      ],
+      "cwd": "/workspace/NINE65_v7",
+      "elapsed_seconds": 1.421,
+      "executed_matching_tests": 1,
+      "exit_code": 0,
+      "id": "sampled_mask_anchor_lanes_agree_with_the_main_lanes",
+      "stderr_file": "sampled_mask_anchor_lanes_agree_with_the_main_lanes.stderr.log",
+      "stdout_file": "sampled_mask_anchor_lanes_agree_with_the_main_lanes.stdout.log"
+    }
+  ],
+  "schema": "nine65-parameter-distribution-runs-v1",
+  "source_sha": "7ada6503634a824e80bc4bcfd6231ad0178d7ed3"
+}

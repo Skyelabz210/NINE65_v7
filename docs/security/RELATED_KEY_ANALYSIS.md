@@ -29,6 +29,8 @@ Not done.
 
 What exists are separate screens: the in-tree factorization-aware screen on the dense work and outer domains, sparse-source attack estimates, and the pinned Hou–Jiang authors' implementation in [HOU_JIANG_ASSESSMENT.md](../execution/2026-10-31/HOU_JIANG_ASSESSMENT.md). The evidence summary's lowest reported modeled cost on that implementation is 161.33894 bits, and the outer in-tree screen binds at 129 bits. Those figures are not a joint-distribution estimate, not a lattice-estimator certificate, and not additive. The key-graph document already excludes the sparse source from the dense-secret screen.
 
+The [November 10 external marginal outputs](../execution/2026-11-10/EXTERNAL_ESTIMATOR_EVIDENCE.md) add selected uSVP/dual cost models for exact scalar product-Q tuples. The [current graph audit](../execution/2026-11-10/PUBLIC_KEY_GRAPH_EVIDENCE.md) also makes the four return channels per ciphertext and their shared N8192 Work secret explicit. Neither models or proves confidentiality of the complete correlated setup; Route C remains not done.
+
 ## Route D — selected
 
 Confidentiality of the related-key setup is not established.

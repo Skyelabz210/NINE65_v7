@@ -1,0 +1,11 @@
+{
+  "status": "pass",
+  "source_and_input_hashes_match": true,
+  "all_distinct_expected_tasks_finite": 32,
+  "versions_uniform": true,
+  "security_admission_flags_remain_false": true,
+  "final_run_preserves_HOME": true,
+  "driver_sha256": "f3919d9c47430e1e96aab946ed34b4e7ccf89c91c111722f134d49018aec6fb6",
+  "input_sha256": "47e164a1d343f0e8d5a46db6541996ed4e4c628ae161472c121e8dd76afad62c",
+  "source_commit": "7ada6503634a824e80bc4bcfd6231ad0178d7ed3"
+}

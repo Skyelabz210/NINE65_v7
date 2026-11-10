@@ -1,0 +1,6 @@
+
+running 1 test
+test ops::rns_fhe::exact_mul::tests::single_rns_uniform_sampler_covers_the_whole_main_modulus ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1353 filtered out; finished in 0.48s
+

@@ -1,0 +1,2 @@
+/bin/bash: -c: line 1: syntax error near unexpected token `sage.version.version'
+/bin/bash: -c: line 1: `sage -python -c import sage.version, scipy, sys; print(sage.version.version); print(sys.version); print(scipy.__version__)'
