@@ -41,6 +41,44 @@ Prohibited uses:
 
 The phrase “shadow entropy” does not authorize replacing a CSPRNG. Code and documentation must state the seed source and intended security role.
 
+### Native single-modulus API boundary
+
+`SecretKey::generate`, `PublicKey::generate`, `EvaluationKey::generate` and
+`KeySet::generate` retain their deterministic signatures for compatibility,
+but call `require_secure_rng` before sampling. In a default release-linked
+library, a `ShadowHarvester` therefore causes a security panic, even if it
+was initialized with an OS seed. Use the corresponding `generate_secure` or
+`try_generate_secure` methods for OS-backed key generation.
+
+`BFVEncryptor::encrypt_poly` and `encrypt_poly_with_rng` enforce the same
+policy through their fallible counterparts, `try_encrypt_poly` and
+`try_encrypt_poly_with_rng`. Scalar, seeded and generic `try_encrypt*` methods
+return `Nine65Error::ConfigError` before sampling when entropy is prohibited;
+out-of-range scalar messages still return their input error first. These
+policy refusals do not unwind or abort the process.
+
+The existing infallible key constructors and encryption methods retain their
+signatures and panic on a policy refusal. With `panic = "abort"`, they terminate
+the process. Callers that must handle failures should migrate to
+`try_generate_secure`, `try_encrypt_secure` or `try_encrypt_poly_secure`.
+Generic fallible encryption is available with `SecureRng`, but the `FheRng`
+trait's sampling methods are themselves infallible; the direct `try_*_secure`
+methods are the path that also returns OS entropy errors. Polynomial/key/NTT
+dimensions must still be compatible. Secure sampling itself is unchanged.
+
+The shared guard intentionally permits deterministic research when the library
+is compiled with `cfg(test)`, debug assertions, or `allow_insecure`. Normal
+release library builds reject `allow_insecure` at compile time; it is not a
+release bypass. Integration tests link the library without `cfg(test)`, so
+release boundary coverage must use a separate integration target rather than
+only `--lib` tests. Run seeded research targets in the development/test profile
+with any required feature enabled. Do not deploy those research builds.
+
+These checks protect the named entry points, not arbitrary custom code:
+`FheRng::is_secure` is supplied by its implementer, and callers can still
+construct public key/polynomial fields manually. They do not constitute a
+type-level proof of RNG quality, parameter security, or production admission.
+
 ## 3. Shadow Butterfly Noise Injection — retired
 
 SBNI is retired (2026-08-09) and is not part of the current entropy model.

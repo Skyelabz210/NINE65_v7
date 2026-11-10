@@ -469,10 +469,16 @@ impl PyFHEContext {
         PyKeySet { inner: keys }
     }
 
-    fn generate_keyset_seeded(&self, seed: u64) -> PyKeySet {
+    /// Deterministic keys are available only in development builds.
+    fn generate_keyset_seeded(&self, seed: u64) -> PyResult<PyKeySet> {
+        if !cfg!(debug_assertions) {
+            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                "deterministic key generation is disabled in release builds; use generate_keyset_secure()",
+            ));
+        }
         let mut harvester = ShadowHarvester::with_seed(seed);
         let keys = KeySet::generate(&self.config, &self.ntt, &mut harvester);
-        PyKeySet { inner: keys }
+        Ok(PyKeySet { inner: keys })
     }
 
     fn encrypt(&self, value: u64, public_key: &PyPublicKey) -> PyResult<PyCiphertext> {
@@ -488,6 +494,11 @@ impl PyFHEContext {
         public_key: &PyPublicKey,
         seed: u64,
     ) -> PyResult<PyCiphertext> {
+        if !cfg!(debug_assertions) {
+            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                "deterministic encryption is disabled in release builds; use encrypt()",
+            ));
+        }
         let encryptor =
             BFVEncryptor::new(&public_key.inner, &self.encoder, &self.ntt, self.config.eta);
         let ct = encryptor

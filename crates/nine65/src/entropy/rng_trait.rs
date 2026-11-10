@@ -136,27 +136,46 @@ impl FheRng for DeterministicRng {
 
 /// Wrapper that enforces secure RNG usage in production
 ///
-/// In release builds without `allow_insecure` feature, this will
-/// panic if a non-secure RNG is used for security-critical operations.
-#[cfg(not(any(test, debug_assertions, feature = "allow_insecure")))]
+/// A release-linked library panics if a non-secure RNG is used for
+/// security-critical operations. Development and library unit-test builds
+/// permit deterministic research streams; `allow_insecure` is not a release
+/// bypass (the crate rejects that feature in release library builds).
 pub fn require_secure_rng<R: FheRng>(rng: &R, operation: &str) {
-    if !rng.is_secure() {
-        panic!(
-            "SECURITY ERROR: Non-secure RNG used for {}!\n\
-             Use SecureRng for production. Shadow entropy is test-only.\n\
-             (If this fired from one of nine65's own integration tests or \
-             benches in a --release build: those targets link the library \
-             without cfg(test), so they must be run with \
-             `--features allow_insecure`; their Cargo target stanzas declare \
-             it via required-features.)",
-            operation
-        );
+    if let Err(error) = try_require_secure_rng(rng, operation) {
+        panic!("{}", error);
     }
 }
 
+/// Fallible counterpart for APIs that already return `Nine65Result`.
+/// Keep the build-policy condition shared with the infallible guard.
+#[cfg(not(any(test, debug_assertions, feature = "allow_insecure")))]
+pub(crate) fn try_require_secure_rng<R: FheRng>(
+    rng: &R,
+    operation: &str,
+) -> crate::errors::Nine65Result<()> {
+    if !rng.is_secure() {
+        return Err(crate::errors::Nine65Error::ConfigError {
+            message: format!(
+                "SECURITY ERROR: Non-secure RNG used for {}!\n\
+             Use SecureRng for production. Shadow entropy is test-only.\n\
+             (Integration tests and benches link the library without cfg(test). \
+             Run deterministic research targets in a development/test profile, \
+             with `--features allow_insecure` when required by the target. \
+             Release library builds reject allow_insecure.)",
+                operation
+            ),
+        });
+    }
+    Ok(())
+}
+
 #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
-pub fn require_secure_rng<R: FheRng>(_rng: &R, _operation: &str) {
+pub(crate) fn try_require_secure_rng<R: FheRng>(
+    _rng: &R,
+    _operation: &str,
+) -> crate::errors::Nine65Result<()> {
     // In test/debug mode, allow any RNG
+    Ok(())
 }
 
 #[cfg(test)]

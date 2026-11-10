@@ -95,7 +95,8 @@ def generate_keypair(context: FHEContext, *, seed: Optional[int] = None) -> KeyS
     ``generate_keyset_seeded()``, which derives an entirely deterministic
     keyset from the seed; the same seed always yields the same keys, which is
     exactly what you want for a repeatable test fixture and exactly what you
-    do not want for anything holding real data.
+    do not want for anything holding real data. Seeded operations require a
+    development build; release builds raise ``ValueError`` before generation.
     """
     if seed is None:
         return context.generate_keyset_secure()
@@ -114,7 +115,7 @@ class Nine65:
     Example
     -------
     >>> import nine65_python as n65
-    >>> fhe = n65.Nine65.build("secure_128", seed=42)   # doctest: +SKIP
+    >>> fhe = n65.Nine65.build("secure_128")           # doctest: +SKIP
     >>> ct_a = fhe.encrypt(6)                            # doctest: +SKIP
     >>> ct_b = fhe.encrypt(7)                            # doctest: +SKIP
     >>> fhe.decrypt(fhe.add(ct_a, ct_b))                 # doctest: +SKIP

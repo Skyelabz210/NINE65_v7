@@ -61,10 +61,11 @@ impl ShadowHarvester {
 
     /// Create with seed from OS CSPRNG
     ///
-    /// Use this when you need non-deterministic behavior but still want
-    /// to use Shadow Entropy's fast sampling (e.g., for eval key noise).
+    /// Use this for non-secret streams that should vary between runs.
+    /// OS seeding does not turn this deterministic harvester into a CSPRNG;
+    /// security-critical release entry points still reject it.
     ///
-    /// For secret key generation, use `entropy::secure::*` directly.
+    /// For key generation and encryption, use `entropy::secure::*` directly.
     pub fn from_os_seed() -> Self {
         Self::try_from_os_seed().expect("CRITICAL: OS CSPRNG failure - system entropy unavailable")
     }

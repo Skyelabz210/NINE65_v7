@@ -152,9 +152,13 @@ assert ctx.batch_decrypt(cts, keys.secret_key) == values
 
 `generate_keyset_seeded(seed)` and `encrypt_seeded(value, public_key, seed)`
 derive their randomness entirely from `seed`: the same seed always produces
-the same keys/ciphertext. This is invaluable for reproducible tests and
+the same keys/ciphertext in development builds. Release builds raise
+`ValueError` before entering native seeded generation or encryption, including
+when called through `generate_keypair(seed=...)` or `Nine65.build(seed=...)`.
+They do not fall back to random output or surface a Rust panic.
+This is invaluable for reproducible tests and
 benchmarks, and actively dangerous for anything holding real data --
-`nine65_python.generate_keypair(ctx, seed=...)` and the plain
+`nine65_python.generate_keypair(ctx)` (without a seed) and the plain
 `ctx.generate_keyset_secure()` / `ctx.encrypt(...)` methods exist
 specifically so the non-seeded, OS-CSPRNG-backed path is the one that reads
 as the default choice.
@@ -230,9 +234,26 @@ than showing up as a wrong decryption downstream.
 ## Running the tests
 
 ```bash
-maturin develop --release        # build + install into the active venv
+maturin develop                  # research suite includes seeded fixtures
 pytest crates/nine65-python/tests -v
 ```
+
+The existing seeded suite requires a development build with debug assertions.
+Do not enable `allow_insecure` in a release library build. To verify the
+release refusal and secure controls separately without installing a wheel:
+
+```bash
+cargo build --locked --release --features python
+python3 tests/check_entropy_boundary.py --mode release \
+  --extension target/release/libnine65_python.so
+cargo build --locked --features python
+python3 tests/check_entropy_boundary.py --mode research \
+  --extension target/debug/libnine65_python.so
+```
+
+These commands are run from `crates/nine65-python` on Linux; pass the built
+extension's platform-specific filename on other systems. The check loads the
+actual compiled extension and exercises both raw methods and Python helpers.
 
 The suite covers: encrypt/decrypt round-trips (seeded and OS-CSPRNG-backed,
 across all three named configs), homomorphic add / add_plain / mul_plain

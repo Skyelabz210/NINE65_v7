@@ -1,6 +1,5 @@
 //! Single-modulus arithmetic must never spend unused RNS-prime capacity.
 use nine65::arithmetic::NTTEngine;
-use nine65::entropy::ShadowHarvester;
 use nine65::keys::KeySet;
 use nine65::ops::Ciphertext;
 use nine65::ops::{BFVDecryptor, BFVEncoder, BFVEncryptor, BFVEvaluator, TrackedEvaluator};
@@ -12,10 +11,9 @@ fn unused_rns_primes_cannot_fund_single_modulus_scalar_multiplication() {
     let config = FHEConfig::for_depth(1, 4096, 0).unwrap();
     let ntt = NTTEngine::new(config.q, config.n);
     let encoder = BFVEncoder::new(&config);
-    let mut rng = ShadowHarvester::with_seed(42);
-    let keys = KeySet::generate(&config, &ntt, &mut rng);
+    let keys = KeySet::generate_secure(&config, &ntt);
     let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
-    let ct = encryptor.encrypt(65_292, &mut rng);
+    let ct = encryptor.encrypt_secure(65_292);
     let mut tracked = TrackedEvaluator::new(BFVEvaluator::new(&ntt, &encoder, None), &config);
     let before = tracked.budget().remaining_millibits();
     assert!(tracked.try_mul_plain(&ct, 65_530).is_err());
@@ -76,8 +74,7 @@ fn funded_single_modulus_preserves_full_plaintext_scalar_domain() {
     };
     let ntt = NTTEngine::new(q, config.n);
     let encoder = BFVEncoder::new(&config);
-    let mut rng = ShadowHarvester::with_seed(42);
-    let keys = KeySet::generate(&config, &ntt, &mut rng);
+    let keys = KeySet::generate_secure(&config, &ntt);
     let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
     let decryptor = BFVDecryptor::new(&keys.secret_key, &encoder, &ntt);
     for (a, scalar) in [
@@ -87,7 +84,7 @@ fn funded_single_modulus_preserves_full_plaintext_scalar_domain() {
         (65_292, 65_530),
         (65_527, 255),
     ] {
-        let ct = encryptor.encrypt(a, &mut rng);
+        let ct = encryptor.encrypt_secure(a);
         let mut tracked = TrackedEvaluator::new(BFVEvaluator::new(&ntt, &encoder, None), &config);
         let scaled = tracked.try_mul_plain(&ct, scalar).unwrap();
         assert_eq!(decryptor.decrypt(&scaled), a * scalar % config.t);
