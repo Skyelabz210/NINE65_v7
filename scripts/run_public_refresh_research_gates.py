@@ -21,6 +21,7 @@ SOURCE = "ops::public_refresh_source::tests"
 CIRCUIT = "ops::public_refresh_circuit::tests"
 VIEWS = "ops::bounded_digit_circuit::protected_adjacent_view_tests"
 KEY_GRAPH = "ops::public_refresh_circuit::key_graph::tests"
+SCHEDULER = "ops::public_refresh_circuit::scheduler::tests"
 SUITES = {
     "production-boundary": (
         ("--lib", None, "params::secure_configs::tests::public_refresh_support_requires_sound_phase1", False),
@@ -51,6 +52,19 @@ SUITES = {
         ("--test", "coefficient_slot_gate", f"{BATCHED}::p_locked_scale_jacobian_extracts_carry_and_residual_from_one_history", False),
         ("--test", "coefficient_slot_gate", f"{BATCHED}::p_locked_scale_jacobian_corrects_the_medium_phase_without_oracle_residual", False),
         ("--test", "coefficient_slot_gate", f"{BATCHED}::wide_p_locked_scale_jacobian_tests_larger_step_and_dependent_square", False),
+    ),
+    "scheduler": (
+        ("--lib", None, f"{SCHEDULER}::numeric_forecasts_reject_wide_unadmitted_bounds", False),
+        ("--lib", None, f"{SCHEDULER}::scheduler_forecasts_match_real_arithmetic_and_bind_histories", False),
+        ("--lib", None, f"{SCHEDULER}::scheduler_repeated_encrypted_squares_use_real_refresh_once_per_input", False),
+        ("--lib", None, f"{SCHEDULER}::scheduler_binary_refresh_forecast_counts_actual_work", False),
+        ("--lib", None, f"{SCHEDULER}::scheduler_rejects_foreign_family_before_any_refresh", False),
+        ("--lib", None, f"{SCHEDULER}::scheduler_budget_refuses_before_work_and_rechecks_stale_forecasts", False),
+        ("--lib", None, f"{SCHEDULER}::scheduler_backend_failure_is_typed_and_never_falls_back", False),
+        ("--lib", None, f"{SCHEDULER}::scheduler_cannot_recover_a_history_already_outside_source_support", False),
+        ("--lib", None, f"{SCHEDULER}::scheduler_addition_refreshes_before_losing_source_support", False),
+        ("--lib", None, f"{SCHEDULER}::scheduler_two_refresh_schedule_reserves_the_whole_budget", False),
+        ("--lib", None, f"{SCHEDULER}::scheduler_second_refresh_failure_keeps_partial_work_accounted", False),
     ),
     "native-arithmetic": (
         ("--test", "coefficient_slot_gate", f"{BATCHED}::triple_lift_chart::frobenius_chart_section::frobenius_chart_section_native_contracts_coherent_residue_and_tracks_quotient", True),

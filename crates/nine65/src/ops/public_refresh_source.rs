@@ -333,7 +333,7 @@ impl PublicRefreshSourceEvaluator {
         Ok(self.output(raw, bound, b"encrypt", &[]))
     }
 
-    fn check(&self, input: &SourceWorkCiphertext) -> Result<(), SourceError> {
+    pub(crate) fn check(&self, input: &SourceWorkCiphertext) -> Result<(), SourceError> {
         if !Arc::ptr_eq(&self.family, &input.family) {
             return Err(SourceError::DomainMismatch);
         }
@@ -366,14 +366,47 @@ impl PublicRefreshSourceEvaluator {
         }
     }
 
+    /// Deterministic preflight only: no ciphertext work or new history is issued.
+    pub fn forecast_add(
+        &self,
+        a: &SourceWorkCiphertext,
+        b: &SourceWorkCiphertext,
+    ) -> Result<U512, SourceError> {
+        self.check(a)?;
+        self.check(b)?;
+        self.plan().forecast_add_bounds(a.bound, b.bound)
+    }
+
+    /// Deterministic preflight using the same ledger as `multiply`.
+    pub fn forecast_multiply(
+        &self,
+        a: &SourceWorkCiphertext,
+        b: &SourceWorkCiphertext,
+    ) -> Result<U512, SourceError> {
+        self.check(a)?;
+        self.check(b)?;
+        self.plan().forecast_multiply_bounds(a.bound, b.bound)
+    }
+
+    /// Source-conversion support forecast without converting ciphertexts.
+    pub fn forecast_refresh_radius(
+        &self,
+        input: &SourceWorkCiphertext,
+    ) -> Result<u64, SourceError> {
+        self.check(input)?;
+        self.plan().forecast_source_radius(input.bound)
+    }
+
+    pub(crate) fn family_id(&self) -> &[u8; 32] {
+        &self.family.id
+    }
+
     pub fn add(
         &self,
         a: &SourceWorkCiphertext,
         b: &SourceWorkCiphertext,
     ) -> Result<SourceWorkCiphertext, SourceError> {
-        self.check(a)?;
-        self.check(b)?;
-        let bound = self.plan().work_noise.add(a.bound, b.bound)?;
+        let bound = self.forecast_add(a, b)?;
         Ok(self.output(
             self.family.work.add(&a.raw, &b.raw),
             bound,
@@ -387,9 +420,7 @@ impl PublicRefreshSourceEvaluator {
         a: &SourceWorkCiphertext,
         b: &SourceWorkCiphertext,
     ) -> Result<SourceWorkCiphertext, SourceError> {
-        self.check(a)?;
-        self.check(b)?;
-        let bound = self.plan().work_noise.multiply(a.bound, b.bound)?;
+        let bound = self.forecast_multiply(a, b)?;
         let raw =
             self.family
                 .work
