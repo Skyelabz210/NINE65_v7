@@ -3,8 +3,8 @@
 This index maps formal proofs (Coq/Lean) to the Rust implementation. It was
 written as the proof-to-code reference for the v6 codebase and has not been
 regenerated for v8; several entries below are stale (noted inline). For the
-current, maintained formal-verification status, see CLAUDE.md's "Formal
-Verification" section.
+current, maintained formal-verification scope, see the [written proof map](proofs/README.md)
+and [Lean trust boundary correction](maintenance/LEAN_TRUST_BOUNDARY_2026-11-10.md).
 
 > **Coq status (2026-08-19):** the "Integration status" column below predates
 > the project's move to Lean and should not be read as implying the Coq
@@ -13,10 +13,12 @@ Verification" section.
 > **not maintained**, and **not the verification basis** — several files do
 > not compile and several contain `Admitted` lemmas. **Lean 4
 > (`lean4/KElimination/`) is the formalization of record**: `lake build`
-> reports 0 errors and 0 `sorry` across all 19 modules, with a single
-> documented axiom (`ahop_hardness`, the AHOP cryptographic hardness
-> assumption). Do not cite a Coq mapping below as proof that the referenced
-> Rust module is formally correct.
+> is the maintained build entry point. The former `ahop_hardness` axiom was
+> inconsistent at `q = 1` and is now replaced by an unasserted legacy proposition
+> with a refutation. The gate checks every project declaration and its transitive
+> axiom dependencies. See the dated correction above for current verification
+> results; old module counts are historical. Do not cite a Coq mapping below as
+> proof that the referenced Rust module is formally correct.
 
 ## Coq Proof Mapping (legacy — see status note above)
 

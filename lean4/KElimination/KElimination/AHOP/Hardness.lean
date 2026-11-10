@@ -1,8 +1,9 @@
 /-
   AHOP Hardness Formalization
 
-  This file captures the hardness assumption and basic structural
-  definitions needed for later security reductions.
+  This file contains structural orbit lemmas and a quarantined historical
+  proposition. It does not assert or prove cryptographic hardness.
+  See docs/maintenance/LEAN_TRUST_BOUNDARY_2026-11-10.md at repository root.
 
   Date: 2026-02-04
   Status: Ported from SwarmProofs to NINE65 v5
@@ -14,7 +15,7 @@ import Mathlib.Data.Vector.Basic
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Finite.Card
 import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic
+import Mathlib.Tactic.NormNum
 import KElimination.AHOP.Algebra
 
 namespace KElimination.AHOP.Hardness
@@ -129,13 +130,46 @@ def wordLength : AHOPWord -> Nat
 def isValidSolution {q : ℕ} [Fact (0 < q)] (inst : AHOPInstance q) (w : AHOPWord) : Prop :=
   applyWord w inst.k_start = inst.k_target
 
-/-- AHOP hardness assumption (axiomatic). -/
-axiom ahop_hardness (q : ℕ) [Fact (0 < q)] :
+/-- Historical unrestricted claim, retained only as a proposition to inspect.
+It is false at `q = 1` (`legacyHardnessClaim_one_false`) and must not be an axiom.
+It quantifies over arbitrary functions, with no computational cost model or
+security parameter, so it is not a formal cryptographic hardness definition. -/
+def LegacyHardnessClaim (q : ℕ) [Fact (0 < q)] : Prop :=
   ∀ (alg : AHOPInstance q → Option AHOPWord),
     ∃ inst : AHOPInstance q,
       match alg inst with
       | none => True
       | some w => ¬ isValidSolution inst w ∨ wordLength w > q * q
+
+/-- At modulus one, the empty word solves every instance with length zero.
+This refutes the historical claim; removing an inconsistent axiom is not a
+cryptanalytic result about a properly parameterized AHOP problem. -/
+theorem legacyHardnessClaim_one_false [Fact (0 < (1 : ℕ))] :
+    ¬ LegacyHardnessClaim 1 := by
+  intro h
+  obtain ⟨inst, hbad⟩ := h (fun _ => some AHOPWord.empty)
+  have hvalid : isValidSolution inst AHOPWord.empty := by
+    change inst.k_start = inst.k_target
+    exact Subsingleton.elim _ _
+  rcases hbad with hinvalid | hlong
+  · exact hinvalid hvalid
+  · norm_num [wordLength] at hlong
+
+/-- No single tag can decode every reflection of every state: all reflections
+fix the zero state, so its tag would have to equal both 0 and 1. This result
+requires neither a size bound on the finite orbit nor an asymptotic argument. -/
+theorem no_global_decoding_tag {q : ℕ} [Fact (0 < q)] :
+    ¬ ∃ tag : (Fin 4 → ZMod q) → Fin 4,
+      ∀ s i, tag (reflect i s) = i := by
+  rintro ⟨tag, htag⟩
+  have hz (i : Fin 4) : reflect i (fun _ => (0 : ZMod q)) = (fun _ => 0) := by
+    funext j
+    simp [reflect]
+  have h0 := htag (fun _ => (0 : ZMod q)) 0
+  have h1 := htag (fun _ => (0 : ZMod q)) 1
+  rw [hz] at h0 h1
+  have h01 : (0 : Fin 4) = 1 := h0.symm.trans h1
+  exact (by decide : (0 : Fin 4) ≠ 1) h01
 
 /-- The orbit is nonempty (contains the starting point). -/
 theorem orbit_nonempty {q : ℕ} [Fact (0 < q)] (k : Fin 4 → ZMod q) :
@@ -192,7 +226,26 @@ theorem injective_length_one {q : ℕ} [Fact (0 < q)]
   apply Subtype.ext
   rfl
 
-/-- Injectivity for all lengths given a decoding tag. -/
+/-- Unrestricted length-two words already collide: repeating either reflection
+is the identity. This does not rule out injectivity on a separately proved
+restricted family such as `ZeroTaggedWord`. -/
+theorem not_injective_length_two {q : ℕ} [Fact (0 < q)] [Fact (q > 2)]
+    (k : Fin 4 → ZMod q) :
+    ¬ Function.Injective (fun v : List.Vector (Fin 4) 2 => applyWordList v.1 k) := by
+  intro hinj
+  let v0 : List.Vector (Fin 4) 2 := ⟨[0, 0], rfl⟩
+  let v1 : List.Vector (Fin 4) 2 := ⟨[1, 1], rfl⟩
+  have hact : applyWordList v0.1 k = applyWordList v1.1 k := by
+    simp [v0, v1, applyWordList, reflect_involution]
+  have heq := hinj hact
+  have h01 : (0 : Fin 4) = 1 :=
+    congrArg (fun v : List.Vector (Fin 4) 2 => List.Vector.head v) heq
+  exact (by decide : (0 : Fin 4) ≠ 1) h01
+
+/-- Historical conditional lemma retained for compatibility only.
+Its global tag premise is impossible (`no_global_decoding_tag`), so it supplies
+no realizable all-length injectivity or security evidence. Use restricted
+`ZeroTaggedWord` results only with their actual premises. -/
 theorem injective_all_lengths {q : ℕ} [Fact (0 < q)] [Fact (q > 2)]
     (k : Fin 4 → ZMod q)
     (tag : (Fin 4 → ZMod q) → Fin 4)
@@ -241,7 +294,8 @@ theorem orbit_at_least_four {q : ℕ} [Fact (0 < q)]
   have hinj := injective_length_one (k := k) h
   simpa using (orbit_exponential_lower_bound (k := k) (ℓ := 1) hinj)
 
-/-- Exponential orbit bound for all lengths when a decoding tag exists. -/
+/-- Historical conditional lemma with an impossible global tag premise.
+See `no_global_decoding_tag`; this is not an actual exponential orbit bound. -/
 theorem orbit_exponential_from_tag {q : ℕ} [Fact (0 < q)] [Fact (q > 2)]
     (k : Fin 4 → ZMod q)
     (tag : (Fin 4 → ZMod q) → Fin 4)

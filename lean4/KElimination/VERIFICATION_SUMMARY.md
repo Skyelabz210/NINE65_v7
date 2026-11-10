@@ -1,5 +1,12 @@
 # NINE65 v5 K-Elimination Verification Summary
 
+> **Scope correction, 2026-11-10:** This is a historical summary, not a current
+> verification report. The former `ahop_hardness` axiom is inconsistent at
+> `q = 1`, not a valid cryptographic assumption. It is no longer asserted.
+> The unrestricted decoding-tag premise is impossible. See the
+> [current trust boundary correction](../../docs/maintenance/LEAN_TRUST_BOUNDARY_2026-11-10.md)
+> for counterexamples, preserved structural results, and actual test results.
+
 **Date:** 2026-02-04
 **Status:** ALL SORRIES FILLED - EXTENDED WITH AHOP & CRT FOUNDATIONS
 

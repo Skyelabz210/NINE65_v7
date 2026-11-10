@@ -1,37 +1,38 @@
 #!/usr/bin/env bash
-# Authoritative axiom audit for the KElimination Lean library.
-#
-# Inspects the *elaborated kernel environment* (not source text) and fails if any
-# KElimination module declares an axiom other than the one documented hardness
-# assumption `ahop_hardness`. Because it reads the kernel environment, it is
-# immune to the things a source grep cannot see — attributes, comments, or an
-# axiom synthesized by a macro.
-#
-# Run from the package dir (lean4/KElimination) AFTER `lake build`, so the module
-# oleans are warm in the page cache (~10s; a cold run is dominated by Mathlib
-# olean I/O and can take minutes).
+# Inspect every project declaration and its transitive kernel axiom dependencies.
+# Run from lean4/KElimination AFTER a fresh `lake build`. No project axiom,
+# imported custom axiom, sorryAx or Lean.ofReduceBool is admitted. The allowed
+# foundational axioms are Lean's standard logical foundations, not crypto claims.
 set -euo pipefail
 
-AUDIT="${RUNNER_TEMP:-/tmp}/axiom_audit.lean"
+AUDIT=$(mktemp "${RUNNER_TEMP:-/tmp}/nine65-axiom-audit.XXXXXX.lean")
+trap 'rm -f "$AUDIT"' EXIT
 {
-  # import every proof module so its declarations enter the environment …
-  find KElimination -name '*.lean' | sed 's|\.lean$||; s|/|.|g; s|^|import |'
-  echo 'import KElimination'   # … and the root module
+  find KElimination -name '*.lean' | LC_ALL=C sort | sed 's|\.lean$||; s|/|.|g; s|^|import |'
+  echo 'import KElimination'
+  echo 'import Lean.Util.CollectAxioms'
+  echo 'import Lean.Elab.Command'
   cat <<'LEAN'
 open Lean in
 run_cmd do
   let env ← getEnv
-  let allowed : Name := `KElimination.AHOP.Hardness.ahop_hardness
-  let mut bad : Array Name := #[]
+  let foundational := #[`propext, `Quot.sound, `Classical.choice]
+  let mut count := 0
   for (name, info) in env.constants.toList do
-    if let .axiomInfo _ := info then
-      if let some idx := env.getModuleIdxFor? name then
-        if (`KElimination).isPrefixOf (env.allImportedModuleNames[idx.toNat]!) then
-          unless name == allowed do bad := bad.push name
-  unless bad.isEmpty do
-    throwError "Unexpected axiom(s) in KElimination modules: {bad}"
-  logInfo "Axiom audit OK: only ahop_hardness"
+    if let some idx := env.getModuleIdxFor? name then
+      -- Attribute ownership by source module, not declaration namespace.
+      if (`KElimination).isPrefixOf (env.allImportedModuleNames[idx.toNat]!) then
+        count := count + 1
+        if let .axiomInfo _ := info then
+          throwError "Unexpected axiom in KElimination module: {name}"
+        -- Check theorem types and proof terms, definitions and opaque values.
+        for dependency in (← collectAxioms name) do
+          unless foundational.contains dependency do
+            throwError "Unexpected axiom dependency of {name}: {dependency}"
+  unless count > 0 do
+    throwError "No KElimination declarations found"
+  logInfo m!"Axiom audit OK: {count} project declarations; no custom axioms or sorryAx"
 LEAN
 } > "$AUDIT"
 
-lake env lean "$AUDIT"
+lake env lean -DwarningAsError=true "$AUDIT"
