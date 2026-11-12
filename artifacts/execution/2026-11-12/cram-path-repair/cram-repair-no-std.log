@@ -1,0 +1,5 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/shared/nine65-cram-path-repair/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/shared/nine65-cram-path-repair/Cargo.toml
+    Checking exact_transcendentals v1.0.0 (/workspace/shared/nine65-cram-path-repair/crates/exact_transcendentals)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.15s

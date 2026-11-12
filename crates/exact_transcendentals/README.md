@@ -19,6 +19,21 @@
 
 This crate provides **exact integer-only implementations** of transcendental functions. No floating point operations are used anywhere in the computation - all algorithms reduce to addition, subtraction, multiplication, bit shifts, and exact integer division.
 
+### CRAM execution scope
+
+`AdjacentWindingEvidence` derives K from its adjacent residue pair on demand,
+without storing scalar K. `transduct_with_lift_provider` checks the requested
+target lane and modulus; authentic source/phase binding remains the caller's
+contract. Heterogeneous schemas retain their residue outputs.
+
+The separate exported `Cram` machine is a stored-winding reference adapter,
+not a claim that the intended on-demand architecture has been wired into the
+encrypted evaluators. Its explicit canonical projection uses an anchored read
+or prepared direct CRT, never a Garner fallback. See the
+[repair and validation record](../../docs/execution/2026-11-12/CRAM_PATH_REPAIR.md)
+for the tested scope and remaining obligations. The historic test table above
+is not a current whole-crate test count.
+
 ## Algorithms Implemented
 
 ### 1. CORDIC (Coordinate Rotation Digital Computer)

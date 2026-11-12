@@ -19,6 +19,12 @@ machine-checked theorem.
 
 ## Coverage and remaining obligations
 
+The [2026-11-12 CRAM path repair](../execution/2026-11-12/CRAM_PATH_REPAIR.md)
+adds executed boundary-projection and lane-identity regressions. Its direct-CRT
+identity and bounds are written there as an implementation review argument,
+not a new Lean theorem. It does not discharge stored-K migration, phase-source
+authenticity, encrypted integration or whole-program security obligations.
+
 | Obligation | Existing coverage | Written supplement / limitation |
 | --- | --- | --- |
 | Signed Taylor and G/H quotient identity | `PublicRefreshDigit.lean` | A1 proves the finite certificates can be constructed and why H is even |

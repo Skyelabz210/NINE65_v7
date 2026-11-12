@@ -74,6 +74,9 @@ pub enum LiftedTransductionError {
     /// A [`LiftEvidenceProvider`] could not supply `K mod b_j` for the named
     /// target lane (out of range, or the provider's own derivation failed).
     EvidenceUnavailable { lane: usize },
+    /// Evidence was returned for a different target lane, even if that lane
+    /// happens to use the same target modulus.
+    EvidenceLaneMismatch { expected: usize, actual: usize },
     /// The basis pair cleared validity but its CRT bookkeeping cannot be
     /// carried in `i128` — the capacity half of `TransductionMap`'s failure
     /// surface. Surfaced as a typed refusal here because this module's
@@ -418,6 +421,12 @@ where
     let mut out = Vec::with_capacity(basis_b.len());
     for (j, &b) in basis_b.iter().enumerate() {
         let evidence = lift.lift_evidence(j, b)?;
+        if evidence.lane() != j {
+            return Err(LiftedTransductionError::EvidenceLaneMismatch {
+                expected: j,
+                actual: evidence.lane(),
+            });
+        }
         if evidence.target_modulus() != b {
             return Err(LiftedTransductionError::InvalidTargetModulus {
                 index: j,
@@ -574,6 +583,39 @@ mod tests {
             err,
             LiftedTransductionError::InvalidTargetModulus { .. }
         ));
+    }
+
+    #[test]
+    fn provider_returning_wrong_lane_with_matching_modulus_is_rejected() {
+        struct WrongLane;
+        impl LiftEvidenceProvider for WrongLane {
+            fn lift_evidence(
+                &self,
+                lane: usize,
+                target_modulus: i128,
+            ) -> Result<LiftEvidence, LiftedTransductionError> {
+                // Correct modulus, wrong lane: modulus equality alone is not
+                // sufficient when the target includes repeated views.
+                LiftEvidence::new(lane + 1, target_modulus, 1)
+            }
+        }
+        let source = vec![0i128; S6_BASIS.len()];
+        assert_eq!(
+            transduct_with_lift_provider(&S6_BASIS, &[17, 17], &source, &WrongLane),
+            Err(LiftedTransductionError::EvidenceLaneMismatch {
+                expected: 0,
+                actual: 1,
+            })
+        );
+    }
+
+    #[test]
+    fn correctly_bound_repeated_target_views_remain_supported() {
+        let x = 30_030i128;
+        let source = residues(x, &S6_BASIS);
+        let provider = |_lane: usize, _modulus: i128| Ok(1i128);
+        let out = transduct_with_lift_provider(&S6_BASIS, &[17, 17], &source, &provider).unwrap();
+        assert_eq!(out, vec![x % 17, x % 17]);
     }
 
     #[test]

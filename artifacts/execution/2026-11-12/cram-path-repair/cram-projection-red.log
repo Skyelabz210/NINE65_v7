@@ -1,0 +1,24 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/shared/nine65-cram-path-repair/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/shared/nine65-cram-path-repair/Cargo.toml
+   Compiling exact_transcendentals v1.0.0 (/workspace/shared/nine65-cram-path-repair/crates/exact_transcendentals)
+    Finished `test` profile [optimized + debuginfo] target(s) in 12.76s
+     Running unittests src/lib.rs (/workspace/shared/nine65-speed-evidence/cram-tests-target/debug/deps/exact_transcendentals-82efecc16556e2a4)
+
+running 1 test
+
+thread 'cram_machine::tests::heterogeneous_projection_does_not_call_garner' panicked at crates/exact_transcendentals/src/cram_machine.rs:874:9:
+assertion `left == right` failed
+  left: 1
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test cram_machine::tests::heterogeneous_projection_does_not_call_garner ... FAILED
+
+failures:
+
+failures:
+    cram_machine::tests::heterogeneous_projection_does_not_call_garner
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 598 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p exact_transcendentals --lib`

@@ -40,6 +40,14 @@ and the [security pack](docs/security/README.md) before interpreting old reports
 The status guide scopes legacy `K_0`, native `K_native`, residual `rho` and
 adjacent `kappa` to their actual producers and equations.
 
+CRAM also has distinct implementation routes. The adjacent-anchor provider
+derives winding on demand; the exported `Cram` reference machine still carries
+winding metadata; encrypted CRAM wrappers use their BFV/exact-evaluator
+backends. The [CRAM path repair record](docs/execution/2026-11-12/CRAM_PATH_REPAIR.md)
+states what is connected, what was repaired and tested, and what remains.
+Reconstruction at a declared boundary is not a blanket violation; Garner and
+mixed-radix synthetic emission must not be hidden inside residue computation.
+
 ## Evidence and limits
 
 The archived native research run checked five refreshes and five following

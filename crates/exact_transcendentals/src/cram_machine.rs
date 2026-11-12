@@ -6,14 +6,16 @@
 //!
 //! # Residue space is the native math space
 //!
-//! The registers hold residue tuples. Not a decomposition of some "real"
-//! integer kept elsewhere — the tuple **is** the number. Execution never
-//! reconstructs, because there is nothing to reconstruct *to*: projecting to
-//! an integer is leaving the space, not arriving at the answer.
+//! This exported reference adapter holds residue tuples plus stored winding
+//! metadata for its integer-line mode. It is not the on-demand-K architecture
+//! implemented by `cram_anchor::AdjacentWindingEvidence`, nor is it the backend
+//! used by the encrypted CRAM evaluators. Heterogeneous execution retains its
+//! residue outputs; an integer projection is a separate declared boundary.
 //!
-//! That is enforced, not asserted. [`Cram::projections`] counts every exit,
-//! and [`Cram::exec`] cannot increment it — only [`Cram::project`] can. A
-//! program that ran natively can prove it did.
+//! [`Cram::projections`] counts projection requests. [`Cram::project`] uses an
+//! anchored read when available, otherwise a prepared direct-CRT sum. Neither
+//! route calls Garner or emits mixed-radix digits. These counters describe this
+//! adapter; they are not a proof of every caller's architecture or security.
 //!
 //! # Heterogeneous lanes
 //!
@@ -85,6 +87,9 @@ pub const DISCRIMINATING_BASIS: [u64; 5] = [3, 5, 7, 11, 13];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CramError {
+    /// The basis must be nonempty, have pairwise-coprime moduli greater than
+    /// one, and have a product with room for its adjacent anchor in `i128`.
+    InvalidBasis,
     /// Register index out of range.
     BadRegister { index: usize, count: usize },
     /// Underlying operator failure (non-invertible operand, bad notation, ...).
@@ -283,6 +288,9 @@ pub struct Cram {
     m: i128,
     /// `A = M + 1` — the adjacent anchor lane's modulus.
     anchor: i128,
+    /// Public CRT idempotents for an explicitly requested canonical projection.
+    /// Prepared once; no scalar user value or winding is stored here.
+    projection_weights: Vec<i128>,
     /// Lane index of 2, if the basis has one. Σ's only parity source.
     parity_lane: Option<usize>,
     /// Lane index of 11, if the basis has one. Σ's only shadow source.
@@ -299,22 +307,35 @@ impl Cram {
     ///
     /// # Panics
     ///
-    /// If the basis product `M` or its anchor `M + 1` exceeds `i128`. A machine
-    /// whose corridor cannot be represented would silently mis-report every
-    /// winding, so this is refused loudly rather than saturated. Use
-    /// [`Cram::try_new`] to handle it as a value.
+    /// If the basis is invalid or its product `M` or anchor `M + 1` exceeds
+    /// `i128`. Use [`Cram::try_new`] to handle refusal as a value.
     pub fn new(basis: &[u64], n_regs: usize) -> Self {
-        Self::try_new(basis, n_regs).expect("basis product must fit i128 with room for its anchor")
+        Self::try_new(basis, n_regs)
+            .expect("valid coprime basis with representable adjacent anchor")
     }
 
-    /// Fallible constructor. `None` if `M + 1` does not fit `i128`.
+    /// Fallible constructor. Refuses an empty basis, moduli <= 1, overlapping
+    /// factors, or a product whose adjacent anchor does not fit `i128`.
+    /// Pairwise-coprime composite carriers are supported.
     pub fn try_new(basis: &[u64], n_regs: usize) -> Option<Self> {
+        if basis.is_empty() || basis.iter().any(|&p| p <= 1) {
+            return None;
+        }
         let roles = basis.iter().map(|&p| LaneRole::of(p)).collect();
         let mut m: i128 = 1;
         for &p in basis {
             m = m.checked_mul(p as i128)?;
         }
         let anchor = m.checked_add(1)?;
+        let mut projection_weights = Vec::with_capacity(basis.len());
+        for &p in basis {
+            let p = p as i128;
+            let partial = m / p;
+            // The inverse exists exactly when this lane is coprime to the
+            // product of the other lanes, including composite carriers.
+            let inverse = crate::k_elim::mod_inv(partial % p, p)?;
+            projection_weights.push(partial.checked_mul(inverse)?);
+        }
         let parity_lane = basis.iter().position(|&p| p == 2);
         let shadow_lane = basis.iter().position(|&p| p == 11);
         let zero = Adelic {
@@ -340,6 +361,7 @@ impl Cram {
             roles,
             m,
             anchor,
+            projection_weights,
             parity_lane,
             shadow_lane,
             regs: vec![zero; n_regs],
@@ -440,8 +462,8 @@ impl Cram {
         self.basis.iter().copied().min().unwrap_or(0)
     }
 
-    /// Number of times execution left residue space. Stays 0 for any program
-    /// that never calls [`Self::project`].
+    /// Number of explicit projection requests, including failed requests on a
+    /// valid register. Stays 0 without `project` or `project_integer` calls.
     pub fn projections(&self) -> usize {
         self.projections
     }
@@ -519,18 +541,19 @@ impl Cram {
     /// **An exit.** Projects to the canonical representative in `[0, M)` and
     /// records that residue space was left.
     ///
-    /// Two reads are possible and the machine records which one it had to use:
+    /// Two declared boundary reads are supported:
     ///
     /// - **Anchored** (`g = (a + K) mod A`) when the register still has a
     ///   winding. `O(1)`, no CRT reconstruction, and the residues are untouched.
-    /// - **Destructive** (Garner) when it does not. A heterogeneous schema
-    ///   leaves lanes that no single integer operation produced, so the anchor
-    ///   lane no longer tracks them; the only way out is to consume the
-    ///   residues into one accumulator. That is counted separately by
-    ///   [`Self::destructive_reads`] — it is not free, and pretending otherwise
-    ///   is how the distinction gets lost.
+    /// - **Direct CRT** when no integer winding is available. The public
+    ///   idempotents `e_i = (M/p_i) * ((M/p_i)^-1 mod p_i)` are prepared at
+    ///   construction. The sum `sum r_i*e_i mod M` gives the canonical
+    ///   representative without a Garner/mixed-radix cascade. It does not
+    ///   invent an integer-line lift or mutate the source residues.
     ///
-    /// Both count as exits. The cost of leaving is not the point; leaving is.
+    /// Both count as projection requests. Direct CRT is also counted by
+    /// [`Self::canonical_reconstructions`]. This reference boundary makes no
+    /// constant-time claim and is not a residue-compute fallback.
     pub fn project(&mut self, reg: usize) -> Result<i128, CramError> {
         self.check_reg(reg)?;
         self.projections += 1;
@@ -539,18 +562,30 @@ impl Cram {
             Winding::Known(_) => self.canonical(&s),
             Winding::Undefined(_) => {
                 self.destructive_reads += 1;
-                let residues: Vec<(i128, i128)> =
-                    s.r.iter()
-                        .zip(self.basis.iter())
-                        .map(|(&r, &p)| (r as i128, p as i128))
-                        .collect();
-                Ok(crate::k_elim::garner_reconstruct(&residues).unwrap_or(0))
+                let mut sum = 0i128;
+                for (&residue, &weight) in s.r.iter().zip(&self.projection_weights) {
+                    let term = crate::k_elim::mulmod(residue as i128, weight, self.m);
+                    // Both operands are in [0,M); avoid overflowing even
+                    // when M is close to i128::MAX.
+                    sum = if sum >= self.m - term {
+                        sum - (self.m - term)
+                    } else {
+                        sum + term
+                    };
+                }
+                Ok(sum)
             }
         }
     }
 
-    /// How many exits had to be taken destructively, through Garner, because no
-    /// winding was left to take the anchored read with.
+    /// Number of direct-CRT canonical boundary projections. Source residues
+    /// are retained; the result is not an integer-line lift.
+    pub fn canonical_reconstructions(&self) -> usize {
+        self.destructive_reads
+    }
+
+    /// Legacy name for [`Self::canonical_reconstructions`]. No Garner call or
+    /// destructive mutation is implied by this compatibility accessor.
     pub fn destructive_reads(&self) -> usize {
         self.destructive_reads
     }
@@ -777,7 +812,7 @@ impl Cram {
     /// Machine — the lane operator assignment *is* the configuration, not a
     /// per-instruction argument.
     pub fn configure(basis: &[u64], notation: &str, n_regs: usize) -> Result<Self, CramError> {
-        let m = Cram::new(basis, n_regs);
+        let m = Cram::try_new(basis, n_regs).ok_or(CramError::InvalidBasis)?;
         let s = m.schema(notation)?;
         let mut m = m;
         m.config = Some(s);
@@ -856,6 +891,95 @@ impl Cram {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn heterogeneous_projection_does_not_call_garner() {
+        let before = crate::k_elim::garner_call_count();
+        let mut machine = Cram::configured("AMSQ_", 3).unwrap();
+        machine.load(0, 41).unwrap();
+        machine.load(1, 17).unwrap();
+        machine.step(2, 0, 1).unwrap();
+        let residues = machine.read(2).unwrap().to_vec();
+        let projected = machine.project(2).unwrap();
+        for (&residue, &modulus) in residues.iter().zip(machine.basis()) {
+            assert_eq!(projected.rem_euclid(modulus as i128), residue as i128);
+        }
+        assert_eq!(machine.read(2).unwrap(), residues);
+        assert_eq!(crate::k_elim::garner_call_count(), before);
+        assert_eq!(machine.projections(), 1);
+        assert_eq!(machine.canonical_reconstructions(), 1);
+        assert!(matches!(
+            machine.project_integer(2),
+            Err(CramError::NoWinding(WindingLoss::Heterogeneous { .. }))
+        ));
+        assert_eq!(machine.projections(), 2, "failed requests remain counted");
+        assert_eq!(machine.canonical_reconstructions(), 1);
+    }
+
+    #[test]
+    fn canonical_projection_exhaustive_prime_and_composite_bases() {
+        for basis in [&[3, 5, 7][..], &[6, 35, 143][..]] {
+            let mut machine = Cram::new(basis, 1);
+            for x in 0..machine.modulus() {
+                machine.load(0, x).unwrap();
+                // Exercise the projection's no-integer-lift branch with every
+                // possible residue tuple in this finite product space.
+                machine.regs[0].k = Winding::Undefined(WindingLoss::Heterogeneous {
+                    notation: "projection-domain-test".into(),
+                });
+                let before = machine.regs[0].clone();
+                assert_eq!(machine.project(0), Ok(x));
+                assert_eq!(machine.regs[0], before);
+            }
+        }
+    }
+
+    #[test]
+    fn canonical_projection_handles_wide_products_without_overflow() {
+        // gcd(2^64-1, 2^63-1)=1; M is close to i128::MAX. Unreduced
+        // r_i*e_i terms can exceed i128 even though the result is in [0,M).
+        let basis = [u64::MAX, (1u64 << 63) - 1];
+        let mut machine = Cram::new(&basis, 1);
+        let m = machine.modulus();
+        for x in [0, 1, m / 2, m - 2, m - 1] {
+            machine.load(0, x).unwrap();
+            machine.regs[0].k = Winding::Undefined(WindingLoss::Heterogeneous {
+                notation: "wide-projection-test".into(),
+            });
+            assert_eq!(machine.project(0), Ok(x));
+        }
+    }
+
+    #[test]
+    fn invalid_projection_bases_are_refused_before_execution() {
+        for basis in [
+            &[][..],
+            &[0][..],
+            &[1][..],
+            &[3, 3][..],
+            &[6, 10][..],
+            &[u64::MAX, u64::MAX - 1][..],
+        ] {
+            assert!(Cram::try_new(basis, 1).is_none(), "basis {basis:?}");
+            assert!(matches!(
+                Cram::configure(basis, "", 1),
+                Err(CramError::InvalidBasis)
+            ));
+        }
+        assert!(Cram::try_new(&[6, 35, 143], 1).is_some());
+    }
+
+    #[test]
+    fn bad_register_projection_does_not_change_counters() {
+        let mut machine = Cram::discriminating(1);
+        assert!(matches!(
+            machine.project(1),
+            Err(CramError::BadRegister { index: 1, count: 1 })
+        ));
+        assert_eq!(machine.projections(), 0);
+        assert_eq!(machine.canonical_reconstructions(), 0);
+    }
 
     /// The defining property: one instruction, a different operator per lane.
     /// Verified lane by lane against hand-computed modular arithmetic.
@@ -1504,8 +1628,7 @@ mod tests {
         assert_eq!(n.winding(2).unwrap(), &Winding::Known(1));
     }
 
-    /// Exits are counted, and the *kind* of exit is counted separately: an
-    /// anchored read leaves the residues intact, a Garner read consumes them.
+    /// Projection kinds are counted separately; both retain the source state.
     #[test]
     fn destructive_reads_are_counted_apart_from_anchored_ones() {
         let mut m = Cram::discriminating(3);
@@ -1524,7 +1647,7 @@ mod tests {
         assert_eq!(m.projections(), 1, "an exit was taken");
         assert_eq!(m.destructive_reads(), 0, "but not a destructive one");
 
-        // Heterogeneous: no winding, so the only way out is through Garner.
+        // Heterogeneous: use the explicitly requested canonical CRT boundary.
         m.exec(&[Instr::Apply {
             dst: 2,
             a: 0,
@@ -1537,7 +1660,7 @@ mod tests {
         assert_eq!(
             m.destructive_reads(),
             1,
-            "this one had to consume the residues"
+            "this one used direct canonical CRT projection"
         );
         assert!((0..15_015).contains(&g), "and it still returns a value");
     }

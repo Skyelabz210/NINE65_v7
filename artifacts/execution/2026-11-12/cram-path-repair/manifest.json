@@ -1,0 +1,37 @@
+{
+  "base_commit": "5481a1bec7c2c34e28b067d8365450d95b090753",
+  "source_sha256": {
+    "crates/exact_transcendentals/src/cram_machine.rs": "2bf0eff1aefc09655aa69b72952dce37c1fe705cd0cac969a713f3ed4c7d011c",
+    "crates/exact_transcendentals/src/lifted_transduction.rs": "f56a32f84455996e250ede366ff3b13352915f9df55357d39a25d9551f013f75"
+  },
+  "log_sha256": {
+    "cram-projection-red.log": "da55454cb6958ff102a26468f824bd1f211c60759aa40eda2f2bf1d7b54168d5",
+    "cram-projection-green.log": "431d69fcacc9de99b74649a80b283a7fce43b942a63e027e2a059977e411bd72",
+    "cram-repair-all-tests.log": "b91b428ebfe4fce92f3cd379bc6a71ed1b9d315c414343fb47eb3ae28e20bd9e",
+    "cram-repair-no-floats.log": "72cbddf8af756e75a4c8e6cd9e4301714031ca6a0422dea1d51e3a3c3f3b514f",
+    "cram-repair-no-floats-correct-root.log": "299f0d39d8e295ee9de0542e234d77f9be01912705b28155051491026e380734",
+    "cram-repair-runtime-no-floats.log": "abefdbafa5090c1c4447882b83cc89515ab1014dd1bfd2e7491239a21711a8cb",
+    "cram-repair-no-std.log": "3a72747b1bf60601cb320cd907efadfe7e40ffc6635325508ce2c2455c96132d",
+    "cram-repair-clippy.log": "5b08eaf637427151d441dca50786d51753c6c6a1802a206abc922c6d1db8d5b2",
+    "cram-repair-nine65-check.log": "45d1ac4dd35e8b15395217d1f27a3075072eca78a608153f521b0c6234742955",
+    "cram-repair-workspace-fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "tests": {
+    "package_passed": 692,
+    "failed": 0,
+    "ignored": 0,
+    "doc_tests_executed": 0,
+    "unit_passed": 605,
+    "integration_passed": 87,
+    "independent_focused_rerun_passed": 39
+  },
+  "baseline_red": "heterogeneous_projection_does_not_call_garner observes 1 Garner call, expected 0",
+  "limits": [
+    "Stored-K reference adapter unchanged",
+    "No encrypted transduction integration",
+    "No full system security clearance",
+    "No Lean execution",
+    "Lane identity validation does not certify source/phase provenance"
+  ],
+  "reproducibility": "Rust1.89.0, offline, CARGO_PROFILE_TEST_OPT_LEVEL=3, serial tests"
+}
