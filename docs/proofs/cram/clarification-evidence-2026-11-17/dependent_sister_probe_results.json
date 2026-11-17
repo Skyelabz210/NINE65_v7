@@ -1,0 +1,61 @@
+{
+  "status": "PASS",
+  "scope": "Finite exact test/oracle only; no production producer or formal verification claim",
+  "arithmetic": "integer-only mathematical checks",
+  "fiber_product": {
+    "carrier_moduli": [
+      77,
+      143
+    ],
+    "shared_modulus": 11,
+    "joint_period": 1001,
+    "all_pairs_checked": 11011,
+    "compatible_pairs": 1001,
+    "incompatible_pairs": 10010,
+    "unique_sources_checked": 1001,
+    "compatibility": "a mod 11 = b mod 11"
+  },
+  "phase_preservation": {
+    "operator": "F(x) = x^2 + 3*x + 7",
+    "compatible_inputs_checked": 1001,
+    "lane_results_match_integer_oracle": true,
+    "negative_control": {
+      "before": [
+        0,
+        0
+      ],
+      "after": [
+        0,
+        1
+      ],
+      "rejected": true
+    },
+    "limitation": "Only this common polynomial was evaluated; arbitrary heterogeneous maps need their own compatibility proof"
+  },
+  "shadow_unit_orders": {
+    "order_4_mod_11": 5,
+    "order_4_mod_121": 55,
+    "lift_candidates_checked": 11,
+    "fifth_roots_mod_121_congruent_to_4_mod_11": [
+      81
+    ],
+    "order_81_mod_121": 5
+  },
+  "linear_pair_roots": {
+    "prime_fields": [
+      3,
+      5,
+      7,
+      11,
+      13
+    ],
+    "unit_a_and_b_cases_checked": 334,
+    "one_excluded_class_cases": 34,
+    "two_excluded_class_cases": 300,
+    "condition": "one iff b=0 mod p; otherwise two, assuming a is a unit"
+  },
+  "reproducibility": {
+    "python": "3.12.14",
+    "script_sha256": "d284d0e8cfbc4f41cad86297bcd74214ba4343e32b7dbf6e83d8f3695a86e526"
+  }
+}

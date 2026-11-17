@@ -1,0 +1,27 @@
+{
+  "repository": "/workspace/NINE65_v7",
+  "commit": "137d9702c56515ebe58e74041f7336e604bc0df6",
+  "source_hashes": {
+    "crates/cram-core/src/phase_lock.rs": "3b48b83d1521729b6cecd829b44554e118e4d00a48f5537bb74f1241d5acdb7a",
+    "crates/cram-core/src/anchor.rs": "ca10bd5c4a277e27e60e63ad3cf025c34e0465140dafa2ca9e6f9c9b1a4925ab",
+    "crates/cram-core/src/lib.rs": "f30a5d7e4fb19a74272e1f10ea9dd0cd79dde4cd88481d41fed238457ce124b8",
+    "crates/exact_transcendentals/src/cram_ct.rs": "b2e58684f712245af3f03e96ee427321a67ce0a21f36100309437447862eb1dc",
+    "crates/exact_transcendentals/src/cram_anchor.rs": "61e623fc91edace7df63bcf03462523bb59b02296f1d91360ad991a4c076f0b4",
+    "crates/nine65/Cargo.toml": "5e45ec471740f612230d66a9e1f421632edbc00484c4586f4add594324048181",
+    "docs/execution/2026-10-03/PRIMING_ROOT_CONTRACT.md": "498abee73b3e385fe8dfcd51bc7ae4b2bb6a827d37e146ab2b5a9e8f80db74de"
+  },
+  "executed_command": "cargo +1.89.0 test -p cram-core --lib phase_lock::tests --locked --no-fail-fast",
+  "environment": {
+    "CARGO_HOME": "/workspace/.tooling/cargo",
+    "RUSTUP_HOME": "/workspace/.tooling/rustup",
+    "CARGO_TARGET_DIR": "/workspace/scratch/cram-shadow-clarification-2026-11-17/runtime-target"
+  },
+  "result": {
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0,
+    "filtered_out": 8,
+    "scope": "Existing phase_lock arithmetic unit tests only; no integrated sister-tray producer or lineage controller execution"
+  },
+  "log": "phase-lock-tests.log"
+}

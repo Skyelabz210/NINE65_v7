@@ -1,0 +1,96 @@
+{
+  "date": "2026-11-17",
+  "amends_initial_import": "137d9702c56515ebe58e74041f7336e604bc0df6",
+  "reason": "Owner clarified immutable primary Safe Basis, arbitrary-modulus phase-locked dependent sisters, derived-only K and compatible refinement; full Prime Family text review supplied role/signature transport and specific corrections",
+  "scope": "Architecture documents and scoped finite evidence; no runtime or Lean source modification",
+  "new_source_uploads_published": false,
+  "audited_lean_source_hash_matches": 21,
+  "formal_declaration_count_unchanged": 235,
+  "files": [
+    {
+      "path": "docs/proofs/cram/FIXED_PRIMARY_SISTER_TRAYS_2026-11-17.md",
+      "sha256": "c10734eea46038668bd2c6ea248367635717ac10c5ddd5398000b2912e0c24a9",
+      "bytes": 6141
+    },
+    {
+      "path": "docs/proofs/cram/PRIME_FAMILY_RECONCILIATION_2026-11-17.md",
+      "sha256": "d9954f823cc3f85f5d36795a041d3bdce8e3124bfa3587af93820f3eb8c3d67b",
+      "bytes": 11853
+    },
+    {
+      "path": "docs/proofs/cram/README.md",
+      "sha256": "2e7ff88f9bda968a4a08de7e0a76ce2e423ff65177dc952bbbdf447b39370705",
+      "bytes": 3616
+    },
+    {
+      "path": "docs/proofs/cram/clarification-evidence-2026-11-17/dependent_sister_probe.py",
+      "sha256": "d284d0e8cfbc4f41cad86297bcd74214ba4343e32b7dbf6e83d8f3695a86e526",
+      "bytes": 6388
+    },
+    {
+      "path": "docs/proofs/cram/clarification-evidence-2026-11-17/dependent_sister_probe_results.json",
+      "sha256": "a3cfa2366f20ec87d6149edac06330dbe924c48f8566ef75e9f30b966d015b95",
+      "bytes": 1553
+    },
+    {
+      "path": "docs/proofs/cram/clarification-evidence-2026-11-17/phase-lock-tests.log",
+      "sha256": "be80b632236ab8cf585babd2eeb6a6536b1cf670c66c82de620ed5d88c79c3b3",
+      "bytes": 1795
+    },
+    {
+      "path": "docs/proofs/cram/clarification-evidence-2026-11-17/runtime_execution.json",
+      "sha256": "19bac74c47f91a063ba92eea01d6ff293c1e55a41342bbb0009d4410d5cd39f9",
+      "bytes": 1490
+    },
+    {
+      "path": "docs/proofs/cram/clarification-evidence-2026-11-17/shadow_lineage_probe.py",
+      "sha256": "b6f82024f7153f46a06fc92192e2c4d2ed552fa62b34219498b48b3646050915",
+      "bytes": 7461
+    },
+    {
+      "path": "docs/proofs/cram/clarification-evidence-2026-11-17/shadow_lineage_probe_results.json",
+      "sha256": "84f4d32e79483ff701d9b3f6ba016a38e173ab1c80e36ef3c3ca49b649395cba",
+      "bytes": 1448
+    },
+    {
+      "path": "docs/proofs/cram/clarification-evidence-2026-11-17/tower-smoke-results.json",
+      "sha256": "8b8687812cbc1363d15ee33838b9a48d7c9c6d0c8cfb3b9ce05a3cd971550e9e",
+      "bytes": 982
+    },
+    {
+      "path": "docs/proofs/cram/clarification-evidence-2026-11-17/tower-smoke.mjs",
+      "sha256": "11d61e51e6ffc5f0ef8f48501b2efbe4396431ba36bbf81f5b1824bb695fe228",
+      "bytes": 1784
+    },
+    {
+      "path": "lean4/CRAMUniversal/docs/cram/CORE_SPEC.md",
+      "sha256": "40d639916f9fbbd2918eec711e29aa3023f6105e3c112472e905d3fae90543b5",
+      "bytes": 17624
+    },
+    {
+      "path": "lean4/CRAMUniversal/docs/cram/PROOF_OBLIGATIONS.md",
+      "sha256": "88d98d06e76c6b40543040dd873e0903173542bfeef218bf2f5c4847db12bba5",
+      "bytes": 13004
+    },
+    {
+      "path": "lean4/CRAMUniversal/docs/cram/SOURCE_RECONCILIATION.md",
+      "sha256": "b799e2105e9fec786aad703052caae0141a4745d898b2914518344ba62d22a5b",
+      "bytes": 9895
+    }
+  ],
+  "source_read_coverage": {
+    "PRIME FAMILIES REFERENCE.md": "238 lines, complete text",
+    "PRIME FAMILY.pdf": "54 pages, complete text; delegated full halves with cross-review of key passages",
+    "other_latest_attachments": "inventoried and text-extracted, no complete-review claim"
+  },
+  "verification": {
+    "dependent_sister_probe": "PASS; 11011 pairs enumerated, 1001 compatible; update negative control; unit orders; 334 linear-pair cases",
+    "audited_lean_sources_unchanged": 21,
+    "archived_collection_files_unchanged": 786,
+    "new_lean_proofs": false,
+    "runtime_changes": false,
+    "lakefile_also_unchanged": true,
+    "independent_mathematical_review": "PASS after clarifying immutable primary configuration versus evolving observations",
+    "whitespace_check": "PASS for documents/scripts; raw phase-lock-tests.log retains its original trailing blank line"
+  }
+}

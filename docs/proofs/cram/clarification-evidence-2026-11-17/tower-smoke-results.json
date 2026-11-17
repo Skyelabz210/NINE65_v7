@@ -1,0 +1,27 @@
+{
+  "node": "v24.19.0",
+  "checks": 325,
+  "failures": 0,
+  "repo_commit": "ad0c8380f02b1d0c4f05a3e00726be3bc9680058",
+  "scope": "finite smoke checks; scalar X used only as independent oracle and to encode authentic readings, not a no-scalar production source",
+  "shell": "881790",
+  "source_bits": 256,
+  "anchors_tested": "11^e for e=1..80",
+  "last_resolution": "204840021458546589812482594366668142542429986589197318528619143395036962199099876801",
+  "exact_final_winding": true,
+  "compatible_reductions": true,
+  "fixed_mod11_collision_preserves_readings": true,
+  "star36_fixture": {
+    "kind": "STAR_TOWER_V1",
+    "shell": "36",
+    "anchor": "37",
+    "value": "340282366920938463463374607431768211455",
+    "depth": "25",
+    "terminates_at_zero": true,
+    "identity_holds_every_level": true,
+    "rebuild_exact_at_boundary": true,
+    "certified_levels": "2",
+    "handover_depth": "0",
+    "anchor_needed_for_level_0": "9452287970026068429538183539771339208"
+  }
+}

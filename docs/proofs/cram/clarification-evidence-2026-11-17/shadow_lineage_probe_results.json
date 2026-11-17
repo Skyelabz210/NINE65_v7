@@ -1,0 +1,54 @@
+{
+  "status": "PASS",
+  "scope": "finite exact-integer oracle checks; not Lean or Rust refinement",
+  "checks": {
+    "local_increment_signed_and_huge_absolute_winding": 2464,
+    "retained_shadow_streams": 12,
+    "retained_shadow_stream_transitions": 636,
+    "omitted_increment_bound_negative_controls": 88,
+    "joint_raw_residue_combinations": 44,
+    "padic_integer_source_prefixes": 210,
+    "noninteger_padic_compatible_prefixes": 12,
+    "finite_prefix_extension_control": 1
+  },
+  "profiles": [
+    {
+      "total": 30030,
+      "shadow_main": 2730,
+      "shadow_inverse": 6,
+      "even_payload_joint_raw_resolution": 11,
+      "joint_main": 1365,
+      "joint_inverse": 1
+    },
+    {
+      "total": 9699690,
+      "shadow_main": 881790,
+      "shadow_inverse": 7,
+      "even_payload_joint_raw_resolution": 11,
+      "joint_main": 440895,
+      "joint_inverse": 3
+    }
+  ],
+  "negative_control_snapshot": {
+    "main": 2730,
+    "remainder": 17,
+    "windings": [
+      3,
+      14
+    ],
+    "same_readings": [
+      17,
+      1
+    ]
+  },
+  "observer_storage": "Only an ordered list of shadow observations; main/lower/known initial winding are supplied to queries. Query temporaries and independent oracle integers are allowed.",
+  "adjacent_higher_precision_example": {
+    "M": 36,
+    "anchor": 1369,
+    "X": 10000,
+    "r": 28,
+    "true_quotient": 277,
+    "uncorrected_subtraction": 980,
+    "compatible_readout": 277
+  }
+}

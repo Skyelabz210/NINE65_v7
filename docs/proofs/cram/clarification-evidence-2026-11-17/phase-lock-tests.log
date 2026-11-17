@@ -1,0 +1,42 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+   Compiling libc v0.2.178
+   Compiling getrandom v0.3.4
+   Compiling cfg-if v1.0.4
+   Compiling rustix v1.1.3
+   Compiling zerocopy v0.8.31
+   Compiling linux-raw-sys v0.11.0
+   Compiling bitflags v2.10.0
+   Compiling autocfg v1.5.0
+   Compiling num-traits v0.2.19
+   Compiling once_cell v1.21.3
+   Compiling fastrand v2.3.0
+   Compiling fnv v1.0.7
+   Compiling bit-vec v0.8.0
+   Compiling quick-error v1.2.3
+   Compiling wait-timeout v0.2.1
+   Compiling rand_core v0.9.3
+   Compiling bit-set v0.8.0
+   Compiling rand_xorshift v0.4.0
+   Compiling rand v0.9.5
+   Compiling tempfile v3.24.0
+   Compiling ppv-lite86 v0.2.21
+   Compiling rusty-fork v0.3.1
+   Compiling unarray v0.1.4
+   Compiling regex-syntax v0.8.8
+   Compiling rand_chacha v0.9.0
+   Compiling proptest v1.9.0
+   Compiling cram-core v0.1.0 (/workspace/NINE65_v7/crates/cram-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.05s
+     Running unittests src/lib.rs (/workspace/scratch/cram-shadow-clarification-2026-11-17/runtime-target/debug/deps/cram_core-1c0da283ee7cc32c)
+
+running 5 tests
+test phase_lock::tests::nonzero_refresh_increment_is_independent_of_source_winding ... ok
+test phase_lock::tests::s8_joint_split_reference_and_invalid_inputs ... ok
+test phase_lock::tests::crt_pair_covers_every_residue ... ok
+test phase_lock::tests::s8_shadow_elimination_refuses_changed_payload_and_aliases ... ok
+test phase_lock::tests::shadow_elimination_matches_independent_integer_successors ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.01s
+

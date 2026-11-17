@@ -4,6 +4,8 @@ Published collection prepared 2026-11-17. This directory brings the complete loc
 
 ## Start here
 
+- [Owner clarification: fixed primary and arbitrary-modulus dependent sisters](FIXED_PRIMARY_SISTER_TRAYS_2026-11-17.md)
+- [Full Prime Family read: role transport, dependent composites and corrections](PRIME_FAMILY_RECONCILIATION_2026-11-17.md)
 - [Current engine specification](../../../lean4/CRAMUniversal/docs/cram/CORE_SPEC.md)
 - [Proof obligations and remaining implementation work](../../../lean4/CRAMUniversal/docs/cram/PROOF_OBLIGATIONS.md)
 - [Source reconciliation](../../../lean4/CRAMUniversal/docs/cram/SOURCE_RECONCILIATION.md)
@@ -25,5 +27,7 @@ The existing `lean4/KElimination` package remains separate. Its library definiti
 The collection contains **786 preserved files**: proof sources, papers, original uploads, analyses, reference programs, patches, manifests and execution records. Seven generated legacy Coq/cache/binary artifacts were omitted and are individually listed with their original hashes in the publication manifest. Original uploaded archives remain unchanged.
 
 Frozen manifests, measured results and historical status statements are preserved. Older files that report 130 or 223 declarations, uncommitted snapshots, or no GitHub upload describe their original dates; this publication wrapper records the later import. Paths into `/workspace` and `/tmp` in raw logs identify the original execution environment. New navigation links above work within this repository.
+
+`PUBLICATION_MANIFEST.json` records the initial import at `137d970`; its maintained-document hashes describe that snapshot. The subsequent fixed-primary clarification amends the live specification and ledger without changing the archived collection or any audited Lean source. Its document hashes are recorded in `ARCHITECTURE_CLARIFICATION_MANIFEST_2026-11-17.json`.
 
 Historical patches and prototype sources under `collection/` are evidence, not applied changes to the NINE65 runtime. In particular, the certified-lift frame-binding and scalar-bound findings remain open. The current proof ledger gives the next engine implementation obligations.
