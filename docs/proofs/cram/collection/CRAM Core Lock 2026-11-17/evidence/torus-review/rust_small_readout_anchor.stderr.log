@@ -1,0 +1,4 @@
+
+thread 'main' panicked at /workspace/scratch/cram-lock-2026-11-17/torus-review/Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_arbitrary_composite.rs:245:9:
+correctness check failed for k=4; refusing to emit a timing row
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

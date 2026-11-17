@@ -1,0 +1,11 @@
+{
+  "recorded_at_utc": "2026-11-12T16:00:50.874666+00:00",
+  "command": "python3 expanded-corpus/experiments/portfolio_polynomial.py",
+  "python": "3.12.14",
+  "scope": "Independent mathematical model; no original-repository mutation; no historical benchmark reproduced",
+  "outputs": {
+    "experiments/portfolio_polynomial.py": "6dd919868b81051c9a64ffbc652f917d7c492c4531e3b91b21d74b03ca6ee74e",
+    "experiments/portfolio_polynomial_results.json": "ab2e86388536044a39c262dc40f28f71d030533262d7c9a98c5ad5132957d397",
+    "reviews/portfolio.md": "4e33237a9fce5de6f5e5a0ec062852877c9acbdd5526ad1ecf918331fa7e732f"
+  }
+}

@@ -1,0 +1,76 @@
+================================================================================
+MANA FHE BENCHMARK BINARY - VERIFICATION CERTIFICATE
+================================================================================
+
+Binary:         mana_fhe_benchmark
+Version:        1.0.0
+Build Date:     January 2026
+Platform:       Linux x86_64
+Publisher:      QMNF Advanced Mathematics
+
+--------------------------------------------------------------------------------
+INTEGRITY VERIFICATION
+--------------------------------------------------------------------------------
+
+SHA-256 Checksum:
+61a3e1110324297a512da84270f4d73544d96fbdb80dc6bea0dbf94c5a54c5dd  mana_fhe_benchmark
+
+To verify integrity:
+  $ sha256sum mana_fhe_benchmark
+  Expected: 61a3e1110324297a512da84270f4d73544d96fbdb80dc6bea0dbf94c5a54c5dd
+
+--------------------------------------------------------------------------------
+BUILD INFORMATION
+--------------------------------------------------------------------------------
+
+Compiler:       rustc (nightly)
+Build Profile:  release (optimized, stripped)
+Build Flags:    -Zlocation-detail=none -C debuginfo=0 -C strip=symbols
+
+Security Measures Applied:
+  [x] Symbol table stripped
+  [x] Debug information removed
+  [x] Source path information removed
+  [x] Panic strings sanitized
+  [x] Release optimizations enabled
+
+--------------------------------------------------------------------------------
+WHAT THIS BINARY DOES
+--------------------------------------------------------------------------------
+
+This benchmark binary demonstrates the K-Elimination algorithm for exact
+RNS division in the context of Fully Homomorphic Encryption operations.
+
+Operations benchmarked:
+  - K-Elimination exact division
+  - Homomorphic addition (light)
+  - Homomorphic multiplication (plaintext)
+  - Homomorphic multiplication (ciphertext)
+  - Key generation
+  - Encryption/Decryption
+
+The binary performs ONLY benchmarking operations. It does not:
+  - Access the network
+  - Read/write files (except stdout)
+  - Execute external commands
+  - Require elevated privileges
+
+--------------------------------------------------------------------------------
+CONTACT
+--------------------------------------------------------------------------------
+
+Publisher:      Anthony Diaz
+Organization:   QMNF Advanced Mathematics
+Email:          founder@hackfate.us
+Website:        https://skyelabz210.github.io/k-elimination-lean4/
+Repository:     https://github.com/Skyelabz210/k-elimination-lean4
+
+--------------------------------------------------------------------------------
+LICENSE
+--------------------------------------------------------------------------------
+
+K-Elimination Theorem:  MIT License (Open Source)
+MANA FHE Binary:        Proprietary - All Rights Reserved
+                        Provided for benchmarking and evaluation only.
+
+================================================================================

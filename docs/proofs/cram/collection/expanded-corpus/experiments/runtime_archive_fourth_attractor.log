@@ -1,0 +1,66 @@
+warning: unused variable: `g12`
+   --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor.rs:392:13
+    |
+392 |         let g12 = compute_feedback(&history_12, eta, FIBONACCI_PERIOD, 1000);
+    |             ^^^ help: if this is intentional, prefix it with an underscore: `_g12`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `g13`
+   --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor.rs:393:13
+    |
+393 |         let g13 = compute_feedback(&history_13, eta, FIBONACCI_PERIOD, 1000);
+    |             ^^^ help: if this is intentional, prefix it with an underscore: `_g13`
+
+warning: unused variable: `id`
+   --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor.rs:416:25
+    |
+416 |     fn run_battery_test(id: usize, m: i128, s0: i128, eta_frac: i128) -> bool {
+    |                         ^^ help: if this is intentional, prefix it with an underscore: `_id`
+
+warning: function `battery_test` is never used
+   --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor.rs:309:8
+    |
+309 |     fn battery_test(
+    |        ^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: 4 warnings emitted
+
+
+running 11 tests
+test tests::battery_large_m_small_s0_converges ... ok
+test tests::battery_depth_emergence_in_fibonacci_range ... FAILED
+test tests::compute_feedback_mavg_uses_window_not_full_history ... ok
+test tests::compute_feedback_fibonacci_gate_fires_at_fib_steps ... ok
+test tests::compute_feedback_with_empty_history_is_zero ... ok
+test tests::fixed_k_phi_compute_effective_k_at_window_boundary ... ok
+test tests::k_at_window_zero_equals_k_min ... ok
+test tests::k_is_monotone_increasing ... ok
+test tests::k_ramp_is_strictly_exact_rational ... ok
+test tests::attractor_step_uses_integer_arithmetic_throughout ... ok
+test tests::battery_all_40_pass ... FAILED
+
+failures:
+
+---- tests::battery_depth_emergence_in_fibonacci_range stdout ----
+
+thread 'tests::battery_depth_emergence_in_fibonacci_range' panicked at /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor.rs:501:9:
+Depth 0 must be near a Fibonacci number (8,13,21,34,55 ± 5)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- tests::battery_all_40_pass stdout ----
+
+thread 'tests::battery_all_40_pass' panicked at /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor.rs:477:9:
+assertion `left == right` failed: Battery: 38/40 PASS, failing tests: [32, 33]
+  left: 2
+ right: 0
+
+
+failures:
+    tests::battery_all_40_pass
+    tests::battery_depth_emergence_in_fibonacci_range
+
+test result: FAILED. 9 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

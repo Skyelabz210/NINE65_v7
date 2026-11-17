@@ -1,0 +1,21 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `release` profile [optimized] target(s) in 0.06s
+     Running unittests src/lib.rs (/workspace/k-elimination-audit/expanded-corpus/build-runtime/nine65/release/deps/nine65-3eee27a58f4ed6fe)
+
+running 11 tests
+test arithmetic::compare_bit::tests::boundary_regions_adversarial_on_42_bit_prime_bases ... ok
+test arithmetic::compare_bit::tests::external_wide_vectors::wide_centering_matches_independent_python_integers ... ok
+test arithmetic::compare_bit::tests::fixed_work_decision_matches_oracle_at_wide_unsigned_boundaries ... ok
+test arithmetic::compare_bit::tests::exhaustive_every_x_on_a_five_lane_small_basis ... ok
+test arithmetic::compare_bit::tests::fixed_work_decision_is_exact_for_every_small_basis_value ... ok
+test arithmetic::compare_bit::tests::impossibility_identity_locks_the_wall ... ok
+test arithmetic::compare_bit::tests::wide_fixed_work_centering_covers_boundary_and_rejects_overflow ... ok
+test arithmetic::compare_bit::tests::x_near_m_is_never_misdecided_through_the_wrap_band ... ok
+test arithmetic::compare_bit::tests::lifted_sign_chimera_scale_random_and_boundary ... ok
+test arithmetic::compare_bit::tests::lifted_sign_exhaustive_small_frames ... ok
+test arithmetic::compare_bit::tests::random_trials_match_u128_ground_truth ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 1391 filtered out; finished in 0.03s
+

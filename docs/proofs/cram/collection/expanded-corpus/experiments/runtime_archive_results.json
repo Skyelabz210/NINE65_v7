@@ -1,0 +1,38 @@
+[
+  {
+    "name": "cram",
+    "command": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram/Cargo.toml",
+      "--no-fail-fast"
+    ],
+    "exit_code": 101,
+    "log": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_cram.log"
+  },
+  {
+    "name": "cram_spt",
+    "command": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_spt/Cargo.toml",
+      "--no-fail-fast"
+    ],
+    "exit_code": 101,
+    "log": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_cram_spt.log"
+  },
+  {
+    "name": "cram_subproduct",
+    "command": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_subproduct/Cargo.toml",
+      "--no-fail-fast"
+    ],
+    "exit_code": 101,
+    "log": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_cram_subproduct.log"
+  }
+]

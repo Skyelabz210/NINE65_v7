@@ -1,0 +1,14 @@
+{
+  "file": "/workspace/k-elimination-swarm-proof/KElimination/UniversalResearch/PhaseBinding.lean",
+  "sha256": "23534c5e45bd7eb326ad1beda5094a1b2854e5b4c0210fbc91cc17d57f5ee07c",
+  "command": [
+    "/workspace/k-elimination-audit/proof-check/elan/toolchains/leanprover--lean4---v4.27.0-rc1/bin/lake",
+    "env",
+    "lean",
+    "KElimination/UniversalResearch/PhaseBinding.lean"
+  ],
+  "exit_code": 0,
+  "scope": "Direct checking of PhaseBinding.lean and twelve local axiom queries; aggregate integration left to root",
+  "declarations": 12,
+  "axiom_free": 9
+}

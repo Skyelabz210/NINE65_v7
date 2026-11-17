@@ -1,0 +1,30 @@
+{
+  "status": "PASS",
+  "controls": [
+    {
+      "control": "admitted_proof",
+      "status": "EXPECTED_REFUSAL",
+      "exit_code": 1,
+      "reason": "Admitted or unsafe declaration"
+    },
+    {
+      "control": "custom_axiom",
+      "status": "EXPECTED_REFUSAL",
+      "exit_code": 1,
+      "reason": "Custom assumed declaration"
+    },
+    {
+      "control": "unproved_positive_halving",
+      "status": "EXPECTED_REFUSAL",
+      "exit_code": 1,
+      "reason": "Lean failed or warned"
+    },
+    {
+      "control": "missing_axiom_audit",
+      "status": "EXPECTED_REFUSAL",
+      "exit_code": 1,
+      "reason": "Every theorem needs one axiom query"
+    }
+  ],
+  "scope": "Build/audit rejection controls; no encrypted execution"
+}

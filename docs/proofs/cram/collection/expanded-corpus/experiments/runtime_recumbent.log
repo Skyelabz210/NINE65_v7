@@ -1,0 +1,25 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `release` profile [optimized] target(s) in 0.07s
+     Running unittests src/lib.rs (/workspace/k-elimination-audit/expanded-corpus/build-runtime/nine65/release/deps/nine65-3eee27a58f4ed6fe)
+
+running 15 tests
+test arithmetic::recumbent::tests::arithmetic_dag_joins_keep_maximum_division_event_depth ... ok
+test arithmetic::recumbent::tests::analytic_bounds_propagate_and_fail_closed_before_capacity_aliases ... ok
+test arithmetic::recumbent::tests::aliasing_intervals_and_unproven_values_are_refused_at_ingress ... ok
+test arithmetic::recumbent::tests::division_event_exhaustion_refuses_without_mutating_input ... ok
+test arithmetic::recumbent::tests::experimental_projection_retains_shared_factor_anchors_and_division_history ... ok
+test arithmetic::recumbent::tests::full_u64_moduli_and_full_i128_interval_have_no_sentinel_or_signed_overflow ... ok
+test arithmetic::recumbent::tests::inclusive_capacity_boundary_and_rounded_output_capacity_are_checked ... ok
+test arithmetic::recumbent::tests::negative_rounding_and_even_ties_have_declared_semantics ... ok
+test arithmetic::recumbent::tests::invalid_bases_mismatches_and_invalid_drop_are_refused ... ok
+test arithmetic::recumbent::tests::public_bound_overflow_refuses_before_residue_arithmetic ... ok
+test arithmetic::recumbent::tests::repeated_division_preserves_signed_value_and_event_depth ... ok
+test arithmetic::recumbent::tests::retained_anchor_residues_name_the_signed_quotient ... ok
+test arithmetic::recumbent::tests::signed_ingress_and_arithmetic_match_scalar_oracle ... ok
+test arithmetic::recumbent::tests::observed_remainder_division_matches_ten_thousand_independent_oracles ... ok
+test arithmetic::recumbent::tests::experimental_rank_projection_matches_ten_thousand_broad_interval_oracles ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 1387 filtered out; finished in 0.09s
+

@@ -1,0 +1,35 @@
+diff --git a/KElimination/UniversalResearch/AllCampaign.lean b/KElimination/UniversalResearch/AllCampaign.lean
+index f47be13..b1c1230 100644
+--- a/KElimination/UniversalResearch/AllCampaign.lean
++++ b/KElimination/UniversalResearch/AllCampaign.lean
+@@ -2,3 +2,4 @@ import KElimination.UniversalResearch.AllResearch
+ import KElimination.UniversalResearch.FutureQuotient
+ import KElimination.UniversalResearch.AnchorValuations
+ import KElimination.UniversalResearch.ReflectionInvariant
++import KElimination.UniversalResearch.PhaseBinding
+diff --git a/README.md b/README.md
+index 5af62c2..0d75c1f 100644
+--- a/README.md
++++ b/README.md
+@@ -1,5 +1,21 @@
+ # K-Elimination Theorem
+ 
++## CRAM engine architecture lock (2026-11-17)
++
++CRAM is the intended arithmetic engine for NINE65. The standalone
++[core specification](docs/cram/CORE_SPEC.md) and
++[proof-obligation ledger](docs/cram/PROOF_OBLIGATIONS.md) distinguish that target
++from present implementation wiring. They govern the current architecture;
++historical performance and FHE headline claims below are not core guarantees.
++
++`PhaseBinding.lean` adds a checked distinction between self-derived phase
++consistency and binding to a specified source, plus source-preserving producer,
++transition and composition laws and a concrete paired-residue translation.
++It does not assert that unspecified Rust producers already satisfy those laws.
++The 2026-11-17 integrated audit passed with **235 declarations**, 67 axiom-free;
++the remaining dependencies are confined to `propext`, `Classical.choice` and
++`Quot.sound`. The dated delivery packet records source hashes and raw logs.
++
+ ## Maintained universal proof packet (2026-11-13)
+ 
+ The default Lean target now includes the universal observation/target theorem,

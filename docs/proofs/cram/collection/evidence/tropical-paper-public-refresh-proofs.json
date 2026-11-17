@@ -1,0 +1,44 @@
+{
+  "schema": "nine65-public-refresh-proofs-v1",
+  "status": "passed",
+  "lean_version": "Lean (version 4.27.0-rc1, x86_64-unknown-linux-gnu, commit 2fcce7258eeb6e324366bc25f9058293b04b7547, Release)",
+  "toolchain": "leanprover/lean4:v4.27.0-rc1",
+  "modules": [
+    {
+      "name": "KElimination.PublicRefreshReturn",
+      "source": "KElimination/PublicRefreshReturn.lean",
+      "log": ""
+    },
+    {
+      "name": "KElimination.PublicRefreshBounds",
+      "source": "KElimination/PublicRefreshBounds.lean",
+      "log": ""
+    },
+    {
+      "name": "KElimination.PublicRefreshGeometry",
+      "source": "KElimination/PublicRefreshGeometry.lean",
+      "log": ""
+    },
+    {
+      "name": "KElimination.PublicRefreshNativeLift",
+      "source": "KElimination/PublicRefreshNativeLift.lean",
+      "log": ""
+    },
+    {
+      "name": "KElimination.PublicRefreshDigit",
+      "source": "KElimination/PublicRefreshDigit.lean",
+      "log": ""
+    }
+  ],
+  "audit": "Public refresh axiom audit OK: 142 theorems; no custom axioms or sorryAx\n",
+  "sha256": {
+    "lean-toolchain": "d71f508cc546aeb22c1687e8ed95fc7e371795a448134142d5e1a262fab2051e",
+    "KElimination/PublicRefreshReturn.lean": "be785f323fcaf79bfeabb13fdeebeed061ca7be84663c2cae17b8e941b446310",
+    "KElimination/PublicRefreshBounds.lean": "0817fbee9052e814ef1cb812d18935dae90b736b76bd4098c9a6b9a743a7a394",
+    "KElimination/PublicRefreshGeometry.lean": "77fa0ca0e6d1cddb6105d6b2a650e6e67366dd2a37ca99d43b48cc71baa25bf6",
+    "KElimination/PublicRefreshNativeLift.lean": "b83ec0eee4aae3ede9f46c92081841bcb17824ccf3345a678f764470ec29d9a0",
+    "KElimination/PublicRefreshDigit.lean": "5bce4f18881234b2b5061fcbf6335c4e097fd8ae00f00de2e433dda7f96cbc15",
+    "scripts/PublicRefreshAudit.lean": "635b541a3258410114aa4a7f01130164cdde9ac917a4aa2b92a9d57c425e563f"
+  },
+  "scope": "arithmetic/model theorems; no Rust refinement or security admission"
+}

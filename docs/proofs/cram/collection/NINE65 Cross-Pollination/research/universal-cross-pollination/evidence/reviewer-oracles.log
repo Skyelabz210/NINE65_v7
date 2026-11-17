@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "seed": 651211,
+  "factorization_oracle_cases": 5000,
+  "random_subset_oracle_cases": 1500,
+  "pair_graph_future_query_oracle_cases": 2000,
+  "scope": "Public finite mathematical models; no ciphertext execution",
+  "sha256": {
+    "reference/query_planner.py": "3a5fea21b6f3925aedcb30665701c80b46b9973c0ef90ac99f5a8eea81bf189b",
+    "reference/future_query.py": "fa1756dee867966d19eddbbf87894402cd20841dd8597aa29a5b00eb0079afc8",
+    "evidence/reviewer_oracles.py": "57b47008ed7e9023df87ed8b8dc4e4d985bf8bc640026d10824c63b6af9e2329"
+  }
+}

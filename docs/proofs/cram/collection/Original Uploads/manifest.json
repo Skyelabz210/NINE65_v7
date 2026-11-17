@@ -1,0 +1,254 @@
+[
+  {
+    "source_id": "upload-original-01",
+    "path": "Original Uploads/upload-original-01/1-The-Universal-Decomposition-Principle-and-Its-Boundaries_-Where-Factorization-Fails-Across-Mathematics-and-Science.pdf",
+    "sha256": "75846764cec92dcfcf7930ccd4e2c96b23ff99ebb8978d3800a084beaf88c61e",
+    "bytes": 116243
+  },
+  {
+    "source_id": "upload-original-02",
+    "path": "Original Uploads/upload-original-02/2-CRAM-K-Elimination-Lifts-and-Exact-Reconstruction.md",
+    "sha256": "65ab7643528fdd36d304ffa353d8171b31e14110160137dbf44a219a90b2620c",
+    "bytes": 48895
+  },
+  {
+    "source_id": "upload-original-03",
+    "path": "Original Uploads/upload-original-03/3-K-ELIMINATION-PAPER.pdf",
+    "sha256": "035707ec30cdbd020ff0887e9bb6b04bdfdbd0295fd59780e22a09d725258c36",
+    "bytes": 173362
+  },
+  {
+    "source_id": "upload-original-04",
+    "path": "Original Uploads/upload-original-04/4-K_ELIMINATION_SUBSTRATE_INVARIANT.md",
+    "sha256": "6efcb8b9d1826820015353ececde4351794a414ab9fbece89ed86ae87f2e491f",
+    "bytes": 6485
+  },
+  {
+    "source_id": "upload-original-05",
+    "path": "Original Uploads/upload-original-05/5-kelim_encoder_demo.rs",
+    "sha256": "d9fd33c0cc6e97738cd73aa4d6512cb18579c3a7e3965fcbf284be4cfd05c0d6",
+    "bytes": 1729
+  },
+  {
+    "source_id": "upload-original-06",
+    "path": "Original Uploads/upload-original-06/6-KELIM_LUMINANCE_DECODE_REPORT.md",
+    "sha256": "091a1065f690406c66de408fda766bfae85213484b07286bc12be1737c4ee011",
+    "bytes": 15218
+  },
+  {
+    "source_id": "upload-original-07",
+    "path": "Original Uploads/upload-original-07/7-Unit_Anchor_K_Elimination_WhitePaper.docx",
+    "sha256": "8db7bda74d628a348253a7e4e8ee85d36ff1482d6b1a990ab1a21ed5395700c0",
+    "bytes": 35734
+  },
+  {
+    "source_id": "upload-original-08",
+    "path": "Original Uploads/upload-original-08/8-K_Elimination_Bootstrap_WhitePaper-2.md",
+    "sha256": "64c2d913234a8c23cd722fdacde9ea37f1f8977922aee2566420015694c0ca88",
+    "bytes": 43444
+  },
+  {
+    "source_id": "upload-original-09",
+    "path": "Original Uploads/upload-original-09/9-K_ELIMINATION_PAPER.md",
+    "sha256": "7de7678b8a968b65251662c70c4888d98370e604a7dd05f1e1587aeed934dc8d",
+    "bytes": 30459
+  },
+  {
+    "source_id": "upload-original-10",
+    "path": "Original Uploads/upload-original-10/10-CRAM-Lift-K-Elimination-and-Reconstruction-Inventory.md",
+    "sha256": "938fd8e7a97713aa8c6dc09ca6fa7ab76f40f28c1157073b243b9775dfe98782",
+    "bytes": 9962
+  },
+  {
+    "source_id": "upload-original-11",
+    "path": "Original Uploads/upload-original-11/11-PAPER_1_COPRIME_LATTICE_STRATIFICATION-2.docx",
+    "sha256": "7ebf119e69fa11fa34db53c77468eddca02ca9ecdde69eef522a6559fb5b6b2c",
+    "bytes": 22613
+  },
+  {
+    "source_id": "upload-original-12",
+    "path": "Original Uploads/upload-original-12/12-K_Elimination_Technical_Paper.pdf",
+    "sha256": "9e9f80e70912a03e701a5ee3f92d3b9205575a44cc6c009796d35be2a83bd8b0",
+    "bytes": 264610
+  },
+  {
+    "source_id": "upload-original-13",
+    "path": "Original Uploads/upload-original-13/13-k_elim_bootstrap_corrected.py",
+    "sha256": "4ad2efaf6ac717738303556f1e7e9dcb0ad652bf4b608e3fff18421192c1c9f6",
+    "bytes": 16592
+  },
+  {
+    "source_id": "upload-original-14",
+    "path": "Original Uploads/upload-original-14/14-U256_KELIM_FIX_SUMMARY.md",
+    "sha256": "a2d89a2caea1b8a942a299dc1604e8be729ad9013244b532a37538e2cac84b11",
+    "bytes": 2468
+  },
+  {
+    "source_id": "upload-original-15",
+    "path": "Original Uploads/upload-original-15/15-NINE65_Formal_Proofs-3.pdf",
+    "sha256": "e2149c11a33a343aa203b269175e41c7a9d4334096af93772cd4fb7c7bf2ef58",
+    "bytes": 165404
+  },
+  {
+    "source_id": "upload-original-16",
+    "path": "Original Uploads/upload-original-16/16-acts.md",
+    "sha256": "0aa316ecdd5336e1614d578795c90dc90b4d252d39fec0b772bdbf2cad0a2900",
+    "bytes": 11281
+  },
+  {
+    "source_id": "upload-original-17",
+    "path": "Original Uploads/upload-original-17/17-k_elim_edge_cases.py",
+    "sha256": "14ca5e6460727dfeb2781e2dd6c81d4fc9e77d27585622ad244b91a636959341",
+    "bytes": 17852
+  },
+  {
+    "source_id": "upload-original-18",
+    "path": "Original Uploads/upload-original-18/18-kelim_crate.tar.gz",
+    "sha256": "5e2bfc4593f67a4df9e2a527671a1ff9e497c969f6609265bf8c0657ba83a4ba",
+    "bytes": 6947
+  },
+  {
+    "source_id": "upload-original-19",
+    "path": "Original Uploads/upload-original-19/19-PROOFS.pdf",
+    "sha256": "3ec3c73b212a0d152f070f8995437fc08f9a92eb4676498eb2f9852dbdb79c2a",
+    "bytes": 250338
+  },
+  {
+    "source_id": "upload-original-20",
+    "path": "Original Uploads/upload-original-20/20-Untitled.docx",
+    "sha256": "cea69c53745d79b21cda86841ffa63bb3552ce5e0f70d4c7d0d60919a7acba11",
+    "bytes": 10531
+  },
+  {
+    "source_id": "upload-expanded-01",
+    "path": "Original Uploads/upload-expanded-01/1-deep-research-report-6.md",
+    "sha256": "b0df878cbe19b4a1a6ee39f7dbb727362a12d18ac9e377fb967be657ef512932",
+    "bytes": 43954
+  },
+  {
+    "source_id": "upload-expanded-02",
+    "path": "Original Uploads/upload-expanded-02/2-Untitled.docx",
+    "sha256": "cea69c53745d79b21cda86841ffa63bb3552ce5e0f70d4c7d0d60919a7acba11",
+    "bytes": 10531
+  },
+  {
+    "source_id": "upload-expanded-03",
+    "path": "Original Uploads/upload-expanded-03/3-NINE65v7-Exhaustive-Audit-Fallback-Systems-and-Actual-Primary-Path-Usage.docx",
+    "sha256": "4e3f58861c7651ec8cb554c2b5afb2a6f4263d44aa6267da2139d9fee7977ae9",
+    "bytes": 171157
+  },
+  {
+    "source_id": "upload-expanded-04",
+    "path": "Original Uploads/upload-expanded-04/4-D-OD01-D024-THEOREM-STACK-2.pdf",
+    "sha256": "4bfed94aefcde808c910cd00aab33111b17cd3a5b50ad7f5747abcbaf2bba899",
+    "bytes": 176247
+  },
+  {
+    "source_id": "upload-expanded-05",
+    "path": "Original Uploads/upload-expanded-05/5-Exact_Division_Residue_Space_Resolution.pdf",
+    "sha256": "ec3325cf89decf9c6cbea55e770269dfa49d57dd4bdb5307228fbb85281dba64",
+    "bytes": 111878
+  },
+  {
+    "source_id": "upload-expanded-06",
+    "path": "Original Uploads/upload-expanded-06/6-CRAM_FULL_SYNTHESIS_EXPANDED.docx",
+    "sha256": "cfcf58e7601fce8eb16b83494ae762d158c1e1232e189dc6b9aeb68f89569315",
+    "bytes": 22397
+  },
+  {
+    "source_id": "upload-expanded-07",
+    "path": "Original Uploads/upload-expanded-07/7-the-safe-basis.pdf",
+    "sha256": "2fc0df63afbbd2502842314257e03d1a385f55ec4163239afec169908ea58ff0",
+    "bytes": 168050
+  },
+  {
+    "source_id": "upload-expanded-08",
+    "path": "Original Uploads/upload-expanded-08/8-KimiCRAM_QMNF_Technical_White_Paper_v1.0.md",
+    "sha256": "1cf492085b689667243d8a5182b8cd1aff385d3330adf948887eb9e7425995ea",
+    "bytes": 35797
+  },
+  {
+    "source_id": "upload-expanded-09",
+    "path": "Original Uploads/upload-expanded-09/9-PROOFS.pdf",
+    "sha256": "3ec3c73b212a0d152f070f8995437fc08f9a92eb4676498eb2f9852dbdb79c2a",
+    "bytes": 250338
+  },
+  {
+    "source_id": "upload-expanded-10",
+    "path": "Original Uploads/upload-expanded-10/10-Untitled.png",
+    "sha256": "78796a288442eea10a0a23e176cb0d51ac0990558795d14aebeb74399212a6fd",
+    "bytes": 41162
+  },
+  {
+    "source_id": "upload-expanded-11",
+    "path": "Original Uploads/upload-expanded-11/11-workspace.zip",
+    "sha256": "39bfcf9d0cf4c1961543ff95bd191ca9fba5f84384dad160e287ad14dea1e082",
+    "bytes": 2779038
+  },
+  {
+    "source_id": "upload-expanded-12",
+    "path": "Original Uploads/upload-expanded-12/12-gpai-20260616-CRAM-CRT-based-coprime-arithmetic.pdf",
+    "sha256": "518ac5bec46412d2cb1a2a9bb41207efd2ccc31964924acf2ddbabf766403f4d",
+    "bytes": 319395
+  },
+  {
+    "source_id": "upload-expanded-13",
+    "path": "Original Uploads/upload-expanded-13/13-cram-beta-synthesis-v1-.pdf",
+    "sha256": "1dc89cbdcbc88417a68d9d93a0377169b4d2a0379e0e482c4241bcba0c9afbbf",
+    "bytes": 476419
+  },
+  {
+    "source_id": "upload-expanded-14",
+    "path": "Original Uploads/upload-expanded-14/14-Crate-12.zip",
+    "sha256": "7d650c2e788e7022e0918c1428894be214d5789127783e032db279fba251967e",
+    "bytes": 223390
+  },
+  {
+    "source_id": "upload-expanded-15",
+    "path": "Original Uploads/upload-expanded-15/15-report.pdf",
+    "sha256": "ad3006a3c40de6f7357a953b080d99c7b41f28dc520181f8475e3f9d374f67b5",
+    "bytes": 74850
+  },
+  {
+    "source_id": "upload-expanded-16",
+    "path": "Original Uploads/upload-expanded-16/16-Configurable-Residue-Arithmetic-Machines-CRAM-A-Self-Contained-Non-Archimedean-Exact-Arithmetic-Substrate-Dual-Track-K-Elimination-and-Frame-Transduction.pdf",
+    "sha256": "52d3407a01f0180e07d00eb301bc4ada9c7e0466c9d52259bad5bd66266b80f6",
+    "bytes": 141277
+  },
+  {
+    "source_id": "upload-expanded-17",
+    "path": "Original Uploads/upload-expanded-17/17-Master-Portfolio-Document-2.pdf",
+    "sha256": "39399a9089c9305aeef85bd6db471ddd80c2bb47597c2d916a4c7ee204a97059",
+    "bytes": 1648585
+  },
+  {
+    "source_id": "upload-expanded-18",
+    "path": "Original Uploads/upload-expanded-18/18-gpai-20260616-Problem-6162026.pdf",
+    "sha256": "1a0fd2ed8f35dd90198cd7d8d8e28700147bb1e3371ac25bf61c8d7aea97968f",
+    "bytes": 228225
+  },
+  {
+    "source_id": "upload-expanded-19",
+    "path": "Original Uploads/upload-expanded-19/19-Unit_Anchor_K_Elimination_WhitePaper.docx",
+    "sha256": "8db7bda74d628a348253a7e4e8ee85d36ff1482d6b1a990ab1a21ed5395700c0",
+    "bytes": 35734
+  },
+  {
+    "source_id": "upload-expanded-20",
+    "path": "Original Uploads/upload-expanded-20/20-ConfigurableResidueArithmeticMachines.docx",
+    "sha256": "46a134b7ca4e0629fbebf964b06aef2c533ef0a7c1ce40683cd46cb842ca03b0",
+    "bytes": 842254
+  },
+  {
+    "source_id": "upload-expanded-21",
+    "path": "Original Uploads/upload-expanded-21/21-PROOFS.pdf",
+    "sha256": "3ec3c73b212a0d152f070f8995437fc08f9a92eb4676498eb2f9852dbdb79c2a",
+    "bytes": 250338
+  },
+  {
+    "source_id": "upload-expanded-22",
+    "path": "Original Uploads/upload-expanded-22/22-claude-memory-2026-11-11.zip",
+    "sha256": "c07fef4d3a6e17fc2775c692f2fb4ac33da9ff1bbdef531f05a35f18a45fa0d4",
+    "bytes": 95414
+  }
+]

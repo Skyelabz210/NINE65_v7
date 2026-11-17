@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "command": [
+    "/workspace/.tooling/cargo/bin/cargo",
+    "test",
+    "-p",
+    "cram-core",
+    "--locked",
+    "--no-fail-fast"
+  ],
+  "base_commit": "d883d24e6a1462c78564e554f42b3dd54044da59",
+  "elapsed_seconds": 3.6939162600028794,
+  "new_integration_tests": 10,
+  "existing_unit_tests": 13,
+  "existing_workload_tests": 5,
+  "encrypted_execution": false,
+  "source_sha256": {
+    "crates/cram-core/src/query_runtime.rs": "72bff16b2464359014acb434ca7cbf9f9fb1c2656358e32cc6560337676899e5",
+    "crates/cram-core/src/lib.rs": "56a979a44447a57709f2f92b04a2de0a90dd375be452a2602219f7c6e2377914",
+    "crates/cram-core/tests/query_runtime.rs": "ddc97d1f8b383de6e98f1a3730df92b29f777635ee3e34df1eb2d156738faac6",
+    "crates/cram-core/examples/query_runtime_cost.rs": "29f49fe3380c2e0b7e98578f9c9a3bc0b0403b9341727fd46646db5b4a288574"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "captured_at": "2026-11-13",
+  "result": "PASS",
+  "total_records": 181,
+  "source_type_counts": {
+    "uploaded_top_level": 42,
+    "extracted_artifact": 108,
+    "repository": 8,
+    "repository_source_excerpt": 9,
+    "private_drive_document": 5,
+    "indexed_primary_lead": 8,
+    "referenced_codex_thread": 1
+  },
+  "unique_source_ids": 181,
+  "top_level_original_count": 42,
+  "extracted_artifact_count": 108,
+  "inherited_extraction_status_counts": {
+    "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ": 59,
+    "INVENTORIED_AND_SCOPED_CODE_REVIEW": 49
+  },
+  "original_and_extracted_hash_rechecks": {
+    "MATCH": 150
+  },
+  "complete_repository_trees": 8,
+  "fresh_repository_excerpt_reads": 9,
+  "private_drive_scoped_reads": 5,
+  "private_raw_bodies_in_repository": false,
+  "raw_private_cache": "/workspace/k-elimination-audit/private-campaign-sources/corpus_drive_fetches.json",
+  "sources_jsonl_sha256": "8fb8f0b91a1af1f4613a4d3f9c55b7a06e3decff1204f2ac6a19b4723e09ad1c",
+  "checks": [
+    "42 top-level identities retained even for identical bytes",
+    "108 extracted dispositions preserved",
+    "all 150 original/member byte hashes rechecked",
+    "unique source IDs",
+    "parent references resolve",
+    "all eight recursive trees have truncated=false",
+    "Git blob SHA distinguished from excerpt SHA-256",
+    "Drive text digest distinguished from original binary digest"
+  ]
+}

@@ -1,0 +1,194 @@
+{
+  "status": "ACCEPTED_WITH_DECLARED_RESEARCH_SCOPE",
+  "date": "2026-11-13",
+  "reviewer": "campaign_review",
+  "implementation_authors_reviewed": [
+    "campaign_residue",
+    "campaign_gcd",
+    "campaign_formal",
+    "campaign_discovery",
+    "campaign_corpus"
+  ],
+  "blocking_findings": [],
+  "independent_executions": {
+    "fresh_std_modules": 17,
+    "fresh_std_axiom_reports": 180,
+    "new_proof_bodies_reviewed": 49,
+    "actual_residue_api_output_checks": 136020,
+    "fixed_euclid_dag_pairs": 94548,
+    "direct_table_dag_pairs": 900,
+    "module_certificate_cases": 432,
+    "decoded_vectors": 2954,
+    "kernel_collision_certificates": 198,
+    "geometry_triples": 729,
+    "bbs_configurations": 1023,
+    "rational_interpolation_points": 50187,
+    "jet_instances_including_composites": 1100,
+    "source_byte_hash_checks": 150
+  },
+  "author_executions_reviewed": {
+    "integrated_lean_declarations": 223,
+    "new_std_declarations": 36,
+    "new_nat_anchor_declarations": 13,
+    "current_residue_core_tests": 29,
+    "serial_adapter_tests": 3,
+    "accelerated_adapter_tests": 3,
+    "current_gcd_tests": 7,
+    "current_clear_circuit_tests": 5,
+    "native_direct_gcd_two_bit_cases": 3,
+    "native_direct_gcd_output_coefficient_checks": 49152,
+    "native_fixed_gcd_one_bit_output_coefficient_checks": 16384,
+    "private_feedback_tests": 1
+  },
+  "reviewed_sources": [
+    {
+      "path": "/workspace/NINE65-swarm-residue/crates/cram-core/src/query_runtime.rs",
+      "sha256": "8de791bc08ebeb00baa17278280bf07b03a1942704732adf4d5b8dc0c908648b",
+      "review_kind": "implementation and contract review; author execution evidence checked"
+    },
+    {
+      "path": "/workspace/NINE65-swarm-residue/crates/cram-core/tests/query_runtime.rs",
+      "sha256": "5ee561c09698638b07ea9703051a0c34435f38d1da6df29e7d7c0c43f7d93859",
+      "review_kind": "implementation and contract review; author execution evidence checked"
+    },
+    {
+      "path": "/workspace/NINE65-swarm-residue/crates/nine65/Cargo.toml",
+      "sha256": "bbaae1f8626935ca8fa1effad12feb4ccc5666e5205b3174d9ed4feb17249884",
+      "review_kind": "implementation and contract review; author execution evidence checked"
+    },
+    {
+      "path": "/workspace/NINE65-swarm-residue/crates/nine65/src/compiler.rs",
+      "sha256": "03b16b97d2bb126805664ae65fd75088ce1503b04c9f8dc8527b73cacfb82d77",
+      "review_kind": "implementation and contract review; author execution evidence checked"
+    },
+    {
+      "path": "/workspace/NINE65-swarm-residue/crates/nine65/src/compiler/residue_query.rs",
+      "sha256": "0edf74fdf0307a7f0a48b5508a674143401724e5fcff68a18acc36f43f4abf94",
+      "review_kind": "implementation and contract review; author execution evidence checked"
+    },
+    {
+      "path": "/workspace/NINE65-swarm-residue/crates/nine65/tests/residue_query_adapter.rs",
+      "sha256": "203147e3a78b106ecb54c6af8d2cf3d6aff5809870e5dc5c35d49f9135475d25",
+      "review_kind": "implementation and contract review; author execution evidence checked"
+    },
+    {
+      "path": "/workspace/NINE65-swarm-gcd/crates/nine65/src/ops/cram_main_division.rs",
+      "sha256": "922379ec84dca6eec76718c10d9f9aef6847ea45810f57b24785727d40a12480",
+      "review_kind": "implementation and contract review; author execution evidence checked"
+    },
+    {
+      "path": "/workspace/NINE65-swarm-gcd/crates/nine65/src/ops/cram_main_gcd_tests.rs",
+      "sha256": "04c9f6676e2403b85926e4f4adae272d1bf0081e4fb61d6beba8bdcbecf49d06",
+      "review_kind": "implementation and contract review; author execution evidence checked"
+    },
+    {
+      "path": "/workspace/NINE65-swarm-gcd/crates/nine65/src/ops/cram_public.rs",
+      "sha256": "d92544ffd6423d189097d2ed18b9f45c609d69f50cb201321ccf312f9c5d5514",
+      "review_kind": "implementation and contract review; author execution evidence checked"
+    },
+    {
+      "path": "/workspace/NINE65-swarm-gcd/crates/nine65/src/ops/integer_division_circuit.rs",
+      "sha256": "032dc4e275e3138e96dc7c43caf4b2218243e35cb3b8e6b97eedc506df62dbd2",
+      "review_kind": "implementation and contract review; author execution evidence checked"
+    },
+    {
+      "path": "/workspace/NINE65-cross-pollination/research/swarm-campaign-2026-11-13/proofs/FutureQuotient.lean",
+      "sha256": "f5b470dfaf710b98cdeba27f4eb72a2b6e984464ef814a10adaf1bfd3fbfbd33",
+      "review_kind": "complete new statements and proof bodies; independent fresh build"
+    },
+    {
+      "path": "/workspace/NINE65-cross-pollination/research/swarm-campaign-2026-11-13/proofs/AnchorValuations.lean",
+      "sha256": "2b1043256fa8e2d0b01457b86bf55ac6830f0406c613ff26e98d5c6603607260",
+      "review_kind": "complete new statements and proof bodies; independent fresh build"
+    },
+    {
+      "path": "/workspace/NINE65-cross-pollination/research/swarm-campaign-2026-11-13/proofs/ReflectionInvariant.lean",
+      "sha256": "6e1ca5ccbf9a9e973303edded9d710c8ab30870ff2d978d8e90ce941b7b2654e",
+      "review_kind": "complete new statements and proof bodies; independent fresh build"
+    },
+    {
+      "path": "/workspace/k-elimination-swarm-proof/KElimination/AnchorSaturation.lean",
+      "sha256": "b51563e36a26f2c9e1b8483ba6e7f769b5441c4101a78e045403134aeb3a3e24",
+      "review_kind": "complete13 statements and proof bodies; author build and axiom evidence checked"
+    },
+    {
+      "path": "/workspace/NINE65-cross-pollination/research/swarm-campaign-2026-11-13/discovery/models.py",
+      "sha256": "231b68b99ac9e1f80eebfb7488836c5a1fe896f6480442b342d68cd807d502cf",
+      "review_kind": "mathematical/API/source-scope review; actual models independently exercised where identified"
+    },
+    {
+      "path": "/workspace/NINE65-cross-pollination/research/swarm-campaign-2026-11-13/discovery/REPORT.md",
+      "sha256": "f83c738ad1fe4144812678cd525aaf321b86cf8d0cf431348015da308f7ea647",
+      "review_kind": "mathematical/API/source-scope review; actual models independently exercised where identified"
+    },
+    {
+      "path": "/workspace/NINE65-cross-pollination/research/swarm-campaign-2026-11-13/discovery/candidates.jsonl",
+      "sha256": "5212f3713f9f93612411828bcd9b4e7a301bd773e4d262f3a29a92a7285df36c",
+      "review_kind": "mathematical/API/source-scope review; actual models independently exercised where identified"
+    },
+    {
+      "path": "/workspace/NINE65-cross-pollination/research/swarm-campaign-2026-11-13/discovery/discoverygraph.json",
+      "sha256": "eae314d776f47ac3e3abf790346794ca4fd25cfc88407efe51b5de7a256465c8",
+      "review_kind": "mathematical/API/source-scope review; actual models independently exercised where identified"
+    },
+    {
+      "path": "/workspace/NINE65-cross-pollination/research/swarm-campaign-2026-11-13/discovery/sources.json",
+      "sha256": "b06d1ad6f3f81c12cc2f1a99ce2a48d479700f41194dd36b99d96833978f6661",
+      "review_kind": "mathematical/API/source-scope review; actual models independently exercised where identified"
+    },
+    {
+      "path": "/workspace/NINE65-cross-pollination/research/swarm-campaign-2026-11-13/registry/SOURCE_COVERAGE.md",
+      "sha256": "a562ce6119d95ebabb48a4502b2a0484ed28ed05482689c77bcee21132cfaa08",
+      "review_kind": "mathematical/API/source-scope review; actual models independently exercised where identified"
+    },
+    {
+      "path": "/workspace/NINE65-cross-pollination/research/swarm-campaign-2026-11-13/registry/sources.jsonl",
+      "sha256": "8fb8f0b91a1af1f4613a4d3f9c55b7a06e3decff1204f2ac6a19b4723e09ad1c",
+      "review_kind": "mathematical/API/source-scope review; actual models independently exercised where identified"
+    },
+    {
+      "path": "/workspace/NINE65-cross-pollination/research/swarm-campaign-2026-11-13/registry/lineage.json",
+      "sha256": "b2f8c5e11948937819f975ce24ceb607aa5ee4b5bd93cdc270c6eb31e0f2bab9",
+      "review_kind": "mathematical/API/source-scope review; actual models independently exercised where identified"
+    },
+    {
+      "path": "/workspace/NINE65-swarm-gcd/research/swarm-campaign-2026-11-13/runtime-gcd/rational_pair_reference.py",
+      "sha256": "61040b64ad27dce2d42d7ec5e2d2c1bf3693b4f221d1f6762da960911fc829c3",
+      "review_kind": "reference semantics and reported scope review"
+    },
+    {
+      "path": "/workspace/NINE65-swarm-gcd/research/swarm-campaign-2026-11-13/runtime-gcd/README.md",
+      "sha256": "3ba3e028c2b16c024ba6ea4b927e53000db1614ec93ad7719592f48c014772e8",
+      "review_kind": "reference semantics and reported scope review"
+    }
+  ],
+  "reviewer_evidence_sha256": {
+    "lean_independent.log": "e5d183943cecccc98c72a525400e51cb39e1006fc9ea25502e28f6d657c3a61d",
+    "corpus_independent.json": "30e4fed7ebb7a8c948353c57247a32986e35837184a0fffddc2be44c06e38b0b",
+    "residue_runtime_independent.json": "23270affcb44719623d35d535d3f2de5d056aed2ca1f328dd4e6c43abf098451",
+    "independent_oracles.py": "9143de7301ef6b84eb4ab8951483033743fa0b52e970af2cc7f02bc31a1f7342",
+    "gcd_dag_independent.rs": "43f61ce2dbac7916cd5231d543d01845d6a90188481d75f72f6f0a48e7c6b461",
+    "gcd_dag_independent.json": "27dfe049073b98634f5df89a7df56ce7d61cec652f83c4bb43c9a4e39448407c",
+    "REVIEW.md": "365e8f5fde8d569b239bfa4bb222cce8e958d1d403bd7ffb50628e65511e563b",
+    "lean_independent.json": "46b8ef4e38b234239aca8095a445fe59f0e140e1e36d59cb3c6d2e786b206d32",
+    "discovery_independent.py": "711a6b45ec79beb0af68085a1df34ab293a62935a79a42359fde6c7f0502f529",
+    "lean_independent.py": "d5d76d0f861cb805112fbdd7a8349d8c738c37a84a635538d9233b7fe05201ed",
+    "integer_division_circuit_review_copy.rs": "032dc4e275e3138e96dc7c43caf4b2218243e35cb3b8e6b97eedc506df62dbd2",
+    "residue_runtime_independent.rs": "737f8b7d240c329cfe44ec4dd8a9cb61825ef6ecf1e88f331936ff610592ca8d",
+    "discovery_independent.json": "a7c1991cb1e41e085d475dd931a425fdce75e97f618e33a7569ccafce0757cec",
+    "independent_oracles.json": "98c9c909c4ce515cd3ca33a60be011061da8ce8628622bbc9ea519edf2c49647"
+  },
+  "remaining_boundaries": [
+    "No whole-system security or confidentiality conclusion; native arithmetic tuples are not a new security admission.",
+    "No source-level Rust/Python refinement proof; formal recurrence semantics and runtime contracts remain separate.",
+    "Clear repeated-subtraction division is variable-time and publicly budgeted; global O(1) arithmetic is not established.",
+    "Direct GCD tables are capped at4bits and have exponential public compilation size; fixed Euclid supports1..8bits subject to history-dependent noise admission.",
+    "BBS result is nearest-neighbor continuous-space path intertwining with boundary/tail obligations, not a PDE continuum limit.",
+    "Jet/value observations still require authentic producers and vanishing/unit/range certificates.",
+    "Discovery231-pair screen is capability triage; no exhaustive novelty or whole-corpus verification claim.",
+    "Original Mathlib build was author-executed; reviewer independently rebuilt Std package and checked final original source hashes/axioms.",
+    "Preserved full-suite GCD exploration contains a known failed admission assumption; later current GCD/circuit tests pass, legacy division pass evidence retains its chronological scope.",
+    "Linked chat unavailable and inherited scoped source reads remain explicit unfinished intake scopes."
+  ],
+  "finalizer_sha256": "78c0f112d6ca232287d6980e9587aeb654e9867391a7558d3a7f14663ae206df"
+}

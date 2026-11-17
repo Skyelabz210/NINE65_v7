@@ -1,0 +1,134 @@
+
+CRAM, NINE65 and Tropical FHE
+Oct 25, 2026 · @Anthony Diaz
+Your repo already contains the tropical core: K-Elimination is the argmin of a min-plus theta function, which I re-checked exactly on 77,760 cases. The function-class link to Wang's tropical FHE is real but empty, since every lane map is tropical rational. What matters is the cost of max, which is the sign problem you have already mapped.
+What is public on Wang's tropical FHE
+I found the talk abstract but not the paper, so I cannot describe how the scheme encrypts max and addition. Dr. Yutong Wang (Illinois Tech, EMC2 Lab) gave "Towards Privacy-Preserving Universal Approximators via Tropical Rational Functions" on 18 Feb 2026 (abstract). It says tropical rational functions can be implemented directly in a tropical FHE scheme, that current FHE for deep learning is approximate and struggles with ReLU, and that the talk presents universal approximation theory plus a memory-efficient training layer.
+Several searches returned only unrelated work, none of it his: a tropical key-exchange paper (eprint 2024/1101, no encryption or homomorphism), a learnable-activation paper (Khalfaoui-Hassani and Kesselheim) and a tropical-geometry MLP paper (Chu and Kuo). Everything below on Wang's side is therefore at the level of the function class and the abstract's claims. If you have the paper, send it and I will compare constructions properly.
+One fact is solid and sourced: a ReLU feedforward network is a tropical rational map, a difference of two tropical polynomials (Chu and Kuo, Prop. 3.15).
+Exact-integer checks (Rust, no floats)
+All seven checks passed with zero failures. They are finite checks, not proofs. The sources are holte.rs and trop.rs, sent with this doc.
+Check
+Range tested
+Result
+Holte carry chain: stationary law is the Eulerian numbers
+n = 1..8, M = 2..24
+Holds in every case
+Holte chain satisfies detailed balance (reversible)
+n = 1..8, M = 2..24
+Yes for all 23 values of M at n = 1, 2, 3; for none at n = 4..8
+carry(v,p) = min(1, max(0, 2v - p + 1))
+p = 2..2000, all v
+Exact
+Linear pieces of lane maps (runs of equal increment)
+p = 11 to 65537
+add b: 2; multiply by 3: 5; multiply by p/2: p - 2; square: p - 1; inverse: p - 1
+Valuation laws: v(xy) = v(x) + v(y), v(x+y) >= min, equality when valuations differ
+6 primes, 955,206 pairs each
+0 violations
+Theta: argmin over n of (Q n^2 + 2 n z) equals -K, value -2Kg - QK^2
+odd Q <= 61, |K| <= 40, 77,760 cases
+0 failures
+Box-ball carrier equals min-plus recurrence U' = min(1 - U, Q)
+2,000 random states
+0 mismatches
+The first violation at n = 4 is at states (0, 1): for M = 2 the two sides of detailed balance are 10 and 11, and the gap persists for every M tested.
+Where CRAM and NINE65 already sit in tropical geometry
+Your repo's tropical lift note (docs/execution/2026-10-22/TROPICAL_LIFT_K_ELIMINATION.md) already identifies the winding as a tropical covering-space coordinate, using the rank-one case of the min-plus theta function from Inoue and Takenawa. I reproduced its central identity independently (77,760 cases above).
+T_Q(z) = \min_{n \in \mathbb{Z}} \left( Q n^2 + 2 n z \right), \quad z = g + QK \;\Rightarrow\; \arg\min = -K, \quad T_Q(z) = -2Kg - QK^2
+Tropical object
+CRAM / NINE65 object
+Rank-one tropical Jacobian R / QZ
+Centered residue g, a point on the torus
+Sheet of the covering space
+Winding K = round(S / Q)
+Min-plus theta function
+Cost whose argmin is the sheet, so K-Elimination reads it exactly
+Quasi-periodicity cocycle c(g,K) = -2Kg - QK^2
+Lifted remainder algebra: partition of unity plus one winding ciphertext
+Cell wall at g = (Q-1)/2
+Boundary bit b, with theta difference D = -2K - b
+Source phase S = R0 + R1 s
+The Phase 1 correction K_phase of issue #95, identical by definition
+The repo states its own limit: this does not identify an arbitrary tropical Toda trajectory with a BFV circuit. I agree. What is established is the rank-one lift and its use as the refresh carry.
+Parallels with tropical FHE
+A tropical network needs two operations, add and max. Add is native to BFV. Max is the hard one: max(a, b) = a + ReLU(b - a), and ReLU needs the sign bit, which is the comparison problem your Sign Trichotomy report already classifies. So the question for NINE65 is the price of one encrypted sign, and what that does to depth.
+Tropical FHE needs
+CRAM / NINE65 counterpart
+Status and gap
+Exact integer add (tropical multiply)
+BFV add, lane-wise residue add
+Native, no gap
+Exact, non-approximate arithmetic
+Axiom A1, zero floats, K-Elimination
+Matches Wang's stated motivation against approximate FHE
+Max / ReLU (tropical add)
+Sign bit: LiftedSign (K >= T_hi), CompareBit, shell lane
+Kernels exist in the clear. Encrypted, the repo's carry gate is a degree-q polynomial over a period-q chart, cost O(q) not O(log q)
+Several max layers in sequence
+Sequential chart gates
+Repo's own negative control: a second sequential gate reaches 126 error bits against Q = 119 and fails. Two increments batched into one gate pass
+Tropical rational function = difference of two tropical polynomials
+Lane map as piecewise-linear function
+Function class holds, but it is vacuous for lanes (see the Weld 3 correction below)
+Universal approximation and a training layer
+None
+Wang's contribution. Nothing in CRAM replaces it
+Depth budget for a deep net
+Direct-square depth 2, 3, 4 on secure_128, 192, 256; public refresh closed
+One or two max layers today, unless refresh lands
+Two consequences. First, a quantized tropical network with small integer ranges is the natural fit: the chart period q is set by the value range, so 3 to 4 bit activations keep the polynomial degree small. Wide ranges are what make the gate expensive. Second, the repo's tropical-lift route and a tropical-FHE inference route want the same primitive, an exact encrypted carry or sign, so progress on issue #95 transfers directly.
+Caveat: the repo's chart-gate numbers are from an explicitly insecure N = 8 toy. I have not run them; they are the repo's own logs. The depth figures come from the attached refresh report.
+Ultradiscrete systems and CRAM
+Ultradiscretization turns a discrete integrable system into a piecewise-linear integer automaton by sending (+, x) to (max, +). Three parallels with CRAM are exact enough to use; I mark where each stops.
+Carry automata. The box-ball carrier is a carry process, and I verified it equals the min-plus recurrence U' = min(1 - U, Q) on 2,000 random states. The Holte chain is the carry of adding n base-M digits, and the winding of an n-term sum of residues is that carry with zero carry-in, a value in {0, ..., n-1}. All three are carry automata. They are not one system: the box-ball carrier is deterministic and unary, Holte's is a stationary chain over digits.
+Torus plus covering sheet. Periodic box-ball dynamics linearize on a tropical Jacobian, and the theta function reads the sheet (Inoue and Takenawa: the generic fiber of the ultradiscrete periodic Toda lattice is isomorphic to a tropical Jacobian). CRAM's pair (r, K) is a torus point plus a sheet, and addition is translation with carry deposits. The repo notes it has not mapped a Toda trajectory onto a BFV circuit; that is still open.
+Valuations are the exact, float-free tropicalization. The usual limit that produces (max, +) uses log-sum-exp over the reals, which A1 forbids. For integers the p-adic valuation does the same job exactly: v(xy) = v(x) + v(y), and v(x + y) >= min(v(x), v(y)) with equality when they differ. I checked 955,206 pairs for each of 6 primes with no violation. Your lanes are p-adic places, so each lane already carries a tropical view, and the exponent k in the fiber size p^k of the Adelic Landauer accounting plays the role of a valuation.
+The third point is the one I would build on: it gives CRAM a tropical semiring with no real-number limit anywhere.
+Corrected Weld statements
+The new checks settle one open point from my first review, correct one of my own claims, and sharpen the rest.
+Claim
+Problem
+Replacement
+Weld 1, Conjecture 4 (i)-(iii)
+(i) and (ii) together force rho = 4, but rho is prime, so the statement is vacuous or false
+Theorem, verified for n <= 8 and M <= 24: the carry chain has Eulerian stationary law and is reversible iff n <= 3. Delete (ii), (iii) and Observation 3. Keep (M1) as the open lemma
+Weld 1, definition of rho
+The formalization sets rho(B) = smallest prime in B; the DKAM note sets rho(B) = 3 as a spectral radius. With 2 in the S8 basis the first gives 2
+Pick one definition before comparing it with the arity n
+Weld 2, Theorem 7
+f_t(c) = floor(t c / Q) has contiguous-interval fibers, not stride-t fibers. Entropy is log2(Q/t) only when t divides Q
+State fiber sizes floor(Q/t) or ceil(Q/t), and make t divides Q a hypothesis
+Weld 2, hypothesis H2
+I earlier said it essentially never holds. That is true of NTT-prime chains, false for the manufactured Q = t x Delta in your arbitrary-moduli note
+Tie H2 to that construction explicitly
+Weld 2, Theorem 8
+K_j = round((R0_j + (R1 s)_j) / Q) is the wrap count of a secret-dependent inner product over both components, not the fiber coordinate of one f_t(c_j). Discarded information is 2 log2(Q/t) bits, while K needs about 13 bits at N = 8192 (|K| <= 4096)
+Say Phase 1 drops a secret-dependent K, as issue #95 does. It cannot be recovered from public data
+Weld 2, Corollary 9
+Landauer gives a lower bound, reached only in idealized erasure
+Keep the information identity for uniform fibers; drop "achieved exactly"
+Weld 3, Proposition 12
+True, with a stray "x 0" term
+Drop the term; verified for p up to 2000
+Weld 3, Proposition 13
+True but vacuous: any integer-valued function on {0..p-1} is tropical rational. Measured pieces: square and inverse have p - 1, the maximum
+Remove "DKAM = tropical regularity". Replace with the theta theorem (K = -argmin T_Q), which has content and is verified
+Welds 4 and 5
+Correct, but bookkeeping rather than deep
+Present as a unifying restatement
+On the first row: your corpus cites Holte and Diaconis and Fulman for the Eulerian law and the n <= 3 bound. I did not re-read those papers; I verified the statements by exact computation over the range above, so a general proof for all M is still owed.
+Next steps
+Send me Wang's paper or a preprint link. Until then I cannot compare his encryption of max and addition with BFV.
+Build one quantized tropical gate on the repo's toy: max of two small integers through the existing chart crossing, then measure depth and error bits. This tests the main claim above directly.
+Prove Holte's n <= 3 reversibility for general M, or cite the exact statement. For n = 3 it is a three-state chain, so the cycle condition is a short exact identity.
+Fix one definition of rho, then either supply the (M1) construction or retire the two-3's link.
+Add holte.rs and trop.rs to the repo as cargo test cases if you want them kept with the other gates.
+Sources
+Yutong Wang talk abstract, Illinois Tech, 18 Feb 2026
+Inoue and Takenawa, tropical Jacobian and the ultradiscrete periodic Toda lattice
+Chu and Kuo, tropical geometry of multi-layer perceptrons
+Tropical key exchange, eprint 2024/1101 (read to rule it out)
+Khalfaoui-Hassani and Kesselheim, learnable tropical activations (read to rule it out)
+NINE65_v7 repository, read at commit bbfa754: docs/execution/2026-10-22/TROPICAL_LIFT_K_ELIMINATION.md, docs/execution/2026-10-23/ULTRADISCRETE_PUBLIC_REFRESH_ARCHITECTURE.md
+Your attached reports: Sign Trichotomy, Arbitrary Moduli Unblocked, DKAM subcriticality, and the refresh and Adelic Landauer review

@@ -1,0 +1,16 @@
+{
+  "status": "CACHE_BLOCKED_SOURCE_BUILD_USED",
+  "commands": [
+    {
+      "command": "lake exe cache get Mathlib/Data/ZMod/Basic.lean Mathlib/Tactic/Ring.lean Mathlib/Tactic/Push.lean",
+      "result": "Invalid argument: non-existing path Mathlib/Data/ZMod/Basic.lean"
+    },
+    {
+      "command": "lake exe cache get Mathlib.Data.ZMod.Basic Mathlib.Tactic.Ring Mathlib.Tactic.Push",
+      "result": "0 files downloaded; all1110 downloads failed; CONNECT tunnel failed, response403"
+    }
+  ],
+  "scope": "Summary of observed tool output, not complete raw1110-line cache failure output",
+  "fallback": "LEAN_NUM_THREADS=2 lake --no-cache build KElimination KElimination.Basic",
+  "fallback_log": "original-source-build.log"
+}

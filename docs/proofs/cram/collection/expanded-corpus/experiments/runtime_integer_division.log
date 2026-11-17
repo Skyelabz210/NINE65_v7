@@ -1,0 +1,33 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `release` profile [optimized] target(s) in 0.08s
+     Running unittests src/lib.rs (/workspace/k-elimination-audit/expanded-corpus/build-runtime/nine65/release/deps/nine65-3eee27a58f4ed6fe)
+
+running 8 tests
+test ops::rns_fhe::cram_main::division::circuit::tests::exhaustive_unsigned_division_with_unequal_widths ... ok
+test ops::rns_fhe::cram_main::division::circuit::tests::full_u64_boundaries_and_random_inputs ... ok
+test ops::rns_fhe::cram_main::division::tests::integer_ingress_checks_width_and_key_domain ... ok
+test ops::rns_fhe::cram_main::division::tests::division_preserves_history_and_hides_zero_in_public_metadata ... ok
+test ops::rns_fhe::cram_main::division::tests::encrypted_divisor_sharing_a_ciphertext_lane ... ok
+secure_128 width 1: 2 products, 42000 millibits
+secure_128 width 2: integer division preflight at gate 18: certified phase bound exhausted before operation
+secure_128 width 3: integer division preflight at gate 35: certified phase bound exhausted before operation
+test ops::rns_fhe::cram_main::division::tests::encrypted_division_small_words_and_zero_status ... ok
+secure_128 width 4: integer division preflight at gate 63: certified phase bound exhausted before operation
+secure_128 width 5: integer division preflight at gate 19: certified phase bound exhausted before operation
+secure_192 width 1: 2 products, 66000 millibits
+secure_192 width 2: 19 products, 20000 millibits
+secure_192 width 3: integer division preflight at gate 35: certified phase bound exhausted before operation
+secure_192 width 4: integer division preflight at gate 63: certified phase bound exhausted before operation
+secure_192 width 5: integer division preflight at gate 19: certified phase bound exhausted before operation
+secure_256 width 1: 2 products, 95000 millibits
+secure_256 width 2: 19 products, 49000 millibits
+secure_256 width 3: 79 products, 3000 millibits
+secure_256 width 4: 287 products, 0 millibits
+secure_256 width 5: integer division preflight at gate 30: certified phase bound exhausted before operation
+test ops::rns_fhe::cram_main::division::tests::native_integer_division_preflight_profiles ... ok
+test ops::rns_fhe::cram_main::division::tests::native_encrypted_integer_division_checks_every_plaintext_coefficient ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 1394 filtered out; finished in 24.27s
+

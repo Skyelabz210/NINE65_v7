@@ -1,0 +1,1014 @@
+{
+  "status": "PASS",
+  "toolchain": "leanprover/lean4:v4.27.0-rc1",
+  "lean_version": "Lean (version 4.27.0-rc1, x86_64-unknown-linux-gnu, commit 2fcce7258eeb6e324366bc25f9058293b04b7547, Release)",
+  "fresh_temporary_build": true,
+  "project_olean_reused": false,
+  "imports": "Pinned Lean bundled Std; no Mathlib dependency",
+  "theorem_declarations": 144,
+  "reused_dependency_theorems": 130,
+  "new_theorem_declarations": 14,
+  "new_axiom_free_declarations": 9,
+  "axiom_free_declarations": 39,
+  "allowed_foundational_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "files": [
+    {
+      "file": "ExactObservation.lean",
+      "sha256": "3e4f0dc07d9ecb189b4b3a7e490d07fad3a0f828e4ad773fa251876263a3f195",
+      "theorem_count": 9,
+      "theorems": [
+        {
+          "name": "KElimination.ExactObservation.recoverable_iff",
+          "axioms": [
+            "Classical.choice"
+          ]
+        },
+        {
+          "name": "KElimination.ExactObservation.refined_observation_suffices",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.ExactObservation.collision_obstructs_query",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.ExactObservation.refines_identity",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.ExactObservation.refines_composition",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.ExactObservation.finite_program_exact",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.ExactObservation.finite_program_identifies_result",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.ExactObservation.transduction_composes",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.ExactObservation.transduction_round_trip",
+          "axioms": []
+        }
+      ]
+    },
+    {
+      "file": "UniversalLift.lean",
+      "sha256": "00da716f76d10806dc86f3d5a4206c380ea8f6b5a99c6d4f788c4053efba2924",
+      "theorem_count": 15,
+      "theorems": [
+        {
+          "name": "KElimination.UniversalLift.AddMap.map_zero",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.UniversalLift.AddMap.map_neg",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.UniversalLift.AddMap.map_sub",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.UniversalLift.AddMap.same_reading_iff",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.UniversalLift.phase_difference",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.UniversalLift.candidate_iff_kernel",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.UniversalLift.separation_iff",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.UniversalLift.lift_query_exists_iff",
+          "axioms": [
+            "propext",
+            "Classical.choice"
+          ]
+        },
+        {
+          "name": "KElimination.UniversalLift.target_factor_exists_iff",
+          "axioms": [
+            "propext",
+            "Classical.choice"
+          ]
+        },
+        {
+          "name": "KElimination.UniversalLift.target_factor_unique",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.UniversalLift.target_factor_additive",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.UniversalLift.constructive_query_correct",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.UniversalLift.constructive_lift_correct",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.UniversalLift.target_projection",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.UniversalLift.direct_target_query",
+          "axioms": []
+        }
+      ]
+    },
+    {
+      "file": "RingReadout.lean",
+      "sha256": "033dc2f2903b7fcffcb7576fcbdfba70dff2cf247b9a9f0d8ce2dd5495d1e67b",
+      "theorem_count": 16,
+      "theorems": [
+        {
+          "name": "KElimination.RingReadout.Observation.map_zero",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.RingReadout.Observation.map_sub",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.RingReadout.Observation.map_neg",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.RingReadout.left_mul_sub",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.RingReadout.phase_defect",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.RingReadout.unit_readout",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.RingReadout.right_unit_readout",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.RingReadout.solution_fiber",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.RingReadout.injective_on_iff_lift_null_separates",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.RingReadout.unit_lift_null_iff",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.RingReadout.lift_null_zero",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.RingReadout.lift_null_add",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.RingReadout.lift_null_neg",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.RingReadout.lift_null_mul_right",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.RingReadout.lift_null_mul_left",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.RingReadout.target_projection",
+          "axioms": []
+        }
+      ]
+    },
+    {
+      "file": "IntegerSpecialization.lean",
+      "sha256": "c7788921b59a7244e54d53cf1bda2013e3bacea98b9392b29c67b1fe91a3fa88",
+      "theorem_count": 28,
+      "theorems": [
+        {
+          "name": "KElimination.IntegerSpecialization.query_fused",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.query_of_decomposition",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.query_chart_of_decomposition",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.query_quotient_congruence",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.query_exact_of_quotient_window",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.query_exact_of_source_window",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.window_decode_exact",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.query_exact_signed_window",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.star_inverse_certificate",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.star_query_congruence",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.adjacent_query_subtraction",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.adjacent_readout_exact",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.affine_defect_reduction",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.nonunit_query_of_affine_defect",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.nonunit_query_of_decomposition",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.nonunit_chart_query",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.nonunit_chart_query_signed_window",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.target_projection_of_decomposition",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.target_projection_of_period_dvd",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.query_target_projection_of_period_dvd",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.target_lane_projection_eq",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.chart_query_target_lane_transport",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.nonunit_chart_target_lane_transport",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.query_target_projection",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.signed_query_target_projection",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.same_views_source_unique",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.paired_views_periodic",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.IntegerSpecialization.no_unbounded_pair_quotient_decoder",
+          "axioms": [
+            "propext"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "CostedReadout.lean",
+      "sha256": "2946863aa7d1252b8687f0feb9073f073b4ba769368567cc9ea9cc3987a534d7",
+      "theorem_count": 7,
+      "theorems": [
+        {
+          "name": "KElimination.CostedReadout.program_counts",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.CostedReadout.program_evaluates_to_readout",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.CostedReadout.program_correct",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.CostedReadout.modular_program_evaluates_to_query",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.CostedReadout.adjacent_program_counts",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.CostedReadout.adjacent_program_evaluates_to_query",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CostedReadout.ring_is_universal_instance",
+          "axioms": []
+        }
+      ]
+    },
+    {
+      "file": "ReferenceChange.lean",
+      "sha256": "ecd6296ba0e850d03a6cd7093947a0d1803b37f3502c1c77256c8f242711b0e1",
+      "theorem_count": 3,
+      "theorems": [
+        {
+          "name": "KElimination.ReferenceChange.shifted_decomposition",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.ReferenceChange.shifted_defect",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.ReferenceChange.target_invariant_under_reference_change",
+          "axioms": [
+            "propext"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "CoupledAnchors.lean",
+      "sha256": "4357100f2e4b0632d36c1e16cfcaa5da10fe2285a8029773aa1b2112a8b9e95d",
+      "theorem_count": 19,
+      "theorems": [
+        {
+          "name": "KElimination.CoupledAnchors.anchor_lcm_dvd_iff",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.anchor_lcm_pos",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.nat_reduced_kernel",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.int_reduced_kernel",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.anchor_lcm_int_dvd_iff",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.combined_kernel",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.resolution_pos",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.source_period",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.combined_kernel_two",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.combined_kernel_as_lcm_of_resolutions",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.resolution_eq_lcm_reduced",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.same_affine_readings_iff",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.signed_window_unique",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.target_period_iff",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.combined_target_iff",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.resolution_minimal",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.source_readings_iff",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.main_and_anchor_readings_iff",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.CoupledAnchors.dependent_anchor_resolution",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "ResidueAlgorithms.lean",
+      "sha256": "852030cea0a3404654d2a77f677e35a147efc917be33d26ba85ceb6b6d5b7b67",
+      "theorem_count": 6,
+      "theorems": [
+        {
+          "name": "KElimination.ResidueAlgorithms.divLoop_correct",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.ResidueAlgorithms.encode_injective_on",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.ResidueAlgorithms.divmod_correct",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.ResidueAlgorithms.divmod_zero_refused",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.ResidueAlgorithms.gcdLoop_correct",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.ResidueAlgorithms.gcd_correct",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "ResiduePrimitives.lean",
+      "sha256": "61ad481a6dd7e7c9831259416a883a90c8b82162ab326dbc293945425ef9de95",
+      "theorem_count": 14,
+      "theorems": [
+        {
+          "name": "KElimination.ResiduePrimitives.zero_eq_encode",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.ResiduePrimitives.kQuery_exact",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.ResiduePrimitives.increment_encode",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.ResiduePrimitives.subtract_encode",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.ResiduePrimitives.euclidean_lex_order",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.ResiduePrimitives.less_encode",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.ResiduePrimitives.encode_injective_on_window",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.ResiduePrimitives.capacity_positive",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.ResiduePrimitives.isZero_encode",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.ResiduePrimitives.adjacent_query",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.ResiduePrimitives.ops_correct",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.ResiduePrimitives.divmod_correct",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.ResiduePrimitives.divmod_zero_refused",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.ResiduePrimitives.gcd_correct",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "StarLift.lean",
+      "sha256": "90947ad64ef314f2e4f07af16a1586f2685ba9e453e74da097b5ea9b44cdde9c",
+      "theorem_count": 13,
+      "theorems": [
+        {
+          "name": "KElimination.StarLift.negate_residue",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.StarLift.negative_query_eq_negate",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.StarLift.negative_query_of_decomposition",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.StarLift.positive_adjacent_congruence",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.StarLift.adjacent_orientations",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.StarLift.negative_adjacent_congruence",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.StarLift.negative_query_adjacent",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.StarLift.negative_decode_exact",
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.StarLift.negative_adjacent_exact_window",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.StarLift.positive_adjacent_exact_source_window",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.StarLift.unit_kernel_equal",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.StarLift.adjacent_kernel_equal",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.StarLift.negative_nonunit_chart_query",
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "UniversalKElimination.lean",
+      "sha256": "0b1ea7311dc2ed7d1259668649e35e63d9ac71a5899f24345bdff4bc1bdbd458",
+      "theorem_count": 0,
+      "theorems": []
+    },
+    {
+      "file": "ConsumerTransport.lean",
+      "sha256": "7f112491a2c01eef4508f7dffbd18afbe8718121e3cb50687171e056649219a7",
+      "theorem_count": 14,
+      "theorems": [
+        {
+          "name": "KElimination.ConsumerTransport.paired_queries_iff",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.ConsumerTransport.indexed_queries_iff",
+          "axioms": [
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.ConsumerTransport.postprocess_sufficient",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.ConsumerTransport.injective_postprocess_iff",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.ConsumerTransport.quotient_transition_exists_iff",
+          "axioms": [
+            "propext",
+            "Classical.choice"
+          ]
+        },
+        {
+          "name": "KElimination.ConsumerTransport.quotient_transition_unique",
+          "axioms": [
+            "Quot.sound"
+          ]
+        },
+        {
+          "name": "KElimination.ConsumerTransport.stable_transports_consumer",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.ConsumerTransport.stable_composition",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.ConsumerTransport.stable_finite_program",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.ConsumerTransport.finite_program_consumer_sufficient",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.ConsumerTransport.terminal_query_exists_iff",
+          "axioms": [
+            "Classical.choice"
+          ]
+        },
+        {
+          "name": "KElimination.ConsumerTransport.stable_under_equivalent_observations",
+          "axioms": []
+        },
+        {
+          "name": "KElimination.ConsumerTransport.additive_stability_iff_kernel_invariant",
+          "axioms": [
+            "propext"
+          ]
+        },
+        {
+          "name": "KElimination.ConsumerTransport.parity_halving_not_stable",
+          "axioms": []
+        }
+      ]
+    },
+    {
+      "file": "AllResearch.lean",
+      "sha256": "2849639703577815b9d8a016898adc4e60beb1c649fd91b6bac86e4f44867a7b",
+      "theorem_count": 0,
+      "theorems": []
+    }
+  ]
+}

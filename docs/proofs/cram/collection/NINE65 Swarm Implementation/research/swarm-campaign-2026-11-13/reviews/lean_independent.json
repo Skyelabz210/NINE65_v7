@@ -1,0 +1,95 @@
+{
+  "status": "PASS",
+  "scope": "Fresh reviewer rebuild of all17 modules, each emitted axiom report checked; new36 proof bodies separately reviewed",
+  "version": "Lean (version 4.27.0-rc1, x86_64-unknown-linux-gnu, commit 2fcce7258eeb6e324366bc25f9058293b04b7547, Release)",
+  "reused_project_olean": false,
+  "total_axiom_reports": 180,
+  "files": [
+    {
+      "file": "ExactObservation.lean",
+      "sha256": "3e4f0dc07d9ecb189b4b3a7e490d07fad3a0f828e4ad773fa251876263a3f195",
+      "axiom_reports": 9
+    },
+    {
+      "file": "UniversalLift.lean",
+      "sha256": "00da716f76d10806dc86f3d5a4206c380ea8f6b5a99c6d4f788c4053efba2924",
+      "axiom_reports": 15
+    },
+    {
+      "file": "RingReadout.lean",
+      "sha256": "033dc2f2903b7fcffcb7576fcbdfba70dff2cf247b9a9f0d8ce2dd5495d1e67b",
+      "axiom_reports": 16
+    },
+    {
+      "file": "IntegerSpecialization.lean",
+      "sha256": "c7788921b59a7244e54d53cf1bda2013e3bacea98b9392b29c67b1fe91a3fa88",
+      "axiom_reports": 28
+    },
+    {
+      "file": "CostedReadout.lean",
+      "sha256": "2946863aa7d1252b8687f0feb9073f073b4ba769368567cc9ea9cc3987a534d7",
+      "axiom_reports": 7
+    },
+    {
+      "file": "ReferenceChange.lean",
+      "sha256": "ecd6296ba0e850d03a6cd7093947a0d1803b37f3502c1c77256c8f242711b0e1",
+      "axiom_reports": 3
+    },
+    {
+      "file": "CoupledAnchors.lean",
+      "sha256": "4357100f2e4b0632d36c1e16cfcaa5da10fe2285a8029773aa1b2112a8b9e95d",
+      "axiom_reports": 19
+    },
+    {
+      "file": "ResidueAlgorithms.lean",
+      "sha256": "852030cea0a3404654d2a77f677e35a147efc917be33d26ba85ceb6b6d5b7b67",
+      "axiom_reports": 6
+    },
+    {
+      "file": "ResiduePrimitives.lean",
+      "sha256": "61ad481a6dd7e7c9831259416a883a90c8b82162ab326dbc293945425ef9de95",
+      "axiom_reports": 14
+    },
+    {
+      "file": "StarLift.lean",
+      "sha256": "90947ad64ef314f2e4f07af16a1586f2685ba9e453e74da097b5ea9b44cdde9c",
+      "axiom_reports": 13
+    },
+    {
+      "file": "UniversalKElimination.lean",
+      "sha256": "0b1ea7311dc2ed7d1259668649e35e63d9ac71a5899f24345bdff4bc1bdbd458",
+      "axiom_reports": 0
+    },
+    {
+      "file": "ConsumerTransport.lean",
+      "sha256": "7f112491a2c01eef4508f7dffbd18afbe8718121e3cb50687171e056649219a7",
+      "axiom_reports": 14
+    },
+    {
+      "file": "AllResearch.lean",
+      "sha256": "2849639703577815b9d8a016898adc4e60beb1c649fd91b6bac86e4f44867a7b",
+      "axiom_reports": 0
+    },
+    {
+      "file": "FutureQuotient.lean",
+      "sha256": "f5b470dfaf710b98cdeba27f4eb72a2b6e984464ef814a10adaf1bfd3fbfbd33",
+      "axiom_reports": 23
+    },
+    {
+      "file": "AnchorValuations.lean",
+      "sha256": "2b1043256fa8e2d0b01457b86bf55ac6830f0406c613ff26e98d5c6603607260",
+      "axiom_reports": 11
+    },
+    {
+      "file": "ReflectionInvariant.lean",
+      "sha256": "6e1ca5ccbf9a9e973303edded9d710c8ab30870ff2d978d8e90ce941b7b2654e",
+      "axiom_reports": 2
+    },
+    {
+      "file": "AllCampaign.lean",
+      "sha256": "f8175500cca46b67064ddbbf08dd41df388f031bf6248832471e2e9b12960f01",
+      "axiom_reports": 0
+    }
+  ],
+  "script_sha256": "d5d76d0f861cb805112fbdd7a8349d8c738c37a84a635538d9233b7fe05201ed"
+}

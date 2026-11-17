@@ -1,0 +1,5 @@
+lane moduli=[8, 9, 25, 49]; product M=88200
+all lane moduli composite; pairwise gcds=1; composite anchors A=323, q2=667; gcd(M,A)=gcd(M,q2)=1
+full exact CRT/Garner reconstruction cases=88200, failures=0
+independent composite-q2 alpha checks=88200, failures=0; alpha range=[0,3]
+composite-anchor (x,K) cases=28488600, failures=0; anchor returns K modulo A with 4 alpha candidates

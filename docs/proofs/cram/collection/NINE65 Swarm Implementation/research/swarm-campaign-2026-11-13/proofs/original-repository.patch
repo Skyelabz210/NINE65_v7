@@ -1,0 +1,3221 @@
+From dd9c6cfb341ad3747f148c336a015e2b80664e87 Mon Sep 17 00:00:00 2001
+From: Anthony Diaz <diaz.anthony210@icloud.com>
+Date: Fri, 13 Nov 2026 02:25:23 +0000
+Subject: [PATCH] Formalize universal query quotients and least anchor
+ saturation
+
+---
+ KElimination.lean                             |   7 +-
+ KElimination/AnchorSaturation.lean            | 170 ++++++++
+ KElimination/Basic.lean                       |  14 +-
+ .../UniversalResearch/AllCampaign.lean        |   4 +
+ .../UniversalResearch/AllResearch.lean        |   8 +
+ .../UniversalResearch/AnchorValuations.lean   | 102 +++++
+ .../UniversalResearch/ConsumerTransport.lean  | 227 ++++++++++
+ .../UniversalResearch/CostedReadout.lean      | 123 ++++++
+ .../UniversalResearch/CoupledAnchors.lean     | 236 +++++++++++
+ .../UniversalResearch/ExactObservation.lean   | 144 +++++++
+ .../UniversalResearch/FutureQuotient.lean     | 319 ++++++++++++++
+ .../IntegerSpecialization.lean                | 390 ++++++++++++++++++
+ .../UniversalResearch/ReferenceChange.lean    |  58 +++
+ .../ReflectionInvariant.lean                  |  29 ++
+ .../UniversalResearch/ResidueAlgorithms.lean  | 165 ++++++++
+ .../UniversalResearch/ResiduePrimitives.lean  | 203 +++++++++
+ .../UniversalResearch/RingReadout.lean        | 198 +++++++++
+ KElimination/UniversalResearch/StarLift.lean  | 140 +++++++
+ .../UniversalKElimination.lean                |  10 +
+ .../UniversalResearch/UniversalLift.lean      | 247 +++++++++++
+ README.md                                     |  60 ++-
+ scripts/audit_proofs.py                       | 134 ++++++
+ 22 files changed, 2975 insertions(+), 13 deletions(-)
+ create mode 100644 KElimination/AnchorSaturation.lean
+ create mode 100644 KElimination/UniversalResearch/AllCampaign.lean
+ create mode 100644 KElimination/UniversalResearch/AllResearch.lean
+ create mode 100644 KElimination/UniversalResearch/AnchorValuations.lean
+ create mode 100644 KElimination/UniversalResearch/ConsumerTransport.lean
+ create mode 100644 KElimination/UniversalResearch/CostedReadout.lean
+ create mode 100644 KElimination/UniversalResearch/CoupledAnchors.lean
+ create mode 100644 KElimination/UniversalResearch/ExactObservation.lean
+ create mode 100644 KElimination/UniversalResearch/FutureQuotient.lean
+ create mode 100644 KElimination/UniversalResearch/IntegerSpecialization.lean
+ create mode 100644 KElimination/UniversalResearch/ReferenceChange.lean
+ create mode 100644 KElimination/UniversalResearch/ReflectionInvariant.lean
+ create mode 100644 KElimination/UniversalResearch/ResidueAlgorithms.lean
+ create mode 100644 KElimination/UniversalResearch/ResiduePrimitives.lean
+ create mode 100644 KElimination/UniversalResearch/RingReadout.lean
+ create mode 100644 KElimination/UniversalResearch/StarLift.lean
+ create mode 100644 KElimination/UniversalResearch/UniversalKElimination.lean
+ create mode 100644 KElimination/UniversalResearch/UniversalLift.lean
+ create mode 100644 scripts/audit_proofs.py
+
+diff --git a/KElimination.lean b/KElimination.lean
+index a092dd3..b8e9b57 100644
+--- a/KElimination.lean
++++ b/KElimination.lean
+@@ -1,4 +1,4 @@
+-/-!
++/-
+ Scope clarification, 2026-11-12.
+ 
+ The bounded K-recovery statements below retain their exact premises.
+@@ -26,7 +26,10 @@ See https://github.com/Skyelabz210/qmnf-lean-coq-security-proofs/blob/main/docs/
+ import Mathlib.Data.ZMod.Basic
+ import Mathlib.Data.Nat.GCD.Basic
+ import Mathlib.RingTheory.Coprime.Basic
+-import Mathlib.Tactic
++import Mathlib.Tactic.Ring
++import KElimination.Basic
++import KElimination.UniversalResearch.AllCampaign
++import KElimination.AnchorSaturation
+ 
+ /-!
+ # K-Elimination Theorem
+diff --git a/KElimination/AnchorSaturation.lean b/KElimination/AnchorSaturation.lean
+new file mode 100644
+index 0000000..6a3234a
+--- /dev/null
++++ b/KElimination/AnchorSaturation.lean
+@@ -0,0 +1,170 @@
++import Mathlib.Data.Nat.Factorization.Basic
++import KElimination.UniversalResearch.AnchorValuations
++
++/-!
++Actual Nat.gcd/lcm bridge for the factorization-free anchor constructor.
++The algorithm uses only division and gcd of public parameters. Factorization
++is used in the proof, never as an implementation input.
++-/
++
++namespace KElimination.AnchorSaturation
++
++def seed (P D : Nat) : Nat := D / Nat.gcd P D
++
++def iterate (D a : Nat) : Nat → Nat
++  | 0 => a
++  | n+1 => Nat.gcd D ((iterate D a n) * (iterate D a n))
++
++theorem seed_positive (P D : Nat) (hD : 0<D) : 0<seed P D := by
++  unfold seed
++  exact Nat.div_pos (Nat.gcd_le_right P hD) (Nat.gcd_pos_of_pos_right P hD)
++
++theorem iterate_positive (D a n : Nat) (hD : 0<D) (ha : 0<a) :
++    0<iterate D a n := by
++  cases n with
++  | zero => exact ha
++  | succ n => exact Nat.gcd_pos_of_pos_left _ hD
++
++theorem seed_factorization (P D p : Nat) (hP : P≠0) (hD : D≠0) :
++    (seed P D).factorization p = D.factorization p - P.factorization p := by
++  unfold seed
++  rw [Nat.factorization_div (Nat.gcd_dvd_right P D), Nat.factorization_gcd hP hD]
++  simp only [Finsupp.tsub_apply, Finsupp.inf_apply]
++  omega
++
++theorem step_factorization (D a p : Nat) (hD : D≠0) (ha : a≠0) :
++    (Nat.gcd D (a*a)).factorization p = min (D.factorization p) (2*a.factorization p) := by
++  rw [Nat.factorization_gcd hD (Nat.mul_ne_zero ha ha), Nat.factorization_mul ha ha]
++  simp only [Finsupp.inf_apply, Finsupp.add_apply]
++  omega
++
++theorem iterate_factorization (D a n p : Nat) (hD : 0<D) (ha : 0<a) :
++    (iterate D a n).factorization p =
++      AnchorValuations.saturate (D.factorization p) (a.factorization p) n := by
++  induction n with
++  | zero => rfl
++  | succ n ih =>
++    rw [iterate, step_factorization D _ p hD.ne' (iterate_positive D a n hD ha).ne', ih]
++    rfl
++
++theorem saturation_after_bound (d p n : Nat) (h : d≤n) :
++    AnchorValuations.saturate d (d-p) n = AnchorValuations.requiredExponent d p := by
++  by_cases hdp : d≤p
++  · have hz : d-p=0 := by omega
++    rw [hz, AnchorValuations.saturation_zero]
++    simp [AnchorValuations.requiredExponent, hdp]
++  · have lo := AnchorValuations.saturation_lower_bound d (d-p) (by omega) (by omega) n
++    have hi := AnchorValuations.saturation_bounded d (d-p) (by omega) n
++    simp only [AnchorValuations.requiredExponent, if_neg hdp]
++    omega
++
++theorem anchor_factorization (P D n p : Nat) (hP : 0<P) (hD : 0<D)
++    (hfuel : D.factorization p ≤ n) :
++    (iterate D (seed P D) n).factorization p =
++      AnchorValuations.requiredExponent (D.factorization p) (P.factorization p) := by
++  rw [iterate_factorization D (seed P D) n p hD (seed_positive P D hD),
++    seed_factorization P D p hP.ne' hD.ne']
++  exact saturation_after_bound _ _ _ hfuel
++
++/-- Every positive public demand and old period have a least sufficient extra
++anchor. The displayed finite gcd program computes it whenever the public fuel
++bounds all demand exponents. No prime factorization is used by that program. -/
++theorem iterate_is_least_sufficient (P D n : Nat) (hP : 0<P) (hD : 0<D)
++    (hfuel : ∀ p, D.factorization p ≤ n) :
++    D ∣ Nat.lcm P (iterate D (seed P D) n) ∧
++    ∀ b, D ∣ Nat.lcm P b → iterate D (seed P D) n ∣ b := by
++  let a := iterate D (seed P D) n
++  have ha : a≠0 := (iterate_positive D (seed P D) n hD (seed_positive P D hD)).ne'
++  have haf (p : Nat) : a.factorization p =
++      AnchorValuations.requiredExponent (D.factorization p) (P.factorization p) :=
++    anchor_factorization P D n p hP hD (hfuel p)
++  constructor
++  · apply (Nat.factorization_le_iff_dvd hD.ne' (Nat.lcm_ne_zero hP.ne' ha)).mp
++    intro p
++    rw [Nat.factorization_lcm hP.ne' ha]
++    simp only [Finsupp.sup_apply]
++    rw [haf]
++    exact AnchorValuations.exponent_feasible _ _
++  · intro b hb
++    by_cases hb0 : b=0
++    · subst b
++      exact Nat.dvd_zero a
++    · apply (Nat.factorization_le_iff_dvd ha hb0).mp
++      intro p
++      have hd := (Nat.factorization_le_iff_dvd hD.ne' (Nat.lcm_ne_zero hP.ne' hb0)).mpr hb
++      have hdp := hd p
++      rw [Nat.factorization_lcm hP.ne' hb0] at hdp
++      simp only [Finsupp.sup_apply] at hdp
++      rw [haf]
++      exact AnchorValuations.exponent_minimal _ _ _ hdp
++
++/-- A deliberately conservative concrete fuel bound avoids any factorization
++input. Faster early stopping may be used once its fixed-point test succeeds. -/
++theorem demand_fuel_is_sufficient (P D : Nat) (hP : 0<P) (hD : 0<D) :
++    D ∣ Nat.lcm P (iterate D (seed P D) D) ∧
++    ∀ b, D ∣ Nat.lcm P b → iterate D (seed P D) D ∣ b := by
++  exact iterate_is_least_sufficient P D D hP hD
++    (fun p => Nat.le_of_lt (Nat.factorization_lt p hD.ne'))
++
++theorem demand_fuel_is_fixed (P D : Nat) (hP : 0<P) (hD : 0<D) :
++    Nat.gcd D ((iterate D (seed P D) D)*(iterate D (seed P D) D)) =
++      iterate D (seed P D) D := by
++  have ha := (iterate_positive D (seed P D) D hD (seed_positive P D hD)).ne'
++  apply Nat.eq_of_factorization_eq (Nat.gcd_pos_of_pos_left _ hD).ne' ha
++  intro p
++  rw [step_factorization D _ p hD.ne' ha,
++    anchor_factorization P D D p hP hD (Nat.le_of_lt (Nat.factorization_lt p hD.ne'))]
++  unfold AnchorValuations.requiredExponent
++  split <;> omega
++
++theorem iterate_add (D a n m : Nat) :
++    iterate D a (n+m) = iterate D (iterate D a n) m := by
++  induction m with
++  | zero => rfl
++  | succ m ih =>
++    change Nat.gcd D ((iterate D a (n+m))*(iterate D a (n+m))) =
++      Nat.gcd D ((iterate D (iterate D a n) m)*(iterate D (iterate D a n) m))
++    rw [ih]
++
++theorem fixed_point_stays (D a n : Nat) (hfixed : Nat.gcd D (a*a)=a) :
++    iterate D a n = a := by
++  induction n with
++  | zero => rfl
++  | succ n ih => simp only [iterate, ih, hfixed]
++
++/-- Stopping at any successful fixed-point test yields the same least anchor
++as the conservative demand-fuel program. This validates early stopping at the
++mathematical recurrence level, without asserting Python source refinement. -/
++theorem early_stop_is_least (P D n : Nat) (hP : 0<P) (hD : 0<D)
++    (hfixed : Nat.gcd D ((iterate D (seed P D) n)*(iterate D (seed P D) n)) =
++      iterate D (seed P D) n) :
++    D ∣ Nat.lcm P (iterate D (seed P D) n) ∧
++    ∀ b, D ∣ Nat.lcm P b → iterate D (seed P D) n ∣ b := by
++  by_cases hDn : D≤n
++  · apply iterate_is_least_sufficient P D n hP hD
++    intro p
++    exact Nat.le_trans (Nat.le_of_lt (Nat.factorization_lt p hD.ne')) hDn
++  · have hsplit : D=n+(D-n) := by omega
++    have heq : iterate D (seed P D) D = iterate D (seed P D) n := by
++      conv_lhs => arg 3; rw [hsplit]
++      rw [iterate_add]
++      exact fixed_point_stays D _ (D-n) hfixed
++    have hleast := demand_fuel_is_sufficient P D hP hD
++    rw [heq] at hleast
++    exact hleast
++
++end KElimination.AnchorSaturation
++
++#print axioms KElimination.AnchorSaturation.seed_positive
++#print axioms KElimination.AnchorSaturation.iterate_positive
++#print axioms KElimination.AnchorSaturation.seed_factorization
++#print axioms KElimination.AnchorSaturation.step_factorization
++#print axioms KElimination.AnchorSaturation.iterate_factorization
++#print axioms KElimination.AnchorSaturation.saturation_after_bound
++#print axioms KElimination.AnchorSaturation.anchor_factorization
++#print axioms KElimination.AnchorSaturation.iterate_is_least_sufficient
++#print axioms KElimination.AnchorSaturation.demand_fuel_is_sufficient
++#print axioms KElimination.AnchorSaturation.demand_fuel_is_fixed
++#print axioms KElimination.AnchorSaturation.iterate_add
++#print axioms KElimination.AnchorSaturation.fixed_point_stays
++#print axioms KElimination.AnchorSaturation.early_stop_is_least
+diff --git a/KElimination/Basic.lean b/KElimination/Basic.lean
+index 02c55cc..0c914d3 100644
+--- a/KElimination/Basic.lean
++++ b/KElimination/Basic.lean
+@@ -16,9 +16,11 @@ def mainRes (X M : Nat) : Nat := X % M
+ def anchorRes (X A : Nat) : Nat := X % A
+ 
+ /-- Fundamental identity: X = v_M + k * M -/
+-theorem fundamental (X M : Nat) (hM : M > 0) :
++theorem fundamental (X M : Nat) (_hM : M > 0) :
+     X = mainRes X M + overflow X M * M := by
+-  simp [mainRes, overflow]
++  unfold mainRes overflow
++  have h := Nat.div_add_mod X M
++  rw [Nat.mul_comm M (X / M)] at h
+   omega
+ 
+ /-- Residue is less than modulus -/
+@@ -27,11 +29,9 @@ theorem res_lt (X M : Nat) (hM : M > 0) : mainRes X M < M := by
+   exact Nat.mod_lt X hM
+ 
+ /-- k range for bounded X -/
+-theorem overflow_range (X M A : Nat) (hM : M > 0) (hX : X < M * A) :
++theorem overflow_range (X M A : Nat) (_hM : M > 0) (hX : X < M * A) :
+     overflow X M < A := by
+-  simp [overflow]
+-  have h := Nat.div_lt_iff_lt_mul hM
+-  rw [h]
+-  exact hX
++  unfold overflow
++  exact Nat.div_lt_of_lt_mul hX
+ 
+ end KElimination.Basic
+diff --git a/KElimination/UniversalResearch/AllCampaign.lean b/KElimination/UniversalResearch/AllCampaign.lean
+new file mode 100644
+index 0000000..f47be13
+--- /dev/null
++++ b/KElimination/UniversalResearch/AllCampaign.lean
+@@ -0,0 +1,4 @@
++import KElimination.UniversalResearch.AllResearch
++import KElimination.UniversalResearch.FutureQuotient
++import KElimination.UniversalResearch.AnchorValuations
++import KElimination.UniversalResearch.ReflectionInvariant
+diff --git a/KElimination/UniversalResearch/AllResearch.lean b/KElimination/UniversalResearch/AllResearch.lean
+new file mode 100644
+index 0000000..bf537d5
+--- /dev/null
++++ b/KElimination/UniversalResearch/AllResearch.lean
+@@ -0,0 +1,8 @@
++import KElimination.UniversalResearch.UniversalKElimination
++import KElimination.UniversalResearch.ConsumerTransport
++
++/-!
++Self-contained research aggregate: 130 unchanged universal K-Elimination
++declarations plus 14 consumer-transport and dynamical-closure declarations.
++This module itself declares no new theorem.
++-/
+diff --git a/KElimination/UniversalResearch/AnchorValuations.lean b/KElimination/UniversalResearch/AnchorValuations.lean
+new file mode 100644
+index 0000000..9b55f32
+--- /dev/null
++++ b/KElimination/UniversalResearch/AnchorValuations.lean
+@@ -0,0 +1,102 @@
++import Std
++
++/-!
++Prime-exponent proof of the factorization-free anchor planner.
++The bridge from Nat.gcd/Nat.lcm to actual prime valuations is not assumed here:
++these are explicit theorems about the exponent recurrence. The accompanying
++written argument supplies that standard arithmetic bridge; this module does
++not claim a full formal refinement of the Python gcd loop.
++-/
++
++namespace KElimination.AnchorValuations
++
++def requiredExponent (d p : Nat) : Nat := if d ≤ p then 0 else d
++
++def saturate (d initial : Nat) : Nat → Nat
++  | 0 => initial
++  | n + 1 => min d (2 * saturate d initial n)
++
++/-- This is the exact per-prime capacity condition for D | lcm(P,a). -/
++theorem exponent_feasible (d p : Nat) : d ≤ max p (requiredExponent d p) := by
++  unfold requiredExponent
++  split <;> omega
++
++/-- Any sufficient anchor contains the full demanded exponent at a deficient
++prime. It contains no required factor at an already-covered prime. -/
++theorem exponent_minimal (d p a : Nat) (h : d ≤ max p a) :
++    requiredExponent d p ≤ a := by
++  unfold requiredExponent
++  split <;> omega
++
++theorem missing_exponent_zero_iff (d p : Nat) : d-p=0 ↔ d≤p := by omega
++
++theorem saturation_zero (d n : Nat) : saturate d 0 n = 0 := by
++  induction n with
++  | zero => rfl
++  | succ n ih => simp [saturate, ih]
++
++theorem saturation_bounded (d initial : Nat) (h : initial ≤ d) (n : Nat) :
++    saturate d initial n ≤ d := by
++  cases n with
++  | zero => exact h
++  | succ n => exact Nat.min_le_left _ _
++
++theorem saturation_monotone (d initial : Nat) (h : initial ≤ d) (n : Nat) :
++    saturate d initial n ≤ saturate d initial (n+1) := by
++  have hb := saturation_bounded d initial h n
++  simp only [saturate]
++  omega
++
++/-- A positive deficient exponent grows by at least one each strict round,
++which gives a conservative explicit finite fuel bound. -/
++theorem saturation_lower_bound (d initial : Nat) (hpos : 0<initial)
++    (hbound : initial ≤ d) (n : Nat) :
++    min d (initial+n) ≤ saturate d initial n := by
++  induction n with
++  | zero => simp [saturate]; omega
++  | succ n ih =>
++    have hb := saturation_bounded d initial hbound n
++    simp only [saturate]
++    omega
++
++theorem positive_saturation_reaches_cap (d initial : Nat)
++    (hpos : 0<initial) (hbound : initial ≤ d) :
++    saturate d initial d = d := by
++  have lo := saturation_lower_bound d initial hpos hbound d
++  have hi := saturation_bounded d initial hbound d
++  omega
++
++theorem missing_saturation_is_required (d p : Nat) :
++    saturate d (d-p) d = requiredExponent d p := by
++  by_cases h : d ≤ p
++  · have hz : d-p=0 := by omega
++    rw [hz, saturation_zero]
++    simp [requiredExponent, h]
++  · rw [positive_saturation_reaches_cap d (d-p) (by omega) (by omega)]
++    simp [requiredExponent, h]
++
++theorem saturation_fixed (d a : Nat) (h : a ≤ d) :
++    min d (2*a)=a ↔ a=0 ∨ a=d := by omega
++
++/-- Applied pointwise to all prime exponents, the saturated vector is the
++least sufficient extra-anchor vector under divisibility. -/
++theorem vector_minimal_sufficient {I : Type} (d p : I → Nat) :
++    (∀ i, d i ≤ max (p i) (requiredExponent (d i) (p i))) ∧
++    (∀ a : I → Nat, (∀ i, d i ≤ max (p i) (a i)) →
++      ∀ i, requiredExponent (d i) (p i) ≤ a i) := by
++  exact ⟨fun i => exponent_feasible _ _,
++    fun a h i => exponent_minimal _ _ _ (h i)⟩
++
++end KElimination.AnchorValuations
++
++#print axioms KElimination.AnchorValuations.exponent_feasible
++#print axioms KElimination.AnchorValuations.exponent_minimal
++#print axioms KElimination.AnchorValuations.missing_exponent_zero_iff
++#print axioms KElimination.AnchorValuations.saturation_zero
++#print axioms KElimination.AnchorValuations.saturation_bounded
++#print axioms KElimination.AnchorValuations.saturation_monotone
++#print axioms KElimination.AnchorValuations.saturation_lower_bound
++#print axioms KElimination.AnchorValuations.positive_saturation_reaches_cap
++#print axioms KElimination.AnchorValuations.missing_saturation_is_required
++#print axioms KElimination.AnchorValuations.saturation_fixed
++#print axioms KElimination.AnchorValuations.vector_minimal_sufficient
+diff --git a/KElimination/UniversalResearch/ConsumerTransport.lean b/KElimination/UniversalResearch/ConsumerTransport.lean
+new file mode 100644
+index 0000000..9a06f73
+--- /dev/null
++++ b/KElimination/UniversalResearch/ConsumerTransport.lean
+@@ -0,0 +1,227 @@
++import KElimination.UniversalResearch.UniversalLift
++
++/-!
++Consumer-directed exact transport and dynamical closure.
++
++The source type may be a subtype of the states admitted by a range or other
++invariant. A source operation on that subtype must already preserve admission.
++The existence of an image decoder is a mathematical assertion, not an efficient
++implementation. In particular no hidden source, full winding, or synthetic
++residue emitter is introduced as a runtime input.
++-/
++
++namespace KElimination.ConsumerTransport
++
++open ExactObservation
++
++universe u v w z t
++
++/-- Several requested outputs need only the intersection of their ambiguities.
++This applies to nonlinear queries as well as additive ones. -/
++theorem paired_queries_iff
++    {X : Type u} {R : Type v} {Y : Type w} {Z : Type z}
++    (observe : X → R) (first : X → Y) (second : X → Z) :
++    FiberConstant observe (fun x => (first x, second x)) ↔
++      FiberConstant observe first ∧ FiberConstant observe second := by
++  constructor
++  · intro h
++    exact ⟨fun x y heq => congrArg Prod.fst (h x y heq),
++      fun x y heq => congrArg Prod.snd (h x y heq)⟩
++  · rintro ⟨hf, hs⟩ x y heq
++    exact Prod.ext (hf x y heq) (hs x y heq)
++
++/-- The bundle can be any indexed family, including a finite compiler demand
++set. This is a statement about exactness, not its aggregate computation cost. -/
++theorem indexed_queries_iff
++    {X : Type u} {R : Type v} {I : Type w} {Y : I → Type z}
++    (observe : X → R) (queries : (i : I) → X → Y i) :
++    FiberConstant observe (fun x i => queries i x) ↔
++      ∀ i, FiberConstant observe (queries i) := by
++  constructor
++  · intro h i x y heq
++    exact congrFun (h x y heq) i
++  · intro h x y heq
++    funext i
++    exact h i x y heq
++
++/-- Deterministic processing of an available query never demands more source
++information. It may itself take arbitrarily much work. -/
++theorem postprocess_sufficient
++    {X : Type u} {R : Type v} {Y : Type w} {Z : Type z}
++    (observe : X → R) (query : X → Y) (finish : Y → Z)
++    (hquery : FiberConstant observe query) :
++    FiberConstant observe (finish ∘ query) := by
++  intro x y heq
++  exact congrArg finish (hquery x y heq)
++
++/-- For an injective output conversion, exact information demand is unchanged. -/
++theorem injective_postprocess_iff
++    {X : Type u} {R : Type v} {Y : Type w} {Z : Type z}
++    (observe : X → R) (query : X → Y) (finish : Y → Z)
++    (hfinish : ∀ a b, finish a = finish b → a = b) :
++    FiberConstant observe (finish ∘ query) ↔ FiberConstant observe query := by
++  constructor
++  · intro h x y heq
++    exact hfinish _ _ (h x y heq)
++  · exact postprocess_sufficient observe query finish
++
++/-- An observation may be sufficient for a query today without being closed
++under a source transition. Stability is precisely the missing condition. -/
++def Stable {X : Type u} {R : Type v}
++    (observe : X → R) (step : X → X) : Prop :=
++  FiberConstant observe (observe ∘ step)
++
++/-- The exact dynamic quotient exists on valid readings iff the transition
++preserves observation fibers. Invalid readings have no required extension. -/
++theorem quotient_transition_exists_iff
++    {X : Type u} {R : Type v} (observe : X → R) (step : X → X) :
++    (∃ advance : Observed observe → Observed observe,
++      ∀ x, advance (reading observe x) = reading observe (step x)) ↔
++    Stable observe step := by
++  rw [recoverable_iff]
++  constructor
++  · intro h x y heq
++    exact congrArg Subtype.val (h x y heq)
++  · intro h x y heq
++    exact Subtype.ext (h x y heq)
++
++/-- The quotient transition is unique wherever the observation is authentic. -/
++theorem quotient_transition_unique
++    {X : Type u} {R : Type v} (observe : X → R) (step : X → X)
++    (advance other : Observed observe → Observed observe)
++    (ha : ∀ x, advance (reading observe x) = reading observe (step x))
++    (hb : ∀ x, other (reading observe x) = reading observe (step x)) :
++    advance = other := by
++  funext r
++  obtain ⟨x, hx⟩ := r.property
++  have hr : reading observe x = r := Subtype.ext hx
++  rw [← hr, ha, hb]
++
++/-- A known quotient transition transports every currently available consumer
++through that transition, without requiring full-state reconstruction. -/
++theorem stable_transports_consumer
++    {X : Type u} {R : Type v} {Y : Type w}
++    (observe : X → R) (step : X → X) (query : X → Y)
++    (hstep : Stable observe step) (hquery : FiberConstant observe query) :
++    FiberConstant observe (query ∘ step) := by
++  intro x y heq
++  exact hquery (step x) (step y) (hstep x y heq)
++
++/-- Stable transitions remain stable when composed in program order. -/
++theorem stable_composition
++    {X : Type u} {R : Type v} (observe : X → R) (first second : X → X)
++    (hfirst : Stable observe first) (hsecond : Stable observe second) :
++    Stable observe (second ∘ first) := by
++  intro x y heq
++  exact hsecond (first x) (first y) (hfirst x y heq)
++
++/-- A list of admitted controls preserves indistinguishability when every
++primitive preserves it. The number of primitives is finite but unrestricted. -/
++theorem stable_finite_program
++    {X : Type u} {R : Type v} {Op : Type w}
++    (observe : X → R) (semantic : Op → X → X)
++    (hstep : ∀ op, Stable observe (semantic op)) (program : List Op) :
++    Stable observe (fun x => program.foldl (fun y op => semantic op y) x) := by
++  intro x y heq
++  induction program generalizing x y with
++  | nil => exact heq
++  | cons op rest ih =>
++    simp only [List.foldl_cons, Function.comp_apply]
++    exact ih (semantic op x) (semantic op y) (hstep op x y heq)
++
++/-- Available outputs remain exact after a stable finite program. This differs
++from an arithmetic implementation refinement: stability alone supplies neither
++a fast transition algorithm nor an encrypted implementation. -/
++theorem finite_program_consumer_sufficient
++    {X : Type u} {R : Type v} {Op : Type w} {Y : Type z}
++    (observe : X → R) (semantic : Op → X → X)
++    (hstep : ∀ op, Stable observe (semantic op)) (program : List Op)
++    (query : X → Y) (hquery : FiberConstant observe query) :
++    FiberConstant observe
++      (fun x => query (program.foldl (fun y op => semantic op y) x)) := by
++  exact stable_transports_consumer observe _ query
++    (stable_finite_program observe semantic hstep program) hquery
++
++/-- Consumer-specific demand may be strictly weaker than a stable full
++observation. A compiler may prove the pullback query directly. -/
++theorem terminal_query_exists_iff
++    {X : Type u} {R : Type v} {Op : Type w} {Y : Type z}
++    (observe : X → R) (semantic : Op → X → X) (program : List Op)
++    (query : X → Y) :
++    (∃ answer : Observed observe → Y,
++      ∀ x, answer (reading observe x) =
++        query (program.foldl (fun y op => semantic op y) x)) ↔
++    FiberConstant observe
++      (fun x => query (program.foldl (fun y op => semantic op y) x)) := by
++  exact recoverable_iff observe _
++
++/-- Reversibly changing a reading's representation preserves the dynamic
++closure question. Surjective reconstruction of the source is not assumed. -/
++theorem stable_under_equivalent_observations
++    {X : Type u} {R : Type v} {S : Type w}
++    (observe : X → R) (other : X → S) (forward : R → S) (back : S → R)
++    (hf : ∀ x, forward (observe x) = other x)
++    (hb : ∀ x, back (other x) = observe x) (step : X → X) :
++    Stable observe step ↔ Stable other step := by
++  constructor
++  · intro h x y heq
++    have base : observe x = observe y := by rw [← hb x, ← hb y, heq]
++    have next := h x y base
++    change observe (step x) = observe (step y) at next
++    change other (step x) = other (step y)
++    rw [← hf (step x), ← hf (step y), next]
++  · intro h x y heq
++    have base : other x = other y := by rw [← hf x, ← hf y, heq]
++    have next := h x y base
++    change other (step x) = other (step y) at next
++    change observe (step x) = observe (step y)
++    rw [← hb (step x), ← hb (step y), next]
++
++open UniversalLift Lean.Grind
++
++/-- The linear dynamical specialization is exact kernel invariance. For a
++matrix observer B and transition F, this is F(ker B) contained in ker B.
++It is the missing premise for autonomous evolution on observed state. -/
++theorem additive_stability_iff_kernel_invariant
++    {X : Type u} {R : Type v} [AddCommGroup X] [AddCommGroup R]
++    (observe : AddMap X R) (step : AddMap X X) :
++    Stable observe.apply step.apply ↔
++      ∀ delta, observe.apply delta = 0 → observe.apply (step.apply delta) = 0 := by
++  constructor
++  · intro h delta hzero
++    have hz : observe.apply delta = observe.apply 0 := by
++      rw [observe.map_zero]
++      exact hzero
++    have hnext := h delta 0 hz
++    change observe.apply (step.apply delta) = observe.apply (step.apply 0) at hnext
++    simpa only [step.map_zero, observe.map_zero] using hnext
++  · intro h x y heq
++    apply (observe.same_reading_iff _ _).mpr
++    rw [← step.map_sub]
++    exact h (x - y) ((observe.same_reading_iff x y).mp heq)
++
++/-- Explicit finite counterexample: parity is not an autonomous quotient for
++integer halving. Today's exact reading does not entail tomorrow's reading. -/
++theorem parity_halving_not_stable :
++    ¬ Stable (fun x : Nat => x % 2) (fun x => x / 2) := by
++  intro h
++  have impossible := h 0 2 (by decide)
++  change 0 = 1 at impossible
++  contradiction
++
++end KElimination.ConsumerTransport
++
++#print axioms KElimination.ConsumerTransport.paired_queries_iff
++#print axioms KElimination.ConsumerTransport.indexed_queries_iff
++#print axioms KElimination.ConsumerTransport.postprocess_sufficient
++#print axioms KElimination.ConsumerTransport.injective_postprocess_iff
++#print axioms KElimination.ConsumerTransport.quotient_transition_exists_iff
++#print axioms KElimination.ConsumerTransport.quotient_transition_unique
++#print axioms KElimination.ConsumerTransport.stable_transports_consumer
++#print axioms KElimination.ConsumerTransport.stable_composition
++#print axioms KElimination.ConsumerTransport.stable_finite_program
++#print axioms KElimination.ConsumerTransport.finite_program_consumer_sufficient
++#print axioms KElimination.ConsumerTransport.terminal_query_exists_iff
++#print axioms KElimination.ConsumerTransport.stable_under_equivalent_observations
++#print axioms KElimination.ConsumerTransport.additive_stability_iff_kernel_invariant
++#print axioms KElimination.ConsumerTransport.parity_halving_not_stable
+diff --git a/KElimination/UniversalResearch/CostedReadout.lean b/KElimination/UniversalResearch/CostedReadout.lean
+new file mode 100644
+index 0000000..5668492
+--- /dev/null
++++ b/KElimination/UniversalResearch/CostedReadout.lean
+@@ -0,0 +1,123 @@
++import KElimination.UniversalResearch.UniversalLift
++import KElimination.UniversalResearch.RingReadout
++import KElimination.UniversalResearch.IntegerSpecialization
++
++/-!
++A small expression language makes the exact operation-count claim explicit.
++Input nodes are two supplied readings and public constants, not a source X or
++stored K. A node is one operation of the chosen arithmetic substrate. In a
++fixed-width modular implementation this is a modular-operation count; it is
++not a bound on bit complexity, input production, or encrypted circuit depth.
++-/
++
++namespace KElimination.CostedReadout
++
++open Lean.Grind
++
++universe u v
++
++inductive Expr (H : Type u) where
++  | chart : Expr H
++  | source : Expr H
++  | constant : H → Expr H
++  | sub : Expr H → Expr H → Expr H
++  | mul : Expr H → Expr H → Expr H
++
++def Expr.eval {H : Type u} (subtract multiply : H → H → H)
++    (chart source : H) : Expr H → H
++  | .chart => chart
++  | .source => source
++  | .constant value => value
++  | .sub a b => subtract (a.eval subtract multiply chart source)
++      (b.eval subtract multiply chart source)
++  | .mul a b => multiply (a.eval subtract multiply chart source)
++      (b.eval subtract multiply chart source)
++
++def Expr.subtractions {H : Type u} : Expr H → Nat
++  | .chart | .source | .constant _ => 0
++  | .sub a b => a.subtractions + b.subtractions + 1
++  | .mul a b => a.subtractions + b.subtractions
++
++def Expr.multiplications {H : Type u} : Expr H → Nat
++  | .chart | .source | .constant _ => 0
++  | .sub a b => a.multiplications + b.multiplications
++  | .mul a b => a.multiplications + b.multiplications + 1
++
++/-- The entire readout program, independent of the source magnitude. -/
++def program {H : Type u} (inverse : H) : Expr H :=
++  .mul (.constant inverse) (.sub .source .chart)
++
++theorem program_counts {H : Type u} (inverse : H) :
++    (program inverse).subtractions = 1 ∧
++    (program inverse).multiplications = 1 := by
++  exact ⟨rfl, rfl⟩
++
++theorem program_evaluates_to_readout {H : Type u} [Ring H]
++    (inverse chart source : H) :
++    (program inverse).eval (· - ·) (· * ·) chart source =
++      RingReadout.readout inverse chart source := rfl
++
++theorem program_correct {R : Type u} {H : Type v} [Ring R] [Ring H]
++    (h : RingReadout.Observation R H) (X r M K : R) (inverse : H)
++    (hsource : X = r + M * K) (hunit : inverse * h.read M = 1) :
++    (program inverse).eval (· - ·) (· * ·) (h.read r) (h.read X) = h.read K :=
++  RingReadout.unit_readout h X r M K inverse hsource hunit
++
++/-- The same program specializes to normalized modular arithmetic gates. -/
++theorem modular_program_evaluates_to_query (chart source A inverse : Int) :
++    (program inverse).eval (fun a b => (a - b) % A)
++      (fun a b => (a * b) % A) chart source =
++      IntegerSpecialization.query chart source A inverse := by
++  change (inverse * ((source - chart) % A)) % A =
++    (((source - chart) % A) * inverse) % A
++  rw [Int.mul_comm]
++
++/-- The adjacent-anchor simplification has only a subtraction node. -/
++def adjacentProgram {H : Type u} : Expr H := .sub .chart .source
++
++theorem adjacent_program_counts {H : Type u} :
++    (adjacentProgram : Expr H).subtractions = 1 ∧
++    (adjacentProgram : Expr H).multiplications = 0 := by
++  exact ⟨rfl, rfl⟩
++
++theorem adjacent_program_evaluates_to_query (chart source M : Int) :
++    (adjacentProgram : Expr Int).eval (fun a b => (a - b) % (M + 1))
++      (fun a b => (a * b) % (M + 1)) chart source =
++      IntegerSpecialization.query chart source (M + 1) (-1) := by
++  change (chart - source) % (M + 1) = _
++  exact (IntegerSpecialization.adjacent_query_subtraction chart source M).symm
++
++/-- Multiplication by M is an additive lift map, even in a noncommutative ring. -/
++def scaleMap {R : Type u} [Ring R] (M : R) : UniversalLift.AddMap R R where
++  apply k := M * k
++  map_add a b := Semiring.left_distrib M a b
++
++def observationMap {R : Type u} {H : Type v} [Ring R] [Ring H]
++    (h : RingReadout.Observation R H) : UniversalLift.AddMap R H where
++  apply := h.read
++  map_add := h.map_add
++
++/-- The fast ring readout is a constructive instance of the universal theorem.
++Its readout obligation is discharged from ring laws and a sided inverse; query
++correctness is not assumed as an extra axiom. -/
++theorem ring_is_universal_instance
++    {R : Type u} {H : Type v} [Ring R] [Ring H]
++    (h : RingReadout.Observation R H) (X r M K : R) (inverse : H)
++    (hsource : X = r + M * K) (hunit : inverse * h.read M = 1) :
++    UniversalLift.query (fun defect => inverse * defect) (h.read r) (h.read X) =
++      h.read K := by
++  apply UniversalLift.constructive_query_correct (scaleMap M) (observationMap h)
++    (fun _ => True) h.read (fun defect => inverse * defect) ?_ X r K trivial hsource
++  intro k _
++  change inverse * h.read (M * k) = h.read k
++  rw [h.map_mul, ← Semiring.mul_assoc, hunit, Semiring.one_mul]
++
++end KElimination.CostedReadout
++
++#print axioms KElimination.CostedReadout.program_counts
++#print axioms KElimination.CostedReadout.program_evaluates_to_readout
++#print axioms KElimination.CostedReadout.program_correct
++#print axioms KElimination.CostedReadout.modular_program_evaluates_to_query
++#print axioms KElimination.CostedReadout.adjacent_program_counts
++#print axioms KElimination.CostedReadout.adjacent_program_evaluates_to_query
++#print axioms KElimination.CostedReadout.ring_is_universal_instance
+diff --git a/KElimination/UniversalResearch/CoupledAnchors.lean b/KElimination/UniversalResearch/CoupledAnchors.lean
+new file mode 100644
+index 0000000..5a0fda7
+--- /dev/null
++++ b/KElimination/UniversalResearch/CoupledAnchors.lean
+@@ -0,0 +1,236 @@
++import Std
++
++/-!
++Exact resolution of arbitrary finite collections of positive anchor moduli.
++The computed LCM and GCD identify the observation kernel. Repeated, composite,
++overlapping and empty anchor lists are allowed; no pairwise coprimality is used.
++These are mathematical capacity/kernel theorems, not a fusion implementation.
++-/
++
++namespace KElimination.CoupledAnchors
++
++/-- Empty observations impose no restriction: their LCM is one. -/
++def anchorLCM : List Nat → Nat
++  | [] => 1
++  | a :: rest => Nat.lcm a (anchorLCM rest)
++
++def resolution (M : Nat) (anchors : List Nat) : Nat :=
++  anchorLCM anchors / Nat.gcd M (anchorLCM anchors)
++
++theorem anchor_lcm_dvd_iff (anchors : List Nat) (n : Nat) :
++    anchorLCM anchors ∣ n ↔ ∀ a ∈ anchors, a ∣ n := by
++  induction anchors with
++  | nil => simp [anchorLCM]
++  | cons a rest ih => simp [anchorLCM, Nat.lcm_dvd_iff, ih]
++
++theorem anchor_lcm_pos (anchors : List Nat)
++    (hpos : ∀ a ∈ anchors, 0 < a) : 0 < anchorLCM anchors := by
++  induction anchors with
++  | nil => decide
++  | cons a rest ih =>
++    exact Nat.lcm_pos (hpos a (by simp))
++      (ih (fun b hb => hpos b (by simp [hb])))
++
++theorem nat_reduced_kernel (M A v : Nat) (hA : 0 < A) :
++    A ∣ M * v ↔ A / Nat.gcd M A ∣ v := by
++  rw [Nat.div_dvd_iff_dvd_mul (Nat.gcd_dvd_right M A)
++    (Nat.gcd_pos_of_pos_right M hA)]
++  rw [Nat.gcd_comm M A, Nat.dvd_gcd_mul_iff_dvd_mul]
++
++/-- Signed coordinate changes have exactly the same reduced period. -/
++theorem int_reduced_kernel (M A : Nat) (delta : Int) (hA : 0 < A) :
++    (A : Int) ∣ (M : Int) * delta ↔
++      ((A / Nat.gcd M A : Nat) : Int) ∣ delta := by
++  simpa only [Int.ofNat_dvd_left, Int.natAbs_mul, Int.natAbs_natCast] using
++    nat_reduced_kernel M A delta.natAbs hA
++
++theorem anchor_lcm_int_dvd_iff (anchors : List Nat) (n : Int) :
++    (anchorLCM anchors : Int) ∣ n ↔ ∀ a ∈ anchors, (a : Int) ∣ n := by
++  simpa only [Int.ofNat_dvd_left] using anchor_lcm_dvd_iff anchors n.natAbs
++
++/-- Complete combined kernel: all anchor differences vanish iff the reduced
++LCM divides the coordinate difference. This is necessary and sufficient. -/
++theorem combined_kernel (M : Nat) (anchors : List Nat) (delta : Int)
++    (hpos : ∀ a ∈ anchors, 0 < a) :
++    (∀ a ∈ anchors, (a : Int) ∣ (M : Int) * delta) ↔
++      (resolution M anchors : Int) ∣ delta := by
++  rw [← anchor_lcm_int_dvd_iff]
++  exact int_reduced_kernel M (anchorLCM anchors) delta (anchor_lcm_pos anchors hpos)
++
++theorem resolution_pos (M : Nat) (anchors : List Nat)
++    (hpos : ∀ a ∈ anchors, 0 < a) : 0 < resolution M anchors :=
++  Nat.div_gcd_pos_of_pos_right M (anchor_lcm_pos anchors hpos)
++
++/-- The full source ambiguity period is exactly the LCM including the main
++modulus. Its multiplication by resolution does not overcount shared factors. -/
++theorem source_period (M : Nat) (anchors : List Nat) :
++    M * resolution M anchors = Nat.lcm M (anchorLCM anchors) := by
++  unfold resolution
++  rw [← Nat.mul_div_assoc M (Nat.gcd_dvd_right M (anchorLCM anchors))]
++  rfl
++
++theorem combined_kernel_two (M A B : Nat) (delta : Int)
++    (hA : 0 < A) (hB : 0 < B) :
++    ((A : Int) ∣ (M : Int) * delta ∧ (B : Int) ∣ (M : Int) * delta) ↔
++      ((Nat.lcm A B / Nat.gcd M (Nat.lcm A B) : Nat) : Int) ∣ delta := by
++  simpa [anchorLCM, resolution] using combined_kernel M [A, B] delta
++    (by intro a ha; simp at ha
++        rcases ha with rfl | rfl <;> assumption)
++
++theorem combined_kernel_as_lcm_of_resolutions
++    (M : Nat) (anchors : List Nat) (delta : Int)
++    (hpos : ∀ a ∈ anchors, 0 < a) :
++    (resolution M anchors : Int) ∣ delta ↔
++      (anchorLCM (anchors.map (fun a => a / Nat.gcd M a)) : Int) ∣ delta := by
++  rw [← combined_kernel M anchors delta hpos, anchor_lcm_int_dvd_iff]
++  constructor
++  · intro hall a ha
++    obtain ⟨b, hb, rfl⟩ := List.mem_map.mp ha
++    exact (int_reduced_kernel M b delta (hpos b hb)).mp (hall b hb)
++  · intro hall a ha
++    apply (int_reduced_kernel M a delta (hpos a ha)).mpr
++    exact hall _ (List.mem_map.mpr ⟨a, ha, rfl⟩)
++
++/-- The coupled resolution law, as an equality of actual computed naturals. -/
++theorem resolution_eq_lcm_reduced (M : Nat) (anchors : List Nat)
++    (hpos : ∀ a ∈ anchors, 0 < a) :
++    resolution M anchors = anchorLCM (anchors.map (fun a => a / Nat.gcd M a)) := by
++  apply Nat.dvd_antisymm
++  · apply Int.ofNat_dvd.mp
++    exact (combined_kernel_as_lcm_of_resolutions M anchors _ hpos).mpr (Int.dvd_refl _)
++  · apply Int.ofNat_dvd.mp
++    exact (combined_kernel_as_lcm_of_resolutions M anchors _ hpos).mp (Int.dvd_refl _)
++
++/-- Equality of the actual affine source readings has the computed kernel. -/
++theorem same_affine_readings_iff (M : Nat) (anchors : List Nat) (r k j : Int)
++    (hpos : ∀ a ∈ anchors, 0 < a) :
++    (∀ a ∈ anchors, (r + (M : Int) * k) % a = (r + (M : Int) * j) % a) ↔
++      (resolution M anchors : Int) ∣ k - j := by
++  rw [← combined_kernel M anchors (k - j) hpos]
++  apply forall_congr'
++  intro a
++  apply forall_congr'
++  intro _
++  rw [Int.emod_eq_emod_iff_emod_sub_eq_zero, ← Int.dvd_iff_emod_eq_zero]
++  have heq : r + (M : Int) * k - (r + (M : Int) * j) = (M : Int) * (k - j) := by grind
++  rw [heq]
++
++/-- A common half-open signed window of width R makes the coordinate unique.
++The bound is on coordinates, and no scalar source is constructed. -/
++theorem signed_window_unique (M : Nat) (anchors : List Nat) (r k j lo : Int)
++    (hpos : ∀ a ∈ anchors, 0 < a)
++    (hklo : lo ≤ k) (hkhi : k < lo + resolution M anchors)
++    (hjlo : lo ≤ j) (hjhi : j < lo + resolution M anchors)
++    (hread : ∀ a ∈ anchors,
++      (r + (M : Int) * k) % a = (r + (M : Int) * j) % a) : k = j := by
++  have hdiv := (same_affine_readings_iff M anchors r k j hpos).mp hread
++  have hshift : (k - lo) - (j - lo) = k - j := by omega
++  have hmod : (k - lo) % resolution M anchors = (j - lo) % resolution M anchors := by
++    apply Int.emod_eq_emod_iff_emod_sub_eq_zero.mpr
++    rw [hshift]
++    exact Int.emod_eq_zero_of_dvd hdiv
++  rw [Int.emod_eq_of_lt (by omega) (by omega),
++      Int.emod_eq_of_lt (by omega) (by omega)] at hmod
++  omega
++
++/-- Exact criterion for a target modulus to ignore a coordinate period.
++Necessity compares coordinates R and zero; sufficiency transports divisibility.
++This is a statement for all integer coordinates, with a fixed reference. -/
++theorem target_period_iff (M R b : Nat) (r : Int) :
++    (∀ k j : Int, (R : Int) ∣ k - j →
++      (r + (M : Int) * k) % b = (r + (M : Int) * j) % b) ↔
++      b ∣ M * R := by
++  constructor
++  · intro hall
++    have hread := hall (R : Int) 0 (by simp)
++    have hzero := Int.emod_eq_emod_iff_emod_sub_eq_zero.mp hread
++    have hdiff : r + (M : Int) * R - (r + (M : Int) * 0) = (M : Int) * R := by grind
++    rw [hdiff] at hzero
++    have hdiv := Int.dvd_of_emod_eq_zero hzero
++    exact Int.ofNat_dvd.mp (by simpa only [Int.natCast_mul] using hdiv)
++  · intro hperiod k j hdelta
++    apply Int.emod_eq_emod_iff_emod_sub_eq_zero.mpr
++    apply Int.emod_eq_zero_of_dvd
++    obtain ⟨v, hv⟩ := hperiod
++    obtain ⟨z, hz⟩ := hdelta
++    refine ⟨(v : Int) * z, ?_⟩
++    have hc : (M : Int) * R = (b : Int) * v := by exact_mod_cast hv
++    grind
++
++/-- Direct target recoverability for the exact combined-anchor kernel. -/
++theorem combined_target_iff (M b : Nat) (anchors : List Nat) (r : Int)
++    (hpos : ∀ a ∈ anchors, 0 < a) :
++    (∀ k j : Int,
++      (∀ a ∈ anchors, (r + (M : Int) * k) % a = (r + (M : Int) * j) % a) →
++      (r + (M : Int) * k) % b = (r + (M : Int) * j) % b) ↔
++      b ∣ Nat.lcm M (anchorLCM anchors) := by
++  rw [← source_period M anchors, ← target_period_iff M (resolution M anchors) b r]
++  constructor
++  · intro hall k j hdelta
++    exact hall k j ((same_affine_readings_iff M anchors r k j hpos).mpr hdelta)
++  · intro hall k j hread
++    exact hall k j ((same_affine_readings_iff M anchors r k j hpos).mp hread)
++
++/-- Resolution is itself an invisible positive coordinate change, and every
++positive invisible change is at least as large. -/
++theorem resolution_minimal (M : Nat) (anchors : List Nat)
++    (hpos : ∀ a ∈ anchors, 0 < a) :
++    (∀ a ∈ anchors, a ∣ M * resolution M anchors) ∧
++    (∀ v : Nat, 0 < v → (∀ a ∈ anchors, a ∣ M * v) → resolution M anchors ≤ v) := by
++  constructor
++  · intro a ha
++    have hk := (combined_kernel M anchors (resolution M anchors) hpos).mpr (Int.dvd_refl _)
++    exact Int.ofNat_dvd.mp (by simpa only [Int.natCast_mul] using hk a ha)
++  · intro v hv hvanish
++    have hk : (resolution M anchors : Int) ∣ (v : Int) := by
++      apply (combined_kernel M anchors v hpos).mp
++      intro a ha
++      exact_mod_cast hvanish a ha
++    exact Nat.le_of_dvd hv (Int.ofNat_dvd.mp hk)
++
++/-- Complete equality criterion for actual residue observations. -/
++theorem source_readings_iff (anchors : List Nat) (X Y : Int) :
++    (∀ a ∈ anchors, X % a = Y % a) ↔ (anchorLCM anchors : Int) ∣ X - Y := by
++  rw [anchor_lcm_int_dvd_iff]
++  apply forall_congr'
++  intro a
++  apply forall_congr'
++  intro _
++  rw [Int.emod_eq_emod_iff_emod_sub_eq_zero, ← Int.dvd_iff_emod_eq_zero]
++
++/-- The main lane plus all anchors distinguish sources exactly modulo MR.
++This proves the observation period, beyond the numerical LCM identity. -/
++theorem main_and_anchor_readings_iff (M : Nat) (anchors : List Nat) (X Y : Int) :
++    (X % M = Y % M ∧ ∀ a ∈ anchors, X % a = Y % a) ↔
++      ((M * resolution M anchors : Nat) : Int) ∣ X - Y := by
++  rw [source_period]
++  simpa [anchorLCM] using source_readings_iff (M :: anchors) X Y
++
++/-- A further anchor whose modulus already divides the existing LCM adds no
++resolution. Repeated or dependent lanes are not counted as fresh capacity. -/
++theorem dependent_anchor_resolution (M a : Nat) (anchors : List Nat)
++    (hdependent : a ∣ anchorLCM anchors) :
++    resolution M (a :: anchors) = resolution M anchors := by
++  simp only [resolution, anchorLCM, Nat.lcm_eq_right hdependent]
++
++end KElimination.CoupledAnchors
++
++#print axioms KElimination.CoupledAnchors.anchor_lcm_dvd_iff
++#print axioms KElimination.CoupledAnchors.anchor_lcm_pos
++#print axioms KElimination.CoupledAnchors.nat_reduced_kernel
++#print axioms KElimination.CoupledAnchors.int_reduced_kernel
++#print axioms KElimination.CoupledAnchors.anchor_lcm_int_dvd_iff
++#print axioms KElimination.CoupledAnchors.combined_kernel
++#print axioms KElimination.CoupledAnchors.resolution_pos
++#print axioms KElimination.CoupledAnchors.source_period
++#print axioms KElimination.CoupledAnchors.combined_kernel_two
++#print axioms KElimination.CoupledAnchors.combined_kernel_as_lcm_of_resolutions
++#print axioms KElimination.CoupledAnchors.resolution_eq_lcm_reduced
++#print axioms KElimination.CoupledAnchors.same_affine_readings_iff
++#print axioms KElimination.CoupledAnchors.signed_window_unique
++#print axioms KElimination.CoupledAnchors.target_period_iff
++#print axioms KElimination.CoupledAnchors.combined_target_iff
++#print axioms KElimination.CoupledAnchors.resolution_minimal
++#print axioms KElimination.CoupledAnchors.source_readings_iff
++#print axioms KElimination.CoupledAnchors.main_and_anchor_readings_iff
++#print axioms KElimination.CoupledAnchors.dependent_anchor_resolution
+diff --git a/KElimination/UniversalResearch/ExactObservation.lean b/KElimination/UniversalResearch/ExactObservation.lean
+new file mode 100644
+index 0000000..99665d2
+--- /dev/null
++++ b/KElimination/UniversalResearch/ExactObservation.lean
+@@ -0,0 +1,144 @@
++import Std
++
++/-!
++Research certificate for the generalized query and composition layer.
++These are mathematical specification theorems, not executable residue decoders.
++In particular the existence proof uses Classical.choose. A concrete CRAM query
++still needs an implemented algorithm, source binding and its refinement proof.
++The arbitrary type X may be a subtype of admissible/bounded source states.
++-/
++
++namespace KElimination.ExactObservation
++
++universe u v w z
++
++def Observed {X : Type u} {R : Type v} (observe : X → R) :=
++  { r : R // ∃ x, observe x = r }
++
++def reading {X : Type u} {R : Type v} (observe : X → R) (x : X) :
++    Observed observe := ⟨observe x, x, rfl⟩
++
++def FiberConstant {X : Type u} {R : Type v} {Y : Type w}
++    (observe : X → R) (query : X → Y) : Prop :=
++  ∀ x y, observe x = observe y → query x = query y
++
++/-- A query is recoverable precisely when it is constant on observation fibers.
++No algebraic structure, finiteness or full-state reconstruction is assumed.
++The inverse on the image exists mathematically; no efficiency is inferred.
++-/
++theorem recoverable_iff {X : Type u} {R : Type v} {Y : Type w}
++    (observe : X → R) (query : X → Y) :
++    (∃ answer : Observed observe → Y,
++      ∀ x, answer (reading observe x) = query x) ↔
++    FiberConstant observe query := by
++  constructor
++  · intro h x y hxy
++    obtain ⟨answer, ha⟩ := h
++    have hr : reading observe x = reading observe y := Subtype.ext hxy
++    rw [← ha x, ← ha y, hr]
++  · intro h
++    refine ⟨fun r => query (Classical.choose r.property), ?_⟩
++    intro x
++    exact h _ x (Classical.choose_spec (reading observe x).property)
++
++/-- Authentic refinement can only add recoverable queries. -/
++theorem refined_observation_suffices
++    {X : Type u} {R : Type v} {S : Type z} {Y : Type w}
++    (observe : X → R) (finer : X → S) (forget : S → R)
++    (query : X → Y) (hsource : ∀ x, forget (finer x) = observe x)
++    (hquery : FiberConstant observe query) : FiberConstant finer query := by
++  intro x y hxy
++  apply hquery
++  rw [← hsource x, ← hsource y, hxy]
++
++/-- A collision only rules out a query that separates the colliding states. -/
++theorem collision_obstructs_query
++    {X : Type u} {R : Type v} {Y : Type w}
++    (observe : X → R) (query : X → Y) (x y : X)
++    (hobs : observe x = observe y) (hdiff : query x ≠ query y) :
++    ¬ FiberConstant observe query := by
++  intro h
++  exact hdiff (h x y hobs)
++
++/-- This equation is a refinement specification. encode is not a runtime oracle. -/
++def Refines {X : Type u} {R : Type v}
++    (encode : X → R) (semantic : X → X) (run : R → R) : Prop :=
++  ∀ x, run (encode x) = encode (semantic x)
++
++theorem refines_identity {X : Type u} {R : Type v} (encode : X → R) :
++    Refines encode id id := by
++  intro x
++  rfl
++
++theorem refines_composition {X : Type u} {R : Type v}
++    (encode : X → R) (f g : X → X) (rf rg : R → R)
++    (hf : Refines encode f rf) (hg : Refines encode g rg) :
++    Refines encode (g ∘ f) (rg ∘ rf) := by
++  intro x
++  change rg (rf (encode x)) = encode (g (f x))
++  rw [hf x, hg (f x)]
++
++/-- A finite program preserves its encoded semantics when its concrete
++primitives refine total semantic primitives on the same admitted source type.
++Full source-value identification additionally needs an injective encoding.
++Partial/refused operations need an explicit result type or admitted subtype.
++This theorem does not supply primitive implementations or range certificates.
++-/
++theorem finite_program_exact
++    {X : Type u} {R : Type v} {Op : Type w}
++    (encode : X → R) (semantic : Op → X → X) (run : Op → R → R)
++    (hstep : ∀ op, Refines encode (semantic op) (run op))
++    (program : List Op) (x : X) :
++    program.foldl (fun r op => run op r) (encode x) =
++      encode (program.foldl (fun y op => semantic op y) x) := by
++  induction program generalizing x with
++  | nil => rfl
++  | cons op rest ih =>
++    simp only [List.foldl_cons]
++    rw [hstep op x]
++    exact ih (semantic op x)
++
++/-- Injectivity upgrades agreement of encoded outputs to source-value equality.
++The injection hypothesis must itself follow from the representation's admitted
++domain; a constant/nonfaithful encoding cannot establish this conclusion.
++-/
++theorem finite_program_identifies_result
++    {X : Type u} {R : Type v} {Op : Type w}
++    (encode : X → R) (semantic : Op → X → X) (run : Op → R → R)
++    (hinj : ∀ a b, encode a = encode b → a = b)
++    (hstep : ∀ op, Refines encode (semantic op) (run op))
++    (program : List Op) (x y : X)
++    (hresult : program.foldl (fun r op => run op r) (encode x) = encode y) :
++    program.foldl (fun a op => semantic op a) x = y := by
++  apply hinj
++  rw [← finite_program_exact encode semantic run hstep program x, hresult]
++
++/-- Frame transfers preserve the common source on every valid encoded state. -/
++theorem transduction_composes
++    {X : Type u} {A : Type v} {B : Type w} {C : Type z}
++    (ea : X → A) (eb : X → B) (ec : X → C)
++    (ab : A → B) (bc : B → C)
++    (hab : ∀ x, ab (ea x) = eb x) (hbc : ∀ x, bc (eb x) = ec x) :
++    ∀ x, bc (ab (ea x)) = ec x := by
++  intro x
++  rw [hab x, hbc x]
++
++theorem transduction_round_trip
++    {X : Type u} {A : Type v} {B : Type w}
++    (ea : X → A) (eb : X → B) (ab : A → B) (ba : B → A)
++    (hab : ∀ x, ab (ea x) = eb x) (hba : ∀ x, ba (eb x) = ea x) :
++    ∀ x, ba (ab (ea x)) = ea x := by
++  intro x
++  rw [hab x, hba x]
++
++end KElimination.ExactObservation
++
++#print axioms KElimination.ExactObservation.recoverable_iff
++#print axioms KElimination.ExactObservation.refined_observation_suffices
++#print axioms KElimination.ExactObservation.collision_obstructs_query
++#print axioms KElimination.ExactObservation.refines_identity
++#print axioms KElimination.ExactObservation.refines_composition
++#print axioms KElimination.ExactObservation.finite_program_exact
++#print axioms KElimination.ExactObservation.finite_program_identifies_result
++#print axioms KElimination.ExactObservation.transduction_composes
++#print axioms KElimination.ExactObservation.transduction_round_trip
+diff --git a/KElimination/UniversalResearch/FutureQuotient.lean b/KElimination/UniversalResearch/FutureQuotient.lean
+new file mode 100644
+index 0000000..af3f563
+--- /dev/null
++++ b/KElimination/UniversalResearch/FutureQuotient.lean
+@@ -0,0 +1,319 @@
++import KElimination.UniversalResearch.ConsumerTransport
++
++/-!
++The largest exact identification compatible with every declared future query.
++The source may be an admitted subtype. Transitions are total on that subtype.
++Theorems concern mathematical observations; no scalar runtime oracle is supplied.
++-/
++
++namespace KElimination.FutureQuotient
++
++universe u v w z
++
++def run {X : Type u} {Op : Type v} (step : Op → X → X)
++    (program : List Op) (x : X) : X :=
++  program.foldl (fun s op => step op s) x
++
++def FutureEq {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) (x y : X) : Prop :=
++  ∀ program i, query i (run step program x) = query i (run step program y)
++
++def OutputEq {X : Type u} {I : Type w} {Y : Type z}
++    (query : I → X → Y) (x y : X) : Prop := ∀ i, query i x = query i y
++
++def Preserved {X : Type u} {Op : Type v} (step : Op → X → X)
++    (rel : X → X → Prop) : Prop :=
++  ∀ op x y, rel x y → rel (step op x) (step op y)
++
++theorem future_refl {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) (x : X) :
++    FutureEq step query x x := by intro program i; rfl
++
++theorem future_symm {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) (x y : X)
++    (h : FutureEq step query x y) : FutureEq step query y x := by
++  intro program i
++  exact (h program i).symm
++
++theorem future_trans {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) (x y z : X)
++    (hxy : FutureEq step query x y) (hyz : FutureEq step query y z) :
++    FutureEq step query x z := by
++  intro program i
++  exact (hxy program i).trans (hyz program i)
++
++theorem future_determines_outputs
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) (x y : X)
++    (h : FutureEq step query x y) : OutputEq query x y := by
++  intro i
++  exact h [] i
++
++theorem future_preserved
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) :
++    Preserved step (FutureEq step query) := by
++  intro op x y h program i
++  exact h (op :: program) i
++
++/-- Any output-sufficient relation preserved by every operation identifies
++only future-equivalent states. No equivalence assumptions are needed here. -/
++theorem future_is_coarsest
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) (rel : X → X → Prop)
++    (houtput : ∀ x y, rel x y → OutputEq query x y)
++    (hstep : Preserved step rel) :
++    ∀ x y, rel x y → FutureEq step query x y := by
++  intro x y h program
++  induction program generalizing x y with
++  | nil => exact houtput x y h
++  | cons op rest ih =>
++    exact ih (step op x) (step op y) (hstep op x y h)
++
++def futureSetoid {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) : Setoid X where
++  r := FutureEq step query
++  iseqv := ⟨future_refl step query, fun h => future_symm step query _ _ h,
++    fun h₁ h₂ => future_trans step query _ _ _ h₁ h₂⟩
++
++def quotientQuery {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) (i : I) :
++    Quotient (futureSetoid step query) → Y :=
++  Quotient.lift (query i) (fun x y h => future_determines_outputs step query x y h i)
++
++def quotientStep {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) (op : Op) :
++    Quotient (futureSetoid step query) → Quotient (futureSetoid step query) :=
++  Quotient.lift (fun x => Quotient.mk _ (step op x))
++    (fun x y h => Quotient.sound (future_preserved step query op x y h))
++
++theorem quotient_query_correct
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) (i : I) (x : X) :
++    quotientQuery step query i (Quotient.mk _ x) = query i x := rfl
++
++theorem quotient_step_correct
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) (op : Op) (x : X) :
++    quotientStep step query op (Quotient.mk _ x) = Quotient.mk _ (step op x) := rfl
++
++theorem quotient_equal_iff_future
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) (x y : X) :
++    Quotient.mk (futureSetoid step query) x = Quotient.mk _ y ↔ FutureEq step query x y := by
++  constructor
++  · intro h
++    exact Quotient.exact h
++  · intro h
++    apply Quotient.sound
++    exact h
++
++/-- Relational refinement used by the finite public-model partition compiler.
++At round n it observes all words of length at most n. -/
++def Refined {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) : Nat → X → X → Prop
++  | 0, x, y => OutputEq query x y
++  | n + 1, x, y => Refined step query n x y ∧
++      ∀ op, Refined step query n (step op x) (step op y)
++
++theorem refined_monotone
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) (n : Nat) (x y : X) :
++    Refined step query (n+1) x y → Refined step query n x y := by
++  exact And.left
++
++theorem refined_determines_outputs
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) (n : Nat) (x y : X)
++    (h : Refined step query n x y) : OutputEq query x y := by
++  induction n with
++  | zero => exact h
++  | succ n ih => exact ih h.1
++
++theorem future_refines_every_round
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) (n : Nat) :
++    ∀ x y, FutureEq step query x y → Refined step query n x y := by
++  induction n with
++  | zero => exact future_determines_outputs step query
++  | succ n ih =>
++    intro x y h
++    exact ⟨ih x y h, fun op => ih _ _ (future_preserved step query op x y h)⟩
++
++theorem refined_iff_bounded_future
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) (n : Nat) :
++    ∀ x y, Refined step query n x y ↔
++      ∀ program : List Op, program.length ≤ n →
++        ∀ i, query i (run step program x) = query i (run step program y) := by
++  induction n with
++  | zero =>
++    intro x y
++    constructor
++    · intro h program hlen i
++      have hp : program = [] := List.eq_nil_of_length_eq_zero (by omega)
++      subst program
++      exact h i
++    · intro h i
++      exact h [] (by simp) i
++  | succ n ih =>
++    intro x y
++    constructor
++    · rintro ⟨hold, hnext⟩ program hlen i
++      cases program with
++      | nil => exact refined_determines_outputs step query n x y hold i
++      | cons op rest =>
++        exact (ih _ _).mp (hnext op) rest (by simpa using hlen) i
++    · intro h
++      refine ⟨(ih x y).mpr ?_, fun op => (ih _ _).mpr ?_⟩
++      · intro program hlen i
++        exact h program (by omega) i
++      · intro program hlen i
++        exact h (op :: program) (by simpa using hlen) i
++
++/-- A fixed point of the implemented refinement recurrence already computes
++the full all-future equivalence; no unbounded word enumeration is needed. -/
++theorem fixed_point_is_future_equivalence
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    (step : Op → X → X) (query : I → X → Y) (n : Nat)
++    (hfixed : ∀ x y, Refined step query n x y → Refined step query (n+1) x y) :
++    ∀ x y, Refined step query n x y ↔ FutureEq step query x y := by
++  intro x y
++  constructor
++  · apply future_is_coarsest step query (Refined step query n)
++      (refined_determines_outputs step query n)
++    intro op a b hab
++    exact (hfixed a b hab).2 op
++  · exact future_refines_every_round step query n x y
++
++open UniversalLift Lean.Grind
++
++def Invisible {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    [AddCommGroup X] [AddCommGroup Y]
++    (step : Op → AddMap X X) (query : I → AddMap X Y) (delta : X) : Prop :=
++  ∀ program i, (query i).apply (run (fun op => (step op).apply) program delta) = 0
++
++theorem additive_run_zero
++    {X : Type u} {Op : Type v} [AddCommGroup X]
++    (step : Op → AddMap X X) (program : List Op) :
++    run (fun op => (step op).apply) program 0 = 0 := by
++  induction program with
++  | nil => rfl
++  | cons op rest ih =>
++    change run _ rest ((step op).apply 0) = 0
++    rw [(step op).map_zero]
++    exact ih
++
++theorem additive_run_add
++    {X : Type u} {Op : Type v} [AddCommGroup X]
++    (step : Op → AddMap X X) (program : List Op) (x y : X) :
++    run (fun op => (step op).apply) program (x+y) =
++      run (fun op => (step op).apply) program x +
++      run (fun op => (step op).apply) program y := by
++  induction program generalizing x y with
++  | nil => rfl
++  | cons op rest ih =>
++    change run _ rest ((step op).apply (x+y)) = _
++    rw [(step op).map_add]
++    exact ih _ _
++
++theorem additive_run_sub
++    {X : Type u} {Op : Type v} [AddCommGroup X]
++    (step : Op → AddMap X X) (program : List Op) (x y : X) :
++    run (fun op => (step op).apply) program (x-y) =
++      run (fun op => (step op).apply) program x -
++      run (fun op => (step op).apply) program y := by
++  induction program generalizing x y with
++  | nil => rfl
++  | cons op rest ih =>
++    change run _ rest ((step op).apply (x-y)) = _
++    rw [(step op).map_sub]
++    exact ih _ _
++
++theorem invisible_zero
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    [AddCommGroup X] [AddCommGroup Y]
++    (step : Op → AddMap X X) (query : I → AddMap X Y) : Invisible step query 0 := by
++  intro program i
++  rw [additive_run_zero, (query i).map_zero]
++
++theorem invisible_add
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    [AddCommGroup X] [AddCommGroup Y]
++    (step : Op → AddMap X X) (query : I → AddMap X Y) (x y : X)
++    (hx : Invisible step query x) (hy : Invisible step query y) :
++    Invisible step query (x+y) := by
++  intro program i
++  rw [additive_run_add, (query i).map_add, hx program i, hy program i]
++  exact AddCommMonoid.add_zero 0
++
++theorem invisible_sub
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    [AddCommGroup X] [AddCommGroup Y]
++    (step : Op → AddMap X X) (query : I → AddMap X Y) (x y : X)
++    (hx : Invisible step query x) (hy : Invisible step query y) :
++    Invisible step query (x-y) := by
++  intro program i
++  rw [additive_run_sub, (query i).map_sub, hx program i, hy program i]
++  exact AddCommGroup.sub_self 0
++
++theorem invisible_preserved
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    [AddCommGroup X] [AddCommGroup Y]
++    (step : Op → AddMap X X) (query : I → AddMap X Y) (op : Op) (x : X)
++    (hx : Invisible step query x) : Invisible step query ((step op).apply x) := by
++  intro program i
++  exact hx (op :: program) i
++
++theorem invisible_is_largest
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    [AddCommGroup X] [AddCommGroup Y]
++    (step : Op → AddMap X X) (query : I → AddMap X Y) (candidate : X → Prop)
++    (houtput : ∀ x, candidate x → ∀ i, (query i).apply x = 0)
++    (hstep : ∀ op x, candidate x → candidate ((step op).apply x)) :
++    ∀ x, candidate x → Invisible step query x := by
++  intro x hx program
++  induction program generalizing x with
++  | nil => exact houtput x hx
++  | cons op rest ih => exact ih _ (hstep op x hx)
++
++theorem future_eq_iff_invisible_difference
++    {X : Type u} {Op : Type v} {I : Type w} {Y : Type z}
++    [AddCommGroup X] [AddCommGroup Y]
++    (step : Op → AddMap X X) (query : I → AddMap X Y) (x y : X) :
++    FutureEq (fun op => (step op).apply) (fun i => (query i).apply) x y ↔
++      Invisible step query (x-y) := by
++  constructor
++  · intro h program i
++    rw [additive_run_sub]
++    exact ((query i).same_reading_iff _ _).mp (h program i)
++  · intro h program i
++    apply ((query i).same_reading_iff _ _).mpr
++    rw [← additive_run_sub]
++    exact h program i
++
++end KElimination.FutureQuotient
++
++#print axioms KElimination.FutureQuotient.future_refl
++#print axioms KElimination.FutureQuotient.future_symm
++#print axioms KElimination.FutureQuotient.future_trans
++#print axioms KElimination.FutureQuotient.future_determines_outputs
++#print axioms KElimination.FutureQuotient.future_preserved
++#print axioms KElimination.FutureQuotient.future_is_coarsest
++#print axioms KElimination.FutureQuotient.quotient_query_correct
++#print axioms KElimination.FutureQuotient.quotient_step_correct
++#print axioms KElimination.FutureQuotient.quotient_equal_iff_future
++#print axioms KElimination.FutureQuotient.refined_monotone
++#print axioms KElimination.FutureQuotient.refined_determines_outputs
++#print axioms KElimination.FutureQuotient.future_refines_every_round
++#print axioms KElimination.FutureQuotient.refined_iff_bounded_future
++#print axioms KElimination.FutureQuotient.fixed_point_is_future_equivalence
++#print axioms KElimination.FutureQuotient.additive_run_zero
++#print axioms KElimination.FutureQuotient.additive_run_add
++#print axioms KElimination.FutureQuotient.additive_run_sub
++#print axioms KElimination.FutureQuotient.invisible_zero
++#print axioms KElimination.FutureQuotient.invisible_add
++#print axioms KElimination.FutureQuotient.invisible_sub
++#print axioms KElimination.FutureQuotient.invisible_preserved
++#print axioms KElimination.FutureQuotient.invisible_is_largest
++#print axioms KElimination.FutureQuotient.future_eq_iff_invisible_difference
+diff --git a/KElimination/UniversalResearch/IntegerSpecialization.lean b/KElimination/UniversalResearch/IntegerSpecialization.lean
+new file mode 100644
+index 0000000..27778ba
+--- /dev/null
++++ b/KElimination/UniversalResearch/IntegerSpecialization.lean
+@@ -0,0 +1,390 @@
++import Std
++
++/-!
++# Integer specialization of exact observation / K-elimination
++
++The computational interface consumes paired readings and public constants.
++The mathematical source `X` occurs only in theorem statements/proofs. No
++persistent quotient register or scalar materialization is an input to `query`.
++
++The unconditional output is a quotient congruence. Equality to an integer
++quotient uses an explicit public window. The source/provenance hypotheses
++cannot be inferred from an arbitrary pair of supplied integers.
++-/
++
++namespace KElimination.IntegerSpecialization
++
++/-- One modular subtraction followed by one modular multiplication, with the
++inverse `u` supplied as a precomputed public constant. The two reductions spell
++out the arithmetic-gate interface; no division of the source is evaluated. -/
++def query (r s A u : Int) : Int := (((s - r) % A) * u) % A
++
++/-- Equivalent fused expression for the query. -/
++theorem query_fused (r s A u : Int) :
++    query r s A u = ((s - r) * u) % A := by
++  simp [query, Int.mul_emod]
++
++/-- Readout for any authentic affine decomposition. This includes noncanonical
++residuals; no claim of Euclidean quotient is made until `r = X % M` is supplied.
++The inverse certificate is a congruence and works also for modulus one. -/
++theorem query_of_decomposition (X r s M A u k : Int)
++    (hsource : X = r + M * k) (hs : s = X % A)
++    (hinv : (u * M) % A = 1 % A) :
++    query r s A u = k % A := by
++  rw [query_fused, hs]
++  calc
++    ((X % A - r) * u) % A = ((X - r) * u) % A := by
++      rw [Int.mul_emod, Int.mul_emod (X - r)]
++      simp only [Int.emod_sub_emod]
++    _ = ((u * M) * k) % A := by
++      congr 1
++      rw [hsource]
++      grind
++    _ = (((u * M) % A) * (k % A)) % A := Int.mul_emod _ _ _
++    _ = ((1 % A) * (k % A)) % A := by rw [hinv]
++    _ = k % A := by rw [← Int.mul_emod]; simp
++
++/-- The runtime chart reading may itself be only a residue of the affine base
++point. There is no need to provide the potentially wide base point `r`. -/
++theorem query_chart_of_decomposition (X r chart s M A u k : Int)
++    (hsource : X = r + M * k) (hchart : chart = r % A)
++    (hs : s = X % A) (hinv : (u * M) % A = 1 % A) :
++    query chart s A u = k % A := by
++  rw [hchart]
++  have h := query_of_decomposition X r s M A u k hsource hs hinv
++  simpa only [query, Int.sub_emod_emod] using h
++
++/-- Arbitrary signed source; the computed query is its Euclidean quotient
++modulo the anchor. Neither nonnegativity nor a source bound is needed here. -/
++theorem query_quotient_congruence (X r s M A u : Int)
++    (hr : r = X % M) (hs : s = X % A)
++    (hinv : (u * M) % A = 1 % A) :
++    query r s A u = (X / M) % A := by
++  apply query_of_decomposition X r s M A u (X / M)
++  · rw [hr, Int.mul_comm M]
++    exact (Int.emod_add_ediv_mul X M).symm
++  · exact hs
++  · exact hinv
++
++/-- Exact quotient when the public quotient window is `[0,A)`. -/
++theorem query_exact_of_quotient_window (X r s M A u : Int)
++    (hr : r = X % M) (hs : s = X % A)
++    (hinv : (u * M) % A = 1 % A)
++    (hlower : 0 ≤ X / M) (hupper : X / M < A) :
++    query r s A u = X / M := by
++  rw [query_quotient_congruence X r s M A u hr hs hinv]
++  exact Int.emod_eq_of_lt hlower hupper
++
++/-- The usual source-range condition is sufficient for exact quotient readout.
++No hidden scalar reconstruction occurs in `query`. -/
++theorem query_exact_of_source_window (X r s M A u : Int)
++    (hM : 0 < M) (hr : r = X % M) (hs : s = X % A)
++    (hinv : (u * M) % A = 1 % A)
++    (hlower : 0 ≤ X) (hupper : X < M * A) :
++    query r s A u = X / M := by
++  apply query_exact_of_quotient_window X r s M A u hr hs hinv
++  · exact Int.ediv_nonneg hlower (Int.le_of_lt hM)
++  · apply Int.ediv_lt_of_lt_mul hM
++    simpa [Int.mul_comm] using hupper
++
++/-- Decode the unique representative in the public interval `[lo,lo+A)`. -/
++def windowDecode (q A lo : Int) : Int := lo + ((q - lo) % A)
++
++theorem window_decode_exact (k A lo : Int)
++    (hlower : lo ≤ k) (hupper : k < lo + A) :
++    windowDecode (k % A) A lo = k := by
++  unfold windowDecode
++  rw [Int.emod_sub_emod]
++  rw [Int.emod_eq_of_lt (by omega) (by omega)]
++  omega
++
++/-- Exact readout for signed quotients using an explicit public window. -/
++theorem query_exact_signed_window (X r s M A u lo : Int)
++    (hr : r = X % M) (hs : s = X % A)
++    (hinv : (u * M) % A = 1 % A)
++    (hlower : lo ≤ X / M) (hupper : X / M < lo + A) :
++    windowDecode (query r s A u) A lo = X / M := by
++  rw [query_quotient_congruence X r s M A u hr hs hinv]
++  exact window_decode_exact _ _ _ hlower hupper
++
++/-- Star anchors have a public inverse `-c`; the inverse is proved from the
++anchor relation rather than postulated as a query-correctness assumption. -/
++theorem star_inverse_certificate (M c : Int) :
++    ((-c) * M) % (c * M + 1) = 1 % (c * M + 1) := by
++  have h : (-c) * M = 1 - (c * M + 1) := by grind
++  rw [h, Int.sub_emod_right]
++
++theorem star_query_congruence (X r s M c : Int)
++    (hr : r = X % M) (hs : s = X % (c * M + 1)) :
++    query r s (c * M + 1) (-c) = (X / M) % (c * M + 1) := by
++  exact query_quotient_congruence X r s M (c * M + 1) (-c)
++    hr hs (star_inverse_certificate M c)
++
++/-- With adjacent anchor `M+1`, readout reduces to modular subtraction. -/
++theorem adjacent_query_subtraction (r s M : Int) :
++    query r s (M + 1) (-1) = (r - s) % (M + 1) := by
++  rw [query_fused]
++  congr 1
++  grind
++
++/-- Exact Euclidean quotient from adjacent authentic readings in the public
++source window. This is a direct operation on the two views. -/
++theorem adjacent_readout_exact (X r s M : Int)
++    (hM : 0 < M) (hr : r = X % M) (hs : s = X % (M + 1))
++    (hlower : 0 ≤ X) (hupper : X < M * (M + 1)) :
++    (r - s) % (M + 1) = X / M := by
++  rw [← adjacent_query_subtraction]
++  apply query_exact_of_source_window X r s M (M + 1) (-1)
++    hM hr hs
++  · simpa using star_inverse_certificate M 1
++  · exact hlower
++  · exact hupper
++
++/-- Generalized readout first removes a certified common factor d from the
++observed defect, then uses a precomputed inverse in the reduced anchor. Unlike
++the unit query, this interface explicitly includes an exact division by d. -/
++def nonunitQuery (r s A d u : Int) : Int :=
++  (((s - r) / d) * u) % (A / d)
++
++/-- Exact factor removal from a consistent affine defect. Divisibility of the
++defect is derived from the two public divisibility certificates. -/
++theorem affine_defect_reduction (defect M A d k z : Int)
++    (hd : d ≠ 0) (hM : d ∣ M) (hA : d ∣ A)
++    (hdefect : defect = M * k + A * z) :
++    d ∣ defect ∧ defect / d = (M / d) * k + (A / d) * z := by
++  have hm := Int.mul_ediv_cancel_of_dvd hM
++  have ha := Int.mul_ediv_cancel_of_dvd hA
++  have hscaled : defect = d * ((M / d) * k + (A / d) * z) := by
++    grind
++  exact ⟨⟨_, hscaled⟩, Int.ediv_eq_of_eq_mul_right hd hscaled⟩
++
++/-- The generalized formula is calculated from the defect. Its correctness is
++not a premise: the affine consistency equation and reduced inverse suffice. -/
++theorem nonunit_query_of_affine_defect (r s M A d u k z : Int)
++    (hd : d ≠ 0) (hM : d ∣ M) (hA : d ∣ A)
++    (hdefect : s - r = M * k + A * z)
++    (hinv : (u * (M / d)) % (A / d) = 1 % (A / d)) :
++    nonunitQuery r s A d u = k % (A / d) := by
++  have hred := (affine_defect_reduction (s - r) M A d k z hd hM hA hdefect).2
++  unfold nonunitQuery
++  rw [hred]
++  calc
++    (((M / d) * k + (A / d) * z) * u) % (A / d) =
++        (((M / d) * k) * u) % (A / d) := by
++      rw [Int.mul_emod, Int.mul_emod ((M / d) * k)]
++      rw [Int.add_mul_emod_self_left]
++    _ = ((u * (M / d)) * k) % (A / d) := by
++      congr 1
++      grind
++    _ = (((u * (M / d)) % (A / d)) * (k % (A / d))) % (A / d) :=
++      Int.mul_emod _ _ _
++    _ = ((1 % (A / d)) * (k % (A / d))) % (A / d) := by rw [hinv]
++    _ = k % (A / d) := by rw [← Int.mul_emod]; simp
++
++/-- For an authentic source and affine base point, the exact-defect formula
++is valid even when M is not a unit modulo A. -/
++theorem nonunit_query_of_decomposition (X r s M A d u k : Int)
++    (hsource : X = r + M * k) (hs : s = X % A)
++    (hd : d ≠ 0) (hM : d ∣ M) (hA : d ∣ A)
++    (hinv : (u * (M / d)) % (A / d) = 1 % (A / d)) :
++    d ∣ s - r ∧ nonunitQuery r s A d u = k % (A / d) := by
++  have hdec := Int.emod_add_ediv_mul X A
++  have hdefect : s - r = M * k + A * (-(X / A)) := by grind
++  exact ⟨(affine_defect_reduction (s - r) M A d k (-(X / A))
++      hd hM hA hdefect).1,
++    nonunit_query_of_affine_defect r s M A d u k (-(X / A))
++      hd hM hA hdefect hinv⟩
++
++/-- Fully observed nonunit readout: the chart and source are both residues in
++the anchor lane. Neither the wide affine base point r nor X is a runtime input.
++Consistency of the exact defect division is proved from authenticity. -/
++theorem nonunit_chart_query (X r chart s M A d u k : Int)
++    (hsource : X = r + M * k) (hchart : chart = r % A) (hs : s = X % A)
++    (hd : d ≠ 0) (hM : d ∣ M) (hA : d ∣ A)
++    (hinv : (u * (M / d)) % (A / d) = 1 % (A / d)) :
++    d ∣ s - chart ∧ nonunitQuery chart s A d u = k % (A / d) := by
++  have hx := Int.emod_add_ediv_mul X A
++  have hr := Int.emod_add_ediv_mul r A
++  have hdefect : s - chart = M * k + A * (r / A - X / A) := by grind
++  exact ⟨(affine_defect_reduction (s - chart) M A d k (r / A - X / A)
++      hd hM hA hdefect).1,
++    nonunit_query_of_affine_defect chart s M A d u k (r / A - X / A)
++      hd hM hA hdefect hinv⟩
++
++theorem nonunit_chart_query_signed_window (X r chart s M A d u k lo : Int)
++    (hsource : X = r + M * k) (hchart : chart = r % A) (hs : s = X % A)
++    (hd : d ≠ 0) (hM : d ∣ M) (hA : d ∣ A)
++    (hinv : (u * (M / d)) % (A / d) = 1 % (A / d))
++    (hlower : lo ≤ k) (hupper : k < lo + A / d) :
++    windowDecode (nonunitQuery chart s A d u) (A / d) lo = k := by
++  rw [(nonunit_chart_query X r chart s M A d u k
++    hsource hchart hs hd hM hA hinv).2]
++  exact window_decode_exact _ _ _ hlower hupper
++
++/-- Emit directly into a target residue lane. Both multiplicands are reduced
++in the target; a full-width scalar `r + M*k` is not a runtime intermediate. -/
++def targetProjection (r k M B : Int) : Int :=
++  ((r % B) + (M % B) * (k % B)) % B
++
++theorem target_projection_of_decomposition (X r k M B : Int)
++    (hsource : X = r + M * k) :
++    targetProjection r k M B = X % B := by
++  unfold targetProjection
++  rw [hsource, Int.add_emod r (M * k) B, Int.mul_emod M k B]
++  simp only [Int.add_emod_emod]
++
++/-- A target that annihilates the unknown period M*A does not require an
++exact integer lift of k. Its output is already determined by k modulo A. -/
++theorem target_projection_of_period_dvd (r k M A B : Int)
++    (hperiod : B ∣ M * A) :
++    targetProjection r (k % A) M B = targetProjection r k M B := by
++  rw [target_projection_of_decomposition (r + M * (k % A)) r (k % A) M B rfl]
++  rw [target_projection_of_decomposition (r + M * k) r k M B rfl]
++  rcases hperiod with ⟨t, ht⟩
++  have hdec := Int.emod_add_ediv_mul k A
++  have heq : r + M * k = (r + M * (k % A)) + (t * (k / A)) * B := by
++    grind
++  rw [heq, Int.add_mul_emod_self_right]
++
++/-- Direct query transport can be exact without knowing k as an integer.
++Only the target modulus must annihilate the source ambiguity M*A. -/
++theorem query_target_projection_of_period_dvd (X r s M A u B : Int)
++    (hr : r = X % M) (hs : s = X % A)
++    (hinv : (u * M) % A = 1 % A) (hperiod : B ∣ M * A) :
++    targetProjection r (query r s A u) M B = X % B := by
++  rw [query_quotient_congruence X r s M A u hr hs hinv]
++  rw [target_projection_of_period_dvd r (X / M) M A B hperiod]
++  apply target_projection_of_decomposition
++  rw [hr, Int.mul_comm M]
++  exact (Int.emod_add_ediv_mul X M).symm
++
++/-- Target-lane interface: only a target base-point view, a quotient reading,
++and the public multiplier reduced in that lane are runtime arguments. -/
++def targetLaneProjection (t q mB B : Int) : Int :=
++  (t + mB * (q % B)) % B
++
++theorem target_lane_projection_eq (r t k M mB B : Int)
++    (ht : t = r % B) (hm : mB = M % B) :
++    targetLaneProjection t k mB B = targetProjection r k M B := by
++  simp only [targetLaneProjection, targetProjection, ht, hm]
++
++/-- All runtime readings in this transport are lane-sized observations. The
++wide base point r, source X, and quotient k occur only in proof hypotheses.
++No exact quotient window is needed when B divides the ambiguity period. -/
++theorem chart_query_target_lane_transport (X r chart s k t M A u mB B : Int)
++    (hsource : X = r + M * k) (hchart : chart = r % A)
++    (hs : s = X % A) (ht : t = r % B) (hm : mB = M % B)
++    (hinv : (u * M) % A = 1 % A) (hperiod : B ∣ M * A) :
++    targetLaneProjection t (query chart s A u) mB B = X % B := by
++  rw [target_lane_projection_eq r t (query chart s A u) M mB B ht hm]
++  rw [query_chart_of_decomposition X r chart s M A u k hsource hchart hs hinv]
++  rw [target_projection_of_period_dvd r k M A B hperiod]
++  exact target_projection_of_decomposition X r k M B hsource
++
++/-- After certified common-factor reduction, the target only needs to
++annihilate M*(A/d). This transports a desired residue without lifting k exactly.
++For positive M,A and d=gcd(M,A), this is the least-common-multiple period. -/
++theorem nonunit_chart_target_lane_transport
++    (X r chart s k t M A d u mB B : Int)
++    (hsource : X = r + M * k) (hchart : chart = r % A) (hs : s = X % A)
++    (ht : t = r % B) (hm : mB = M % B)
++    (hd : d ≠ 0) (hM : d ∣ M) (hA : d ∣ A)
++    (hinv : (u * (M / d)) % (A / d) = 1 % (A / d))
++    (hperiod : B ∣ M * (A / d)) :
++    targetLaneProjection t (nonunitQuery chart s A d u) mB B = X % B := by
++  rw [target_lane_projection_eq r t (nonunitQuery chart s A d u) M mB B ht hm]
++  rw [(nonunit_chart_query X r chart s M A d u k
++    hsource hchart hs hd hM hA hinv).2]
++  rw [target_projection_of_period_dvd r k M (A / d) B hperiod]
++  exact target_projection_of_decomposition X r k M B hsource
++
++theorem query_target_projection (X r s M A u B : Int)
++    (hr : r = X % M) (hs : s = X % A)
++    (hinv : (u * M) % A = 1 % A)
++    (hlower : 0 ≤ X / M) (hupper : X / M < A) :
++    targetProjection r (query r s A u) M B = X % B := by
++  rw [query_exact_of_quotient_window X r s M A u hr hs hinv hlower hupper]
++  apply target_projection_of_decomposition
++  rw [hr, Int.mul_comm M]
++  exact (Int.emod_add_ediv_mul X M).symm
++
++theorem signed_query_target_projection (X r s M A u lo B : Int)
++    (hr : r = X % M) (hs : s = X % A)
++    (hinv : (u * M) % A = 1 % A)
++    (hlower : lo ≤ X / M) (hupper : X / M < lo + A) :
++    targetProjection r (windowDecode (query r s A u) A lo) M B = X % B := by
++  rw [query_exact_signed_window X r s M A u lo hr hs hinv hlower hupper]
++  apply target_projection_of_decomposition
++  rw [hr, Int.mul_comm M]
++  exact (Int.emod_add_ediv_mul X M).symm
++
++/-- Two authentic paired readings identify a source exactly on a common
++quotient window. This is a uniqueness theorem; it does not materialize X in
++the computation. -/
++theorem same_views_source_unique (X Y r s M A u lo : Int)
++    (hrX : r = X % M) (hsX : s = X % A)
++    (hrY : r = Y % M) (hsY : s = Y % A)
++    (hinv : (u * M) % A = 1 % A)
++    (hXlo : lo ≤ X / M) (hXhi : X / M < lo + A)
++    (hYlo : lo ≤ Y / M) (hYhi : Y / M < lo + A) : X = Y := by
++  have hqX := query_exact_signed_window X r s M A u lo hrX hsX hinv hXlo hXhi
++  have hqY := query_exact_signed_window Y r s M A u lo hrY hsY hinv hYlo hYhi
++  have hquot : X / M = Y / M := hqX.symm.trans hqY
++  have hdecX := Int.emod_add_ediv_mul X M
++  have hdecY := Int.emod_add_ediv_mul Y M
++  rw [← hrX, hquot] at hdecX
++  rw [← hrY] at hdecY
++  exact hdecX.symm.trans hdecY
++
++/-- Finite residue views repeat with period M*A. Shared factors can shorten
++the minimal period; repetition itself needs no inverse. -/
++theorem paired_views_periodic (X M A : Int) :
++    (X + M * A) % M = X % M ∧ (X + M * A) % A = X % A := by
++  simp
++
++/-- A fixed pair of nonzero residue moduli cannot determine every unbounded
++integer quotient. Windows or further authentic observations are necessary;
++this statement is compatible with exact on-demand readout on a known window. -/
++theorem no_unbounded_pair_quotient_decoder (M A : Int)
++    (hM : M ≠ 0) (hA : A ≠ 0) :
++    ¬ ∃ decode : Int → Int → Int,
++      ∀ X : Int, decode (X % M) (X % A) = X / M := by
++  rintro ⟨decode, hdecode⟩
++  have hz := hdecode 0
++  have hp := hdecode (M * A)
++  have hq : (M * A) / M = A := by
++    simpa using Int.add_mul_ediv_left 0 A hM
++  simp only [Int.zero_emod, Int.zero_ediv] at hz
++  simp only [Int.mul_emod_left, Int.mul_emod_right, hq] at hp
++  exact hA (hp.symm.trans hz)
++
++end KElimination.IntegerSpecialization
++
++#print axioms KElimination.IntegerSpecialization.query_fused
++#print axioms KElimination.IntegerSpecialization.query_of_decomposition
++#print axioms KElimination.IntegerSpecialization.query_chart_of_decomposition
++#print axioms KElimination.IntegerSpecialization.query_quotient_congruence
++#print axioms KElimination.IntegerSpecialization.query_exact_of_quotient_window
++#print axioms KElimination.IntegerSpecialization.query_exact_of_source_window
++#print axioms KElimination.IntegerSpecialization.window_decode_exact
++#print axioms KElimination.IntegerSpecialization.query_exact_signed_window
++#print axioms KElimination.IntegerSpecialization.star_inverse_certificate
++#print axioms KElimination.IntegerSpecialization.star_query_congruence
++#print axioms KElimination.IntegerSpecialization.adjacent_query_subtraction
++#print axioms KElimination.IntegerSpecialization.adjacent_readout_exact
++#print axioms KElimination.IntegerSpecialization.affine_defect_reduction
++#print axioms KElimination.IntegerSpecialization.nonunit_query_of_affine_defect
++#print axioms KElimination.IntegerSpecialization.nonunit_query_of_decomposition
++#print axioms KElimination.IntegerSpecialization.nonunit_chart_query
++#print axioms KElimination.IntegerSpecialization.nonunit_chart_query_signed_window
++#print axioms KElimination.IntegerSpecialization.target_projection_of_decomposition
++#print axioms KElimination.IntegerSpecialization.target_projection_of_period_dvd
++#print axioms KElimination.IntegerSpecialization.query_target_projection_of_period_dvd
++#print axioms KElimination.IntegerSpecialization.target_lane_projection_eq
++#print axioms KElimination.IntegerSpecialization.chart_query_target_lane_transport
++#print axioms KElimination.IntegerSpecialization.nonunit_chart_target_lane_transport
++#print axioms KElimination.IntegerSpecialization.query_target_projection
++#print axioms KElimination.IntegerSpecialization.signed_query_target_projection
++#print axioms KElimination.IntegerSpecialization.same_views_source_unique
++#print axioms KElimination.IntegerSpecialization.paired_views_periodic
++#print axioms KElimination.IntegerSpecialization.no_unbounded_pair_quotient_decoder
+diff --git a/KElimination/UniversalResearch/ReferenceChange.lean b/KElimination/UniversalResearch/ReferenceChange.lean
+new file mode 100644
+index 0000000..252d9de
+--- /dev/null
++++ b/KElimination/UniversalResearch/ReferenceChange.lean
+@@ -0,0 +1,58 @@
++import KElimination.UniversalResearch.UniversalLift
++
++/-!
++Changing the affine reference leaves the exact requested result unchanged.
++Only the views of the old/new references are needed at runtime. Coordinates
++and source values in these statements are mathematical specification variables.
++-/
++
++namespace KElimination.ReferenceChange
++
++open Lean.Grind UniversalLift
++
++universe u v w z
++variable {G : Type u} {K : Type v} {H : Type w} {T : Type z}
++variable [AddCommGroup G] [AddCommGroup K] [AddCommGroup H] [AddCommGroup T]
++
++/-- Moving the reference by i(a) changes its coordinate from k to k-a. -/
++theorem shifted_decomposition (embed : AddMap K G) (x r : G) (k a : K)
++    (hsource : x = r + embed.apply k) :
++    x = (r + embed.apply a) + embed.apply (k - a) := by
++  rw [embed.map_sub, AddCommMonoid.add_assoc,
++      AddCommMonoid.add_comm (embed.apply a), AddCommGroup.sub_add_cancel]
++  exact hsource
++
++/-- The observed difference transforms by subtracting the observed reference
++shift. No inverse or source recovery is needed to prove this law. -/
++theorem shifted_defect (embed : AddMap K G) (observe : AddMap G H)
++    (x r : G) (k a : K) (hsource : x = r + embed.apply k) :
++    observe.apply x - observe.apply (r + embed.apply a) =
++      (observe.apply x - observe.apply r) - (observe.comp embed).apply a := by
++  rw [phase_difference embed observe x (r + embed.apply a) (k - a)
++    (shifted_decomposition embed x r k a hsource)]
++  rw [(observe.comp embed).map_sub, phase_difference embed observe x r k hsource]
++
++/-- Independent admitted windows may be used before and after changing the
++reference. Each readout must satisfy its own concrete decoder law. -/
++theorem target_invariant_under_reference_change
++    (embed : AddMap K G) (observe : AddMap G H) (target : AddMap G T)
++    (oldDomain newDomain : K → Prop) (oldReadout newReadout : H → T)
++    (hold : ∀ k, oldDomain k → oldReadout ((observe.comp embed).apply k) =
++      target.apply (embed.apply k))
++    (hnew : ∀ k, newDomain k → newReadout ((observe.comp embed).apply k) =
++      target.apply (embed.apply k))
++    (x r : G) (k a : K) (hk : oldDomain k) (hshift : newDomain (k - a))
++    (hsource : x = r + embed.apply k) :
++    target.apply r + query oldReadout (observe.apply r) (observe.apply x) =
++      target.apply (r + embed.apply a) +
++        query newReadout (observe.apply (r + embed.apply a)) (observe.apply x) := by
++  rw [direct_target_query embed observe target oldDomain oldReadout hold x r k hk hsource]
++  rw [direct_target_query embed observe target newDomain newReadout hnew x
++    (r + embed.apply a) (k - a) hshift
++    (shifted_decomposition embed x r k a hsource)]
++
++end KElimination.ReferenceChange
++
++#print axioms KElimination.ReferenceChange.shifted_decomposition
++#print axioms KElimination.ReferenceChange.shifted_defect
++#print axioms KElimination.ReferenceChange.target_invariant_under_reference_change
+diff --git a/KElimination/UniversalResearch/ReflectionInvariant.lean b/KElimination/UniversalResearch/ReflectionInvariant.lean
+new file mode 100644
+index 0000000..75a46a6
+--- /dev/null
++++ b/KElimination/UniversalResearch/ReflectionInvariant.lean
+@@ -0,0 +1,29 @@
++import Std
++
++/-! Integral polynomial identities: no field, inverse, odd characteristic or
++prime-modulus premise is needed. Actual finite-word execution still needs
++the implementation's width and source-binding contract. -/
++
++namespace KElimination.ReflectionInvariant
++
++open Lean.Grind
++
++def reflect {R : Type} [Ring R] (a b c d : R) : R := 2*(b+c+d)-a
++
++def descartes {R : Type} [Ring R] (a b c d : R) : R :=
++  2*(a*a+b*b+c*c+d*d)-(a+b+c+d)*(a+b+c+d)
++
++theorem reflection_involution {R : Type} [CommRing R] (a b c d : R) :
++    reflect (reflect a b c d) b c d = a := by
++  unfold reflect
++  grind
++
++theorem reflection_preserves_descartes {R : Type} [CommRing R] (a b c d : R) :
++    descartes (reflect a b c d) b c d = descartes a b c d := by
++  unfold reflect descartes
++  grind
++
++end KElimination.ReflectionInvariant
++
++#print axioms KElimination.ReflectionInvariant.reflection_involution
++#print axioms KElimination.ReflectionInvariant.reflection_preserves_descartes
+diff --git a/KElimination/UniversalResearch/ResidueAlgorithms.lean b/KElimination/UniversalResearch/ResidueAlgorithms.lean
+new file mode 100644
+index 0000000..0c9651a
+--- /dev/null
++++ b/KElimination/UniversalResearch/ResidueAlgorithms.lean
+@@ -0,0 +1,165 @@
++import Std
++
++/-!
++Executable bounded arithmetic from residue operations. Runtime data contains
++only observation states and a public capacity/fuel; the semantic encoding is
++supplied separately to correctness theorems. No persistent scalar K or scalar
++source value is a field of the executable interface.
++-/
++
++namespace KElimination.ResidueAlgorithms
++
++universe u
++
++structure Ops (S : Type u) where
++  capacity : Nat
++  zero : S
++  increment : S → S
++  subtract : S → S → S
++  less : S → S → Bool
++  isZero : S → Bool
++
++structure Correct {S : Type u} (ops : Ops S) (encode : Nat → S) : Prop where
++  zero_eq : ops.zero = encode 0
++  increment_eq : ∀ n, n + 1 < ops.capacity →
++    ops.increment (encode n) = encode (n + 1)
++  subtract_eq : ∀ a b, b ≤ a → a < ops.capacity →
++    ops.subtract (encode a) (encode b) = encode (a - b)
++  less_eq : ∀ a b, a < ops.capacity → b < ops.capacity →
++    ops.less (encode a) (encode b) = decide (a < b)
++  isZero_eq : ∀ a, a < ops.capacity → ops.isZero (encode a) = decide (a = 0)
++
++/-- The exact comparison contract itself implies faithful encoding on the
++admitted domain. Thus equal represented results identify a unique value. -/
++theorem encode_injective_on {S : Type u} (ops : Ops S) (encode : Nat → S)
++    (correct : Correct ops encode) (a b : Nat)
++    (ha : a < ops.capacity) (hb : b < ops.capacity)
++    (heq : encode a = encode b) : a = b := by
++  have hself : ops.less (encode b) (encode b) = false := by
++    simpa using correct.less_eq b b hb hb
++  have hab : decide (a < b) = false := by
++    rw [← correct.less_eq a b ha hb, heq]
++    exact hself
++  have hba : decide (b < a) = false := by
++    rw [← correct.less_eq b a hb ha, heq]
++    exact hself
++  have hnotab : ¬ a < b := of_decide_eq_false hab
++  have hnotba : ¬ b < a := of_decide_eq_false hba
++  omega
++
++/-- Repeated-subtraction division. At zero fuel an already completed division
++still succeeds. Failure denotes exhausted fuel, not an incorrect quotient. -/
++def divLoop {S : Type u} (ops : Ops S) : Nat → S → S → S → Option (S × S)
++  | 0, quotient, remainder, divisor =>
++      if ops.less remainder divisor then some (quotient, remainder) else none
++  | fuel + 1, quotient, remainder, divisor =>
++      if ops.less remainder divisor then some (quotient, remainder)
++      else divLoop ops fuel (ops.increment quotient)
++        (ops.subtract remainder divisor) divisor
++
++/-- Division refuses a represented zero divisor. Public capacity is sufficient
++fuel on the admitted domain; no scalar dividend is used to obtain the fuel. -/
++def divmod {S : Type u} (ops : Ops S) (dividend divisor : S) : Option (S × S) :=
++  if ops.isZero divisor then none
++  else divLoop ops ops.capacity ops.zero dividend divisor
++
++def gcdLoop {S : Type u} (ops : Ops S) : Nat → S → S → Option S
++  | 0, a, b => if ops.isZero b then some a else none
++  | fuel + 1, a, b =>
++      if ops.isZero b then some a
++      else match divmod ops a b with
++        | none => none
++        | some (_, remainder) => gcdLoop ops fuel b remainder
++
++def gcd {S : Type u} (ops : Ops S) (a b : S) : Option S :=
++  gcdLoop ops ops.capacity a b
++
++/-- The quotient and remainder remain represented throughout. The invariant
++q+r<capacity admits the increment and subtraction, and r≤fuel proves that
++public fuel cannot expire on a valid computation. -/
++theorem divLoop_correct {S : Type u} (ops : Ops S) (encode : Nat → S)
++    (correct : Correct ops encode) (fuel q r d : Nat)
++    (hd : 0 < d) (hdcap : d < ops.capacity)
++    (hcap : q + r < ops.capacity) (hfuel : r ≤ fuel) :
++    divLoop ops fuel (encode q) (encode r) (encode d) =
++      some (encode (q + r / d), encode (r % d)) := by
++  induction fuel generalizing q r with
++  | zero =>
++    have hr : r = 0 := by omega
++    subst r
++    rw [divLoop, correct.less_eq 0 d (by omega) hdcap]
++    simp [hd]
++  | succ fuel ih =>
++    have hrcap : r < ops.capacity := by omega
++    by_cases hlt : r < d
++    · rw [divLoop, correct.less_eq r d hrcap hdcap]
++      simp [hlt, Nat.div_eq_of_lt hlt, Nat.mod_eq_of_lt hlt]
++    · have hge : d ≤ r := by omega
++      rw [divLoop, correct.less_eq r d hrcap hdcap]
++      simp only [hlt, decide_false, Bool.false_eq_true, ↓reduceIte]
++      rw [correct.increment_eq q (by omega), correct.subtract_eq r d hge hrcap]
++      rw [ih (q + 1) (r - d) (by omega) (by omega)]
++      have hquot : q + 1 + (r - d) / d = q + r / d := by
++        have hdiv := Nat.div_eq_sub_div hd hge
++        omega
++      rw [hquot, ← Nat.mod_eq_sub_mod hge]
++
++theorem divmod_correct {S : Type u} (ops : Ops S) (encode : Nat → S)
++    (correct : Correct ops encode) (n d : Nat)
++    (hn : n < ops.capacity) (hdcap : d < ops.capacity) (hd : 0 < d) :
++    divmod ops (encode n) (encode d) =
++      some (encode (n / d), encode (n % d)) := by
++  unfold divmod
++  rw [correct.isZero_eq d hdcap]
++  have hdz : d ≠ 0 := by omega
++  simp only [hdz, decide_false, Bool.false_eq_true, ↓reduceIte]
++  rw [correct.zero_eq]
++  simpa using divLoop_correct ops encode correct ops.capacity 0 n d hd hdcap
++    (by omega) (by omega)
++
++theorem divmod_zero_refused {S : Type u} (ops : Ops S) (encode : Nat → S)
++    (correct : Correct ops encode) (dividend : S) (hcap : 0 < ops.capacity) :
++    divmod ops dividend (encode 0) = none := by
++  simp [divmod, correct.isZero_eq 0 hcap]
++
++/-- The Euclidean loop uses the residue division result, whose second semantic
++operand decreases. Neither a semantic remainder nor its magnitude is stored. -/
++theorem gcdLoop_correct {S : Type u} (ops : Ops S) (encode : Nat → S)
++    (correct : Correct ops encode) (fuel a b : Nat)
++    (ha : a < ops.capacity) (hb : b < ops.capacity) (hfuel : b ≤ fuel) :
++    gcdLoop ops fuel (encode a) (encode b) = some (encode (Nat.gcd a b)) := by
++  induction fuel generalizing a b with
++  | zero =>
++    have hzero : b = 0 := by omega
++    subst b
++    simp [gcdLoop, correct.isZero_eq 0 hb]
++  | succ fuel ih =>
++    by_cases hzero : b = 0
++    · subst b
++      simp [gcdLoop, correct.isZero_eq 0 hb]
++    · have hpos : 0 < b := by omega
++      rw [gcdLoop, correct.isZero_eq b hb]
++      simp only [hzero, decide_false, Bool.false_eq_true, ↓reduceIte]
++      rw [divmod_correct ops encode correct a b ha hb hpos]
++      change gcdLoop ops fuel (encode b) (encode (a % b)) =
++        some (encode (Nat.gcd a b))
++      have hrlt : a % b < b := Nat.mod_lt a hpos
++      rw [ih b (a % b) hb (by omega) (by omega)]
++      have hgcd : Nat.gcd b (a % b) = Nat.gcd a b := by
++        rw [Nat.gcd_comm b (a % b), ← Nat.gcd_rec b a, Nat.gcd_comm b a]
++      rw [hgcd]
++
++theorem gcd_correct {S : Type u} (ops : Ops S) (encode : Nat → S)
++    (correct : Correct ops encode) (a b : Nat)
++    (ha : a < ops.capacity) (hb : b < ops.capacity) :
++    gcd ops (encode a) (encode b) = some (encode (Nat.gcd a b)) := by
++  exact gcdLoop_correct ops encode correct ops.capacity a b ha hb (by omega)
++
++end KElimination.ResidueAlgorithms
++
++#print axioms KElimination.ResidueAlgorithms.divLoop_correct
++#print axioms KElimination.ResidueAlgorithms.encode_injective_on
++#print axioms KElimination.ResidueAlgorithms.divmod_correct
++#print axioms KElimination.ResidueAlgorithms.divmod_zero_refused
++#print axioms KElimination.ResidueAlgorithms.gcdLoop_correct
++#print axioms KElimination.ResidueAlgorithms.gcd_correct
+diff --git a/KElimination/UniversalResearch/ResiduePrimitives.lean b/KElimination/UniversalResearch/ResiduePrimitives.lean
+new file mode 100644
+index 0000000..91c0293
+--- /dev/null
++++ b/KElimination/UniversalResearch/ResiduePrimitives.lean
+@@ -0,0 +1,203 @@
++import KElimination.UniversalResearch.IntegerSpecialization
++import KElimination.UniversalResearch.ResidueAlgorithms
++
++namespace KElimination.ResiduePrimitives
++
++/-- Public frame data and inverse certificate. No source value is stored. -/
++structure Frame where
++  M : Nat
++  A : Nat
++  positiveM : 0 < M
++  positiveA : 0 < A
++  inverse : Int
++  inverse_ok : (inverse * (M : Int)) % (A : Int) = 1 % (A : Int)
++
++/-- The complete runtime number state: two residue observations only. -/
++structure State where
++  main : Int
++  anchor : Int
++  deriving DecidableEq, Repr
++
++def Frame.capacity (f : Frame) : Nat := f.M * f.A
++
++/-- Semantic ingress/specification map; runtime algorithms do not call this. -/
++def Frame.encode (f : Frame) (n : Nat) : State :=
++  ⟨(n : Int) % (f.M : Int), (n : Int) % (f.A : Int)⟩
++
++def zero : State := ⟨0, 0⟩
++
++def Frame.kQuery (f : Frame) (x : State) : Int :=
++  IntegerSpecialization.query x.main x.anchor (f.A : Int) f.inverse
++
++def Frame.increment (f : Frame) (x : State) : State :=
++  ⟨(x.main + 1) % (f.M : Int), (x.anchor + 1) % (f.A : Int)⟩
++
++def Frame.subtract (f : Frame) (x y : State) : State :=
++  ⟨(x.main - y.main) % (f.M : Int), (x.anchor - y.anchor) % (f.A : Int)⟩
++
++def Frame.less (f : Frame) (x y : State) : Bool :=
++  decide (f.kQuery x < f.kQuery y ∨
++    (f.kQuery x = f.kQuery y ∧ x.main < y.main))
++
++def isZero (x : State) : Bool := decide (x = zero)
++
++theorem zero_eq_encode (f : Frame) : zero = f.encode 0 := by
++  simp [zero, Frame.encode]
++
++theorem kQuery_exact (f : Frame) (n : Nat) (hn : n < f.capacity) :
++    f.kQuery (f.encode n) = (n : Int) / (f.M : Int) := by
++  apply IntegerSpecialization.query_exact_of_source_window
++    (n : Int) ((n : Int) % (f.M : Int)) ((n : Int) % (f.A : Int))
++    (f.M : Int) (f.A : Int) f.inverse
++  · exact_mod_cast f.positiveM
++  · rfl
++  · rfl
++  · exact f.inverse_ok
++  · omega
++  · unfold Frame.capacity at hn
++    have hn' : (n : Int) < (f.M * f.A : Nat) := by omega
++    simpa [Int.natCast_mul] using hn'
++
++theorem increment_encode (f : Frame) (n : Nat) :
++    f.increment (f.encode n) = f.encode (n + 1) := by
++  simp [Frame.increment, Frame.encode, Int.add_emod, Int.natCast_add]
++
++theorem subtract_encode (f : Frame) (a b : Nat) (h : b ≤ a) :
++    f.subtract (f.encode a) (f.encode b) = f.encode (a - b) := by
++  simp [Frame.subtract, Frame.encode, Int.natCast_sub h, Int.sub_emod]
++
++/-- Euclidean coordinates preserve the ordinary integer order. -/
++theorem euclidean_lex_order (a b M : Int) (hM : 0 < M) :
++    (a / M < b / M ∨ (a / M = b / M ∧ a % M < b % M)) ↔ a < b := by
++  have ha := Int.emod_add_ediv_mul a M
++  have hb := Int.emod_add_ediv_mul b M
++  constructor
++  · intro h
++    rcases h with hq | ⟨hq, hr⟩
++    · by_cases hab : a < b
++      · exact hab
++      · have hba : b ≤ a := by omega
++        have := Int.ediv_le_ediv hM hba
++        omega
++    · rw [hq] at ha
++      omega
++  · intro hab
++    have hq := Int.ediv_le_ediv hM (Int.le_of_lt hab)
++    by_cases heq : a / M = b / M
++    · right
++      refine ⟨heq, ?_⟩
++      rw [heq] at ha
++      omega
++    · left
++      omega
++
++theorem less_encode (f : Frame) (a b : Nat)
++    (ha : a < f.capacity) (hb : b < f.capacity) :
++    f.less (f.encode a) (f.encode b) = decide (a < b) := by
++  unfold Frame.less
++  rw [kQuery_exact f a ha, kQuery_exact f b hb]
++  change decide ((a : Int) / f.M < (b : Int) / f.M ∨
++    ((a : Int) / f.M = (b : Int) / f.M ∧ (a : Int) % f.M < (b : Int) % f.M)) = _
++  simp only [euclidean_lex_order (a : Int) (b : Int) (f.M : Int) (by exact_mod_cast f.positiveM), Int.ofNat_lt]
++
++theorem encode_injective_on_window (f : Frame) (a b : Nat)
++    (ha : a < f.capacity) (hb : b < f.capacity)
++    (heq : f.encode a = f.encode b) : a = b := by
++  have hq : (a : Int) / f.M = (b : Int) / f.M := by
++    rw [← kQuery_exact f a ha, ← kQuery_exact f b hb, heq]
++  have hr : (a : Int) % f.M = (b : Int) % f.M := congrArg State.main heq
++  have hdecA := Int.emod_add_ediv_mul (a : Int) (f.M : Int)
++  have hdecB := Int.emod_add_ediv_mul (b : Int) (f.M : Int)
++  rw [hq, hr] at hdecA
++  omega
++
++theorem capacity_positive (f : Frame) : 0 < f.capacity :=
++  Nat.mul_pos f.positiveM f.positiveA
++
++theorem isZero_encode (f : Frame) (a : Nat) (ha : a < f.capacity) :
++    isZero (f.encode a) = decide (a = 0) := by
++  unfold isZero
++  rw [zero_eq_encode f]
++  by_cases hz : a = 0
++  · simp [hz]
++  · have hne : f.encode a ≠ f.encode 0 := by
++      intro heq
++      exact hz (encode_injective_on_window f a 0 ha (capacity_positive f) heq)
++    simp [hz, hne]
++
++/-- Adjacent frames provide their inverse algebraically, without a GCD search. -/
++def Frame.adjacent (M : Nat) (hM : 0 < M) : Frame where
++  M := M
++  A := M + 1
++  positiveM := hM
++  positiveA := by omega
++  inverse := -1
++  inverse_ok := by
++    simpa using IntegerSpecialization.star_inverse_certificate (M : Int) 1
++
++theorem adjacent_query (M : Nat) (hM : 0 < M) (x : State) :
++    (Frame.adjacent M hM).kQuery x = (x.main - x.anchor) % ((M : Int) + 1) := by
++  change IntegerSpecialization.query x.main x.anchor ((M + 1 : Nat) : Int) (-1) = _
++  simpa using IntegerSpecialization.adjacent_query_subtraction x.main x.anchor (M : Int)
++
++/-- Concrete executable operations. encode occurs only in the separate theorem. -/
++def Frame.ops (f : Frame) : ResidueAlgorithms.Ops State where
++  capacity := f.capacity
++  zero := zero
++  increment := f.increment
++  subtract := f.subtract
++  less := f.less
++  isZero := isZero
++
++/-- Every abstract primitive obligation is discharged by the actual paired-view
++implementation. There is no assumed correct comparator or hidden decoder. -/
++theorem ops_correct (f : Frame) : ResidueAlgorithms.Correct f.ops f.encode where
++  zero_eq := zero_eq_encode f
++  increment_eq n _ := increment_encode f n
++  subtract_eq a b h _ := subtract_encode f a b h
++  less_eq a b ha hb := less_encode f a b ha hb
++  isZero_eq a ha := isZero_encode f a ha
++
++/-- Runtime division consumes two residue states and public frame data. -/
++def Frame.divmod (f : Frame) (x y : State) : Option (State × State) :=
++  ResidueAlgorithms.divmod f.ops x y
++
++/-- Runtime GCD consumes two residue states and public frame data. -/
++def Frame.gcd (f : Frame) (x y : State) : Option State :=
++  ResidueAlgorithms.gcd f.ops x y
++
++/-- All positive admitted divisors are supported, including those sharing
++factors with either observer modulus, and including inexact divisions. -/
++theorem divmod_correct (f : Frame) (n d : Nat)
++    (hn : n < f.capacity) (hdcap : d < f.capacity) (hd : 0 < d) :
++    f.divmod (f.encode n) (f.encode d) =
++      some (f.encode (n / d), f.encode (n % d)) :=
++  ResidueAlgorithms.divmod_correct f.ops f.encode (ops_correct f) n d hn hdcap hd
++
++theorem divmod_zero_refused (f : Frame) (dividend : State) :
++    f.divmod dividend (f.encode 0) = none :=
++  ResidueAlgorithms.divmod_zero_refused f.ops f.encode (ops_correct f)
++    dividend (capacity_positive f)
++
++/-- Euclid's result remains a paired-residue state throughout the computation. -/
++theorem gcd_correct (f : Frame) (a b : Nat)
++    (ha : a < f.capacity) (hb : b < f.capacity) :
++    f.gcd (f.encode a) (f.encode b) = some (f.encode (Nat.gcd a b)) :=
++  ResidueAlgorithms.gcd_correct f.ops f.encode (ops_correct f) a b ha hb
++
++end KElimination.ResiduePrimitives
++
++#print axioms KElimination.ResiduePrimitives.zero_eq_encode
++#print axioms KElimination.ResiduePrimitives.kQuery_exact
++#print axioms KElimination.ResiduePrimitives.increment_encode
++#print axioms KElimination.ResiduePrimitives.subtract_encode
++#print axioms KElimination.ResiduePrimitives.euclidean_lex_order
++#print axioms KElimination.ResiduePrimitives.less_encode
++#print axioms KElimination.ResiduePrimitives.encode_injective_on_window
++#print axioms KElimination.ResiduePrimitives.capacity_positive
++#print axioms KElimination.ResiduePrimitives.isZero_encode
++#print axioms KElimination.ResiduePrimitives.adjacent_query
++#print axioms KElimination.ResiduePrimitives.ops_correct
++#print axioms KElimination.ResiduePrimitives.divmod_correct
++#print axioms KElimination.ResiduePrimitives.divmod_zero_refused
++#print axioms KElimination.ResiduePrimitives.gcd_correct
+diff --git a/KElimination/UniversalResearch/RingReadout.lean b/KElimination/UniversalResearch/RingReadout.lean
+new file mode 100644
+index 0000000..6dc0ccf
+--- /dev/null
++++ b/KElimination/UniversalResearch/RingReadout.lean
+@@ -0,0 +1,198 @@
++import Std
++
++/-!
++Constructive ring specialization of observed-lift elimination.
++
++The readout uses only two supplied observations and a supplied left inverse:
++one subtraction and one multiplication in the observation ring. Its result is
++the observation of K. Selecting an exact source K requires a separate admitted
++domain/decoder theorem. No source X or persistent K is a readout input.
++
++These theorems use Lean's bundled algebra hierarchy. The principal readout and
++solution-fiber statements hold even for noncommutative rings; multiplication
++order and the side of the inverse are explicit.
++-/
++
++namespace KElimination.RingReadout
++
++open Lean.Grind
++
++universe u v w
++
++/-- The two homomorphism laws needed for the readout. Unitality is not needed;
++the separate left-inverse certificate is an equation in the observation ring.
++-/
++structure Observation (R : Type u) (H : Type v) [Ring R] [Ring H] where
++  read : R → H
++  map_add : ∀ a b, read (a + b) = read a + read b
++  map_mul : ∀ a b, read (a * b) = read a * read b
++
++namespace Observation
++
++variable {R : Type u} {H : Type v} [Ring R] [Ring H]
++
++theorem map_zero (h : Observation R H) : h.read 0 = 0 := by
++  apply (AddCommGroup.add_right_inj (h.read 0) (h.read 0) 0).mp
++  rw [← h.map_add, Semiring.add_zero, Semiring.add_zero]
++
++theorem map_sub (h : Observation R H) (a b : R) :
++    h.read (a - b) = h.read a - h.read b := by
++  symm
++  apply AddCommGroup.sub_eq_iff.mpr
++  rw [← h.map_add, AddCommGroup.sub_add_cancel]
++
++theorem map_neg (h : Observation R H) (a : R) :
++    h.read (-a) = -(h.read a) := by
++  have ha : (0 : R) - a = -a := by
++    rw [Ring.sub_eq_add_neg, AddCommMonoid.zero_add]
++  rw [← ha, h.map_sub, h.map_zero, Ring.sub_eq_add_neg, AddCommMonoid.zero_add]
++
++end Observation
++
++theorem left_mul_sub {H : Type v} [Ring H] (a b c : H) :
++    a * (b - c) = a * b - a * c := by
++  rw [Ring.sub_eq_add_neg, Semiring.left_distrib, Ring.mul_neg,
++      Ring.sub_eq_add_neg]
++
++/-- This is the complete computational readout; inputs are observations only. -/
++def readout {H : Type v} [Ring H] (inverse baseReading sourceReading : H) : H :=
++  inverse * (sourceReading - baseReading)
++
++/-- A source decomposition gives an observed phase defect. -/
++theorem phase_defect {R : Type u} {H : Type v} [Ring R] [Ring H]
++    (h : Observation R H) (X r M K : R) (hsource : X = r + M * K) :
++    h.read X - h.read r = h.read M * h.read K := by
++  rw [hsource, h.map_add, h.map_mul, Semiring.add_comm (h.read r),
++      AddCommGroup.add_sub_cancel]
++
++/-- Left cancellation gives the exact observed lift, without commutativity. -/
++theorem unit_readout {R : Type u} {H : Type v} [Ring R] [Ring H]
++    (h : Observation R H) (X r M K : R) (inverse : H)
++    (hsource : X = r + M * K) (hunit : inverse * h.read M = 1) :
++    readout inverse (h.read r) (h.read X) = h.read K := by
++  unfold readout
++  rw [phase_defect h X r M K hsource, ← Semiring.mul_assoc, hunit,
++      Semiring.one_mul]
++
++/-- When the source is a right multiple, use a right inverse on the right. -/
++theorem right_unit_readout {R : Type u} {H : Type v} [Ring R] [Ring H]
++    (h : Observation R H) (X r M K : R) (inverse : H)
++    (hsource : X = r + K * M) (hunit : h.read M * inverse = 1) :
++    (h.read X - h.read r) * inverse = h.read K := by
++  rw [hsource, h.map_add, h.map_mul, Semiring.add_comm (h.read r),
++      AddCommGroup.add_sub_cancel, Semiring.mul_assoc, hunit,
++      Semiring.mul_one]
++
++/-- Invisible changes of a source lift: the preimage of the observer kernel
++under multiplication by M. In a commutative ring this is the ideal quotient
++(ker h : M). This predicate also makes sense in a noncommutative ring.
++-/
++def LiftNull {R : Type u} {H : Type v} [Ring R] [Ring H]
++    (h : Observation R H) (M delta : R) : Prop := h.read (M * delta) = 0
++
++/-- All compatible solutions differ from any one solution by LiftNull.
++No inverse, primality, coprimality or source range is required for this result.
++-/
++theorem solution_fiber {R : Type u} {H : Type v} [Ring R] [Ring H]
++    (h : Observation R H) (r M K₀ : R) (observed : H)
++    (hbase : h.read (r + M * K₀) = observed) (K : R) :
++    h.read (r + M * K) = observed ↔ LiftNull h M (K - K₀) := by
++  unfold LiftNull
++  rw [← hbase, h.map_add, h.map_add, h.map_mul, h.map_mul,
++      h.map_mul, h.map_sub, left_mul_sub]
++  exact (AddCommGroup.add_right_inj _ _ _).trans
++    AddCommGroup.sub_eq_zero_iff.symm
++
++/-- The exact recovery criterion is kernel separation on the admitted set. -/
++theorem injective_on_iff_lift_null_separates
++    {R : Type u} {H : Type v} [Ring R] [Ring H]
++    (h : Observation R H) (r M : R) (admitted : R → Prop) :
++    (∀ a b, admitted a → admitted b →
++      h.read (r + M * a) = h.read (r + M * b) → a = b) ↔
++    (∀ a b, admitted a → admitted b → LiftNull h M (a - b) → a = b) := by
++  constructor
++  · intro hinj a b ha hb hnull
++    apply hinj a b ha hb
++    exact (solution_fiber h r M b (h.read (r + M * b)) rfl a).mpr hnull
++  · intro hsep a b ha hb heq
++    apply hsep a b ha hb
++    exact (solution_fiber h r M b (h.read (r + M * b)) rfl a).mp heq
++
++/-- A left inverse removes the multiplier's ambiguity. Any remaining ambiguity
++is exactly the observer kernel, so a source decoder still needs its own range
++or separation certificate.
++-/
++theorem unit_lift_null_iff {R : Type u} {H : Type v} [Ring R] [Ring H]
++    (h : Observation R H) (M delta : R) (inverse : H)
++    (hunit : inverse * h.read M = 1) :
++    LiftNull h M delta ↔ h.read delta = 0 := by
++  unfold LiftNull
++  rw [h.map_mul]
++  constructor
++  · intro hz
++    have hcancel := congrArg (fun value => inverse * value) hz
++    change inverse * (h.read M * h.read delta) = inverse * 0 at hcancel
++    rw [← Semiring.mul_assoc, hunit, Semiring.one_mul,
++        Semiring.mul_zero] at hcancel
++    exact hcancel
++  · intro hz
++    rw [hz, Semiring.mul_zero]
++
++theorem lift_null_zero {R : Type u} {H : Type v} [Ring R] [Ring H]
++    (h : Observation R H) (M : R) : LiftNull h M 0 := by
++  unfold LiftNull
++  rw [Semiring.mul_zero, h.map_zero]
++
++theorem lift_null_add {R : Type u} {H : Type v} [Ring R] [Ring H]
++    (h : Observation R H) (M a b : R)
++    (ha : LiftNull h M a) (hb : LiftNull h M b) : LiftNull h M (a + b) := by
++  unfold LiftNull at *
++  rw [Semiring.left_distrib, h.map_add, ha, hb, Semiring.add_zero]
++
++theorem lift_null_neg {R : Type u} {H : Type v} [Ring R] [Ring H]
++    (h : Observation R H) (M a : R) (ha : LiftNull h M a) :
++    LiftNull h M (-a) := by
++  unfold LiftNull at *
++  rw [Ring.mul_neg, h.map_neg, ha, AddCommGroup.neg_zero]
++
++/-- The invisible changes form a right ideal even without commutativity. -/
++theorem lift_null_mul_right {R : Type u} {H : Type v} [Ring R] [Ring H]
++    (h : Observation R H) (M a b : R) (ha : LiftNull h M a) :
++    LiftNull h M (a * b) := by
++  unfold LiftNull at *
++  rw [← Semiring.mul_assoc, h.map_mul, ha, Semiring.zero_mul]
++
++/-- In the commutative case, this is also closed under left multiplication. -/
++theorem lift_null_mul_left {R : Type u} {H : Type v} [CommRing R] [Ring H]
++    (h : Observation R H) (M a b : R) (ha : LiftNull h M a) :
++    LiftNull h M (b * a) := by
++  rw [CommSemiring.mul_comm b a]
++  exact lift_null_mul_right h M a b ha
++
++/-- A target view is produced from target components; no inverse is needed. -/
++def project {T : Type w} [Ring T] (base scale lift : T) : T := base + scale * lift
++
++theorem target_projection {R : Type u} {T : Type w} [Ring R] [Ring T]
++    (target : Observation R T) (X r M K : R) (hsource : X = r + M * K) :
++    project (target.read r) (target.read M) (target.read K) = target.read X := by
++  unfold project
++  rw [hsource, target.map_add, target.map_mul]
++
++end KElimination.RingReadout
++
++#print axioms KElimination.RingReadout.Observation.map_zero
++#print axioms KElimination.RingReadout.Observation.map_sub
++#print axioms KElimination.RingReadout.Observation.map_neg
++#print axioms KElimination.RingReadout.left_mul_sub
++#print axioms KElimination.RingReadout.phase_defect
++#print axioms KElimination.RingReadout.unit_readout
++#print axioms KElimination.RingReadout.right_unit_readout
++#print axioms KElimination.RingReadout.solution_fiber
++#print axioms KElimination.RingReadout.injective_on_iff_lift_null_separates
++#print axioms KElimination.RingReadout.unit_lift_null_iff
++#print axioms KElimination.RingReadout.lift_null_zero
++#print axioms KElimination.RingReadout.lift_null_add
++#print axioms KElimination.RingReadout.lift_null_neg
++#print axioms KElimination.RingReadout.lift_null_mul_right
++#print axioms KElimination.RingReadout.lift_null_mul_left
++#print axioms KElimination.RingReadout.target_projection
+diff --git a/KElimination/UniversalResearch/StarLift.lean b/KElimination/UniversalResearch/StarLift.lean
+new file mode 100644
+index 0000000..e6b2f26
+--- /dev/null
++++ b/KElimination/UniversalResearch/StarLift.lean
+@@ -0,0 +1,140 @@
++import KElimination.UniversalResearch.IntegerSpecialization
++
++/-!
++StarLift as an observed-coordinate query, with both subtraction orientations
++explicit. Source/reference/lift variables occur only in theorem specifications.
++The word "infinity" is not an arithmetic object in these definitions: a source
++coordinate may be unbounded while its requested residue is finite.
++-/
++
++namespace KElimination.StarLift
++
++open IntegerSpecialization
++
++def positiveAdjacent (main source M : Int) : Int := (main - source) % (M + 1)
++def negativeAdjacent (main source M : Int) : Int := (source - main) % (M + 1)
++
++theorem negate_residue (k A : Int) : (-(k % A)) % A = (-k) % A := by
++  simpa only [Int.zero_sub] using (Int.sub_emod_emod 0 k A)
++
++/-- The general-anchor negative-coordinate query uses a negated public inverse. -/
++def negativeQuery (chart source A inverse : Int) : Int :=
++  (((source - chart) % A) * (-inverse)) % A
++
++theorem negative_query_eq_negate (chart source A inverse : Int) :
++    negativeQuery chart source A inverse = (-(query chart source A inverse)) % A := by
++  unfold negativeQuery query
++  rw [Int.mul_neg, negate_residue]
++
++theorem negative_query_of_decomposition (X r chart source M A inverse k : Int)
++    (hsource : X = r + M * k) (hchart : chart = r % A)
++    (hs : source = X % A) (hinv : (inverse * M) % A = 1 % A) :
++    negativeQuery chart source A inverse = (-k) % A := by
++  rw [negative_query_eq_negate,
++    query_chart_of_decomposition X r chart source M A inverse k hsource hchart hs hinv,
++    negate_residue]
++
++/-- Both orientations are valid for arbitrary signed X, without a magnitude
++bound. Their results are congruence classes of the Euclidean quotient. -/
++theorem positive_adjacent_congruence (X main source M : Int)
++    (hm : main = X % M) (hs : source = X % (M + 1)) :
++    positiveAdjacent main source M = (X / M) % (M + 1) := by
++  unfold positiveAdjacent
++  rw [← adjacent_query_subtraction]
++  apply query_quotient_congruence X main source M (M + 1) (-1) hm hs
++  simpa using star_inverse_certificate M 1
++
++theorem adjacent_orientations (main source M : Int) :
++    negativeAdjacent main source M = (-(positiveAdjacent main source M)) % (M + 1) := by
++  unfold positiveAdjacent negativeAdjacent
++  rw [negate_residue]
++  congr 1
++  omega
++
++theorem negative_adjacent_congruence (X main source M : Int)
++    (hm : main = X % M) (hs : source = X % (M + 1)) :
++    negativeAdjacent main source M = (-(X / M)) % (M + 1) := by
++  rw [adjacent_orientations, positive_adjacent_congruence X main source M hm hs,
++    negate_residue]
++
++/-- For the raw defect source-chart, the negative-coordinate decoder at an
++adjacent anchor is the identity; the positive-coordinate decoder negates it. -/
++theorem negative_query_adjacent (chart source M : Int) :
++    negativeQuery chart source (M + 1) (-1) = negativeAdjacent chart source M := by
++  simp [negativeQuery, negativeAdjacent]
++
++/-- Negate the negative-coordinate class, then select the public window. -/
++def decodeNegative (negativeClass A lo : Int) : Int :=
++  windowDecode ((-negativeClass) % A) A lo
++
++theorem negative_decode_exact (k A lo : Int)
++    (hlower : lo ≤ k) (hupper : k < lo + A) :
++    decodeNegative ((-k) % A) A lo = k := by
++  unfold decodeNegative
++  rw [negate_residue, Int.neg_neg]
++  exact window_decode_exact k A lo hlower hupper
++
++theorem negative_adjacent_exact_window (X main source M lo : Int)
++    (hm : main = X % M) (hs : source = X % (M + 1))
++    (hlower : lo ≤ X / M) (hupper : X / M < lo + (M + 1)) :
++    decodeNegative (negativeAdjacent main source M) (M + 1) lo = X / M := by
++  rw [negative_adjacent_congruence X main source M hm hs]
++  exact negative_decode_exact _ _ _ hlower hupper
++
++theorem positive_adjacent_exact_source_window (X main source M : Int)
++    (hM : 0 < M) (hm : main = X % M) (hs : source = X % (M + 1))
++    (hlower : 0 ≤ X) (hupper : X < M * (M + 1)) :
++    positiveAdjacent main source M = X / M :=
++  adjacent_readout_exact X main source M hM hm hs hlower hupper
++
++/-- The observed multiplication and coordinate reduction have the same
++kernel under a valid inverse certificate. This is the transport criterion. -/
++theorem unit_kernel_equal (M A inverse k : Int)
++    (hinv : (inverse * M) % A = 1 % A) :
++    (M * k) % A = 0 ↔ k % A = 0 := by
++  constructor
++  · intro hz
++    have h := query_of_decomposition (M * k) 0 ((M * k) % A) M A inverse k
++      (by omega) rfl hinv
++    rw [hz] at h
++    simpa [query] using h.symm
++  · intro hk
++    rw [Int.mul_emod, hk]
++    simp
++
++theorem adjacent_kernel_equal (M k : Int) :
++    (M * k) % (M + 1) = 0 ↔ k % (M + 1) = 0 := by
++  apply unit_kernel_equal M (M + 1) (-1) k
++  simpa using star_inverse_certificate M 1
++
++/-- The nonunit negative query retains the same reduced resolution. -/
++def negativeNonunitQuery (chart source A d inverse : Int) : Int :=
++  (-(nonunitQuery chart source A d inverse)) % (A / d)
++
++theorem negative_nonunit_chart_query (X r chart source M A d inverse k : Int)
++    (hsource : X = r + M * k) (hchart : chart = r % A) (hs : source = X % A)
++    (hd : d ≠ 0) (hM : d ∣ M) (hA : d ∣ A)
++    (hinv : (inverse * (M / d)) % (A / d) = 1 % (A / d)) :
++    d ∣ source - chart ∧
++      negativeNonunitQuery chart source A d inverse = (-k) % (A / d) := by
++  have h := nonunit_chart_query X r chart source M A d inverse k
++    hsource hchart hs hd hM hA hinv
++  refine ⟨h.1, ?_⟩
++  unfold negativeNonunitQuery
++  rw [h.2, negate_residue]
++
++end KElimination.StarLift
++
++#print axioms KElimination.StarLift.negate_residue
++#print axioms KElimination.StarLift.negative_query_eq_negate
++#print axioms KElimination.StarLift.negative_query_of_decomposition
++#print axioms KElimination.StarLift.positive_adjacent_congruence
++#print axioms KElimination.StarLift.adjacent_orientations
++#print axioms KElimination.StarLift.negative_adjacent_congruence
++#print axioms KElimination.StarLift.negative_query_adjacent
++#print axioms KElimination.StarLift.negative_decode_exact
++#print axioms KElimination.StarLift.negative_adjacent_exact_window
++#print axioms KElimination.StarLift.positive_adjacent_exact_source_window
++#print axioms KElimination.StarLift.unit_kernel_equal
++#print axioms KElimination.StarLift.adjacent_kernel_equal
++#print axioms KElimination.StarLift.negative_nonunit_chart_query
+diff --git a/KElimination/UniversalResearch/UniversalKElimination.lean b/KElimination/UniversalResearch/UniversalKElimination.lean
+new file mode 100644
+index 0000000..b969718
+--- /dev/null
++++ b/KElimination/UniversalResearch/UniversalKElimination.lean
+@@ -0,0 +1,10 @@
++import KElimination.UniversalResearch.ExactObservation
++import KElimination.UniversalResearch.UniversalLift
++import KElimination.UniversalResearch.RingReadout
++import KElimination.UniversalResearch.IntegerSpecialization
++import KElimination.UniversalResearch.CostedReadout
++import KElimination.UniversalResearch.ReferenceChange
++import KElimination.UniversalResearch.CoupledAnchors
++import KElimination.UniversalResearch.ResidueAlgorithms
++import KElimination.UniversalResearch.ResiduePrimitives
++import KElimination.UniversalResearch.StarLift
+diff --git a/KElimination/UniversalResearch/UniversalLift.lean b/KElimination/UniversalResearch/UniversalLift.lean
+new file mode 100644
+index 0000000..5975c15
+--- /dev/null
++++ b/KElimination/UniversalResearch/UniversalLift.lean
+@@ -0,0 +1,247 @@
++import KElimination.UniversalResearch.ExactObservation
++
++/-!
++Constructive universal K-Elimination layer over additive groups.
++
++Algebra comes from Lean's bundled standard hierarchy, not project axioms.
++The theorem is about observed affine extensions, not a claim that every
++domain has an effective inexpensive inverse. Concrete readouts are proved
++separately. The computational query accepts only two observations; source x,
++chart representative r and lift k occur only as specification variables.
++-/
++
++namespace KElimination.UniversalLift
++
++open Lean.Grind
++
++universe u v w z
++
++structure AddMap (A : Type u) (B : Type v)
++    [AddCommGroup A] [AddCommGroup B] where
++  apply : A → B
++  map_add : ∀ a b, apply (a + b) = apply a + apply b
++
++namespace AddMap
++
++variable {A : Type u} {B : Type v} {C : Type w}
++variable [AddCommGroup A] [AddCommGroup B] [AddCommGroup C]
++
++theorem map_zero (h : AddMap A B) : h.apply 0 = 0 := by
++  apply Eq.symm
++  apply (AddCommGroup.add_right_inj (h.apply 0) 0 (h.apply 0)).mp
++  simpa only [AddCommMonoid.add_zero] using h.map_add 0 0
++
++theorem map_neg (h : AddMap A B) (a : A) : h.apply (-a) = -h.apply a := by
++  apply (AddCommGroup.add_left_inj (h.apply a)).mp
++  rw [← h.map_add, AddCommGroup.neg_add_cancel, h.map_zero,
++    AddCommGroup.neg_add_cancel]
++
++theorem map_sub (h : AddMap A B) (a b : A) :
++    h.apply (a - b) = h.apply a - h.apply b := by
++  rw [AddCommGroup.sub_eq_add_neg, h.map_add, h.map_neg,
++    AddCommGroup.sub_eq_add_neg]
++
++def comp (g : AddMap B C) (f : AddMap A B) : AddMap A C where
++  apply a := g.apply (f.apply a)
++  map_add a b := by rw [f.map_add, g.map_add]
++
++/-- The exact ambiguity of an additive observation is its difference kernel. -/
++theorem same_reading_iff (h : AddMap A B) (a b : A) :
++    h.apply a = h.apply b ↔ h.apply (a - b) = 0 := by
++  rw [h.map_sub, AddCommGroup.sub_eq_zero_iff]
++
++end AddMap
++
++variable {G : Type u} {K : Type v} {H : Type w}
++variable [AddCommGroup G] [AddCommGroup K] [AddCommGroup H]
++
++/-- Actual runtime function: subtract the chart's observation, then apply a
++specified readout. It receives no full source x or persistent lift k. -/
++def query {V : Type z} (readout : H → V) (chart source : H) : V :=
++  readout (source - chart)
++
++/-- Universal elimination identity: the observed phase difference isolates
++the observer's image of the hidden displacement. -/
++theorem phase_difference
++    (embed : AddMap K G) (observe : AddMap G H)
++    (x r : G) (k : K) (hsource : x = r + embed.apply k) :
++    observe.apply x - observe.apply r =
++      (observe.comp embed).apply k := by
++  rw [hsource, observe.map_add]
++  change observe.apply r + observe.apply (embed.apply k) - observe.apply r =
++    observe.apply (embed.apply k)
++  rw [AddCommMonoid.add_comm (observe.apply r), AddCommGroup.add_sub_cancel]
++
++/-- Complete solution fiber, including noninjective and nonunit observers. -/
++theorem candidate_iff_kernel
++    (embed : AddMap K G) (observe : AddMap G H)
++    (x r : G) (k candidate : K) (hsource : x = r + embed.apply k) :
++    observe.apply (r + embed.apply candidate) = observe.apply x ↔
++      (observe.comp embed).apply (candidate - k) = 0 := by
++  rw [hsource, observe.map_add, observe.map_add,
++    AddCommGroup.add_right_inj]
++  exact (observe.comp embed).same_reading_iff candidate k
++
++/-- Every observed affine fiber has at most one admitted coordinate iff its
++kernel contains no nonzero difference of admitted coordinates. -/
++theorem separation_iff
++    (linear : AddMap K H) (admitted : K → Prop) :
++    (∀ a b, admitted a → admitted b →
++      linear.apply a = linear.apply b → a = b) ↔
++    (∀ a b, admitted a → admitted b →
++      linear.apply (a - b) = 0 → a = b) := by
++  constructor
++  · intro hinj a b ha hb hzero
++    exact hinj a b ha hb ((linear.same_reading_iff a b).mpr hzero)
++  · intro hker a b ha hb heq
++    exact hker a b ha hb ((linear.same_reading_iff a b).mp heq)
++
++/-- Universal exact-query criterion, stronger than requiring full lift recovery.
++An arbitrary query of the lift is recoverable iff it is constant on exactly
++the ambiguity classes computed by the linear observation kernel.
++The existence direction is mathematical and uses Classical.choice through
++ExactObservation.recoverable_iff; it is not an efficient decoder constructor.
++-/
++theorem lift_query_exists_iff
++    {V : Type z} (linear : AddMap K H) (admitted : K → Prop) (wanted : K → V) :
++    (∃ answer : ExactObservation.Observed
++        (fun k : {k : K // admitted k} => linear.apply k.val) → V,
++      ∀ k : {k : K // admitted k},
++        answer (ExactObservation.reading
++          (fun j : {j : K // admitted j} => linear.apply j.val) k) = wanted k.val) ↔
++    (∀ a b, admitted a → admitted b →
++      linear.apply (a - b) = 0 → wanted a = wanted b) := by
++  rw [ExactObservation.recoverable_iff]
++  constructor
++  · intro h a b ha hb hzero
++    exact h ⟨a, ha⟩ ⟨b, hb⟩ ((linear.same_reading_iff a b).mpr hzero)
++  · intro h a b heq
++    exact h a.val b.val a.property b.property
++      ((linear.same_reading_iff a.val b.val).mp heq)
++
++/-- On the whole lift group, exact transport of an additive consumer is
++equivalent to kernel inclusion. It may hold even when full lift recovery
++does not. The factor is defined only on genuinely observed values. -/
++theorem target_factor_exists_iff
++    {T : Type z} [AddCommGroup T]
++    (linear : AddMap K H) (consumer : AddMap K T) :
++    (∃ answer : ExactObservation.Observed linear.apply → T,
++      ∀ k, answer (ExactObservation.reading linear.apply k) = consumer.apply k) ↔
++    (∀ delta, linear.apply delta = 0 → consumer.apply delta = 0) := by
++  rw [ExactObservation.recoverable_iff]
++  constructor
++  · intro hfiber delta hzero
++    have heq : linear.apply delta = linear.apply 0 := by
++      rw [linear.map_zero]
++      exact hzero
++    have htarget := hfiber delta 0 heq
++    rw [consumer.map_zero] at htarget
++    exact htarget
++  · intro hkernel a b heq
++    apply (consumer.same_reading_iff a b).mpr
++    exact hkernel (a - b) ((linear.same_reading_iff a b).mp heq)
++
++/-- An exact factor on the observation image is unique. This is a statement
++about every valid observation, not about arbitrary malformed inputs. -/
++theorem target_factor_unique
++    {T : Type z} (linear : AddMap K H) (wanted : K → T)
++    (first second : ExactObservation.Observed linear.apply → T)
++    (hfirst : ∀ k, first (ExactObservation.reading linear.apply k) = wanted k)
++    (hsecond : ∀ k, second (ExactObservation.reading linear.apply k) = wanted k) :
++    ∀ observed, first observed = second observed := by
++  intro observed
++  obtain ⟨k, hk⟩ := observed.property
++  have hreading : ExactObservation.reading linear.apply k = observed :=
++    Subtype.ext hk
++  rw [← hreading, hfirst k, hsecond k]
++
++/-- The factor preserves the addition induced on the observation image.
++This makes no claim that it extends additively to every element of H. -/
++theorem target_factor_additive
++    {T : Type z} [AddCommGroup T]
++    (linear : AddMap K H) (consumer : AddMap K T)
++    (answer : ExactObservation.Observed linear.apply → T)
++    (hanswer : ∀ k, answer (ExactObservation.reading linear.apply k) = consumer.apply k)
++    (a b : K) :
++    answer (ExactObservation.reading linear.apply (a + b)) =
++      answer (ExactObservation.reading linear.apply a) +
++      answer (ExactObservation.reading linear.apply b) := by
++  rw [hanswer (a + b), hanswer a, hanswer b, consumer.map_add]
++
++/-- Once a concrete readout is proved on observed lift coordinates, the same
++readout works on authentic source/chart readings. Neither x nor k is a runtime
++argument. The ring and integer modules construct particular readouts.
++-/
++theorem constructive_query_correct
++    {V : Type z} (embed : AddMap K G) (observe : AddMap G H)
++    (admitted : K → Prop) (wanted : K → V) (readout : H → V)
++    (hread : ∀ k, admitted k →
++      readout ((observe.comp embed).apply k) = wanted k)
++    (x r : G) (k : K) (hk : admitted k)
++    (hsource : x = r + embed.apply k) :
++    query readout (observe.apply r) (observe.apply x) = wanted k := by
++  unfold query
++  rw [phase_difference embed observe x r k hsource]
++  exact hread k hk
++
++/-- Full lift recovery is a particular query, not a required intermediate
++for every consumer. -/
++theorem constructive_lift_correct
++    (embed : AddMap K G) (observe : AddMap G H)
++    (admitted : K → Prop) (readout : H → K)
++    (hread : ∀ k, admitted k →
++      readout ((observe.comp embed).apply k) = k)
++    (x r : G) (k : K) (hk : admitted k)
++    (hsource : x = r + embed.apply k) :
++    query readout (observe.apply r) (observe.apply x) = k :=
++  constructive_query_correct embed observe admitted id readout hread x r k hk hsource
++
++/-- Exact consumer projection can avoid emitting the source itself. The only
++base-chart input used by the consumer is its target observation target(r).
++-/
++theorem target_projection
++    {T : Type z} [AddCommGroup T]
++    (embed : AddMap K G) (observe : AddMap G H) (target : AddMap G T)
++    (admitted : K → Prop) (readout : H → K)
++    (hread : ∀ k, admitted k →
++      readout ((observe.comp embed).apply k) = k)
++    (x r : G) (k : K) (hk : admitted k)
++    (hsource : x = r + embed.apply k) :
++    target.apply r + target.apply (embed.apply
++      (query readout (observe.apply r) (observe.apply x))) = target.apply x := by
++  rw [constructive_lift_correct embed observe admitted readout hread x r k hk hsource]
++  rw [hsource, target.map_add]
++
++/-- The target may decode only its own displacement image, even when the
++full lift is ambiguous. This is often strictly weaker than lift recovery. -/
++theorem direct_target_query
++    {T : Type z} [AddCommGroup T]
++    (embed : AddMap K G) (observe : AddMap G H) (target : AddMap G T)
++    (admitted : K → Prop) (readout : H → T)
++    (hread : ∀ k, admitted k →
++      readout ((observe.comp embed).apply k) = target.apply (embed.apply k))
++    (x r : G) (k : K) (hk : admitted k)
++    (hsource : x = r + embed.apply k) :
++    target.apply r + query readout (observe.apply r) (observe.apply x) =
++      target.apply x := by
++  rw [constructive_query_correct embed observe admitted
++    (fun j => target.apply (embed.apply j)) readout hread x r k hk hsource]
++  rw [hsource, target.map_add]
++
++end KElimination.UniversalLift
++
++#print axioms KElimination.UniversalLift.AddMap.map_zero
++#print axioms KElimination.UniversalLift.AddMap.map_neg
++#print axioms KElimination.UniversalLift.AddMap.map_sub
++#print axioms KElimination.UniversalLift.AddMap.same_reading_iff
++#print axioms KElimination.UniversalLift.phase_difference
++#print axioms KElimination.UniversalLift.candidate_iff_kernel
++#print axioms KElimination.UniversalLift.separation_iff
++#print axioms KElimination.UniversalLift.lift_query_exists_iff
++#print axioms KElimination.UniversalLift.target_factor_exists_iff
++#print axioms KElimination.UniversalLift.target_factor_unique
++#print axioms KElimination.UniversalLift.target_factor_additive
++#print axioms KElimination.UniversalLift.constructive_query_correct
++#print axioms KElimination.UniversalLift.constructive_lift_correct
++#print axioms KElimination.UniversalLift.target_projection
++#print axioms KElimination.UniversalLift.direct_target_query
+diff --git a/README.md b/README.md
+index 29c99b0..5af62c2 100644
+--- a/README.md
++++ b/README.md
+@@ -1,5 +1,55 @@
+ # K-Elimination Theorem
+ 
++## Maintained universal proof packet (2026-11-13)
++
++The default Lean target now includes the universal observation/target theorem,
++its ring and integer instances, StarLift, reference changes, coupled anchors,
++residue-operation contracts, future-query quotients and anchor saturation.
++The new mathematical statements are in
++[`KElimination/UniversalResearch`](KElimination/UniversalResearch) and
++[`KElimination/AnchorSaturation.lean`](KElimination/AnchorSaturation.lean).
++
++The future-query quotient identifies exactly those states that give the same
++requested outputs after every finite admitted operation word. It is the
++coarsest output-sufficient equivalence preserved by all declared transitions;
++its output and transition maps are constructed as actual Lean quotient maps.
++For additive maps, its invisible differences form the largest invariant
++query-invisible subgroup.
++
++For positive public period P and demand D, start with `a = D / gcd(P,D)` and
++iterate `a = gcd(D,a*a)`. The checked Nat theorem proves finite termination
++with conservative fuel D, correctness of early fixed-point stopping, and that
++the result is the divisibility-least anchor satisfying `D | lcm(P,a)`.
++Prime factorization is used only in the proof, never as an algorithm input.
++The reflection/Descartes identities are proved over every commutative ring,
++including characteristic two and composite residue rings.
++
++Run the maintained build and complete transitive axiom audit with:
++
++```sh
++lake --no-cache build
++python3 scripts/audit_proofs.py
++```
++
++The audit inventories each declaration and permits only Lean's foundational
++`propext`, `Quot.sound` and `Classical.choice`, recording their actual use. No
++admitted proof or custom project axiom is permitted. The separate standalone
++campaign checker rebuilds the standard-library packet from scratch.
++
++The audited inventory is **223 declarations**: 27 legacy root theorems, three
++Basic theorems, 144 previously checked universal foundation theorems, 36 new
++standard-library theorems and 13 new Nat anchor-saturation theorems. Thus this
++update contributes **49 new declarations**, without recounting imports.
++
++Proof scopes remain explicit: the finite quotient refinement semantics and
++fixed-point criterion do not establish source-level refinement of the Python
++compiler or its cardinality termination bound. The anchor recurrence theorem
++does not establish machine-word overflow safety or Python source refinement.
++No theorem here proves global O(1) bit complexity, production FHE security,
++or the historical performance figures below. In particular, the legacy
++`complexity_improvement` declaration is a numerical inequality, not an
++implementation cost theorem. Coq has not been revalidated in this update.
++
+ ## CRAM architecture and proof scope (2026-11-12)
+ 
+ Current design intent is residue-space division and an exact magnitude gauge,
+@@ -26,7 +76,7 @@ or establish implementation conformance.
+ 
+ [![Lean 4](https://img.shields.io/badge/Lean-4.27.0-blue)](https://leanprover.github.io/)
+ [![Mathlib](https://img.shields.io/badge/Mathlib-4-green)](https://github.com/leanprover-community/mathlib4)
+-[![Theorems](https://img.shields.io/badge/Theorems-27-brightgreen)]()
++[![Theorems](https://img.shields.io/badge/Lean_declarations-223-brightgreen)]()
+ [![Sorry](https://img.shields.io/badge/Sorry-0-success)]()
+ [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+ 
+@@ -108,7 +158,7 @@ k-elimination-lean4/
+ └── LICENSE                    # MIT
+ ```
+ 
+-## Verified Theorems (27 Total)
++## Legacy Root Theorems (27)
+ 
+ | Category | Theorems | Count |
+ |----------|----------|-------|
+@@ -165,9 +215,11 @@ K-Elimination enables:
+ - 📝 [Formal Verification Report](docs/K_ELIMINATION_FORMAL_VERIFICATION_COMPLETE.md) — Lean 4 + Coq details
+ - ❓ [FAQ](FAQ.md) — Frequently Asked Questions
+ 
+-## Cross-Validation
++## Historical Cross-Validation
+ 
+-The theorem was independently verified in two proof systems:
++The historical report described verification in two proof systems. The current
++maintained Lean audit is documented above; the Coq claim below was not rechecked
++in this update:
+ 
+ | System | Version | Theorems | Axioms | Status |
+ |--------|---------|----------|--------|--------|
+diff --git a/scripts/audit_proofs.py b/scripts/audit_proofs.py
+new file mode 100644
+index 0000000..242eea4
+--- /dev/null
++++ b/scripts/audit_proofs.py
+@@ -0,0 +1,134 @@
++#!/usr/bin/env python3
++"""Build maintained Lean modules and audit every project theorem's axioms.
++
++Uses the checked-in Lean and Lake manifest pins. Mathlib dependencies may use
++locally compiled artifacts; the separate standard-library research audit also
++supports a fully fresh project build. This checks declarations, not runtime
++implementation equivalence or cryptographic security.
++"""
++from pathlib import Path
++import argparse
++import hashlib
++import json
++import os
++import re
++import subprocess
++import tempfile
++
++ROOT = Path(__file__).resolve().parents[1]
++ALLOWED = {"propext", "Classical.choice", "Quot.sound"}
++
++
++def uncomment(text):
++    out, i, depth = [], 0, 0
++    while i < len(text):
++        if text.startswith("/-", i):
++            depth += 1
++            i += 2
++        elif depth and text.startswith("-/", i):
++            depth -= 1
++            i += 2
++        elif depth:
++            out.append("\n" if text[i] == "\n" else " ")
++            i += 1
++        elif text.startswith("--", i):
++            end = text.find("\n", i)
++            i = len(text) if end < 0 else end
++        else:
++            out.append(text[i])
++            i += 1
++    if depth:
++        raise RuntimeError("Unclosed comment")
++    return "".join(out)
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--lake", default="lake")
++    parser.add_argument("--output", type=Path, default=ROOT / "verification")
++    args = parser.parse_args()
++    args.output.mkdir(parents=True, exist_ok=True)
++    env = os.environ.copy()
++    env.setdefault("LEAN_NUM_THREADS", "2")
++    sources = [ROOT / "KElimination.lean", *sorted((ROOT / "KElimination").rglob("*.lean"))]
++    files, all_names = [], []
++    for source in sources:
++        body = uncomment(source.read_text())
++        if re.search(r"\b(sorry|admit|unsafe)\b", body):
++            raise RuntimeError("Admitted or unsafe declaration: " + str(source))
++        if re.search(r"^\s*(axiom|constant|opaque)\s", body, re.M):
++            raise RuntimeError("Custom assumed declaration: " + str(source))
++        declarations = re.findall(r"^\s*(?:theorem|lemma)\s+(\S+)", body, re.M)
++        printed = re.findall(r"^#print axioms\s+(\S+)", body, re.M)
++        if printed:
++            if len(printed) != len(declarations):
++                raise RuntimeError("Incomplete local axiom queries: " + str(source))
++            names = printed
++        else:
++            # The two legacy files have top-level named namespaces only.
++            names, namespaces = [], []
++            for line in body.splitlines():
++                match = re.match(r"^namespace\s+(\S+)", line)
++                if match:
++                    namespaces.append(match.group(1))
++                elif re.match(r"^end(?:\s|$)", line):
++                    if namespaces:
++                        namespaces.pop()
++                else:
++                    match = re.match(r"^\s*(?:theorem|lemma)\s+(\S+)", line)
++                    if match:
++                        names.append(".".join([*namespaces, match.group(1)]))
++            if len(names) != len(declarations):
++                raise RuntimeError("Declaration inventory mismatch: " + str(source))
++        files.append({"file": str(source.relative_to(ROOT)),
++                      "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
++                      "theorem_count": len(names), "names": names})
++        all_names.extend(names)
++    if len(set(all_names)) != len(all_names):
++        raise RuntimeError("Duplicate theorem inventory")
++    version = subprocess.run([args.lake, "env", "lean", "--version"], cwd=ROOT,
++        env=env, text=True, capture_output=True, check=True).stdout.strip()
++    pin = (ROOT / "lean-toolchain").read_text().strip()
++    if not version.startswith("Lean (version " + pin.split(":v", 1)[1] + ","):
++        raise RuntimeError("Toolchain mismatch: " + version)
++    build = subprocess.run([args.lake, "--no-cache", "build"], cwd=ROOT,
++        env=env, text=True, capture_output=True)
++    (args.output / "build.log").write_text(build.stdout + build.stderr)
++    if build.returncode or re.search(r"\b(error|warning):", build.stdout + build.stderr):
++        raise RuntimeError("Build failed or warned; see build.log")
++    with tempfile.TemporaryDirectory(prefix="kelim-axioms-") as temporary:
++        audit = Path(temporary) / "Audit.lean"
++        audit.write_text("import KElimination\n\n" +
++                         "\n".join("#print axioms " + n for n in all_names) + "\n")
++        result = subprocess.run([args.lake, "env", "lean", str(audit)], cwd=ROOT,
++            env=env, text=True, capture_output=True)
++    output = result.stdout + result.stderr
++    (args.output / "axioms.log").write_text(output)
++    if result.returncode or re.search(r"\b(error|warning):", output):
++        raise RuntimeError("Axiom audit failed or warned; see axioms.log")
++    pattern = r"'([^']+)' (?:depends on axioms: \[([^]]*)\]|does not depend on any axioms)"
++    found = re.findall(pattern, output)
++    if [name for name, _ in found] != all_names:
++        raise RuntimeError("Axiom output does not match complete inventory")
++    audited = []
++    for name, raw in found:
++        axioms = [x.strip() for x in raw.replace("\n", " ").split(",") if x.strip()]
++        if set(axioms) - ALLOWED:
++            raise RuntimeError("Unexpected axiom in " + name + ": " + str(axioms))
++        audited.append({"name": name, "axioms": axioms})
++    revision = subprocess.run(["git", "-C", str(ROOT / ".lake/packages/mathlib"),
++        "rev-parse", "HEAD"], text=True, capture_output=True, check=True).stdout.strip()
++    report = {"status": "PASS", "toolchain": pin, "lean_version": version,
++              "mathlib_revision": revision,
++              "lake_manifest_sha256": hashlib.sha256((ROOT / "lake-manifest.json").read_bytes()).hexdigest(),
++              "theorem_declarations": len(audited),
++              "axiom_free_declarations": sum(not t["axioms"] for t in audited),
++              "allowed_foundational_axioms": sorted(ALLOWED),
++              "files": files, "theorems": audited,
++              "scope": "All maintained project Lean declarations; no Coq revalidation or source-level runtime refinement"}
++    (args.output / "verification.json").write_text(json.dumps(report, indent=2) + "\n")
++    print(json.dumps({k: v for k, v in report.items() if k not in {"files", "theorems"}}, indent=2))
++
++
++if __name__ == "__main__":
++    main()
+-- 
+2.52.0
+

@@ -1,0 +1,34 @@
+COMMAND: lean KElimination/Basic.lean
+EXIT: 1
+KElimination/Basic.lean:22:2: error: omega could not prove the goal:
+a possible counterexample may satisfy the constraints
+  d ≥ 0
+  c ≥ 0
+  b ≥ 0
+  b + c - d ≥ 1
+  a ≥ 1
+where
+ a := ↑M
+ b := ↑X % ↑M
+ c := ↑(X / M) * ↑M
+ d := ↑X
+KElimination/Basic.lean:33:12: error: don't know how to synthesize implicit argument `y`
+  @Nat.div_lt_iff_lt_mul M ?m.17 ?m.18 hM
+context:
+X M A : Nat
+hM : M > 0
+hX : X < M * A
+⊢ Nat
+KElimination/Basic.lean:33:12: error: don't know how to synthesize implicit argument `x`
+  @Nat.div_lt_iff_lt_mul M ?m.17 ?m.18 hM
+context:
+X M A : Nat
+hM : M > 0
+hX : X < M * A
+⊢ Nat
+KElimination/Basic.lean:33:7: error: failed to infer `have` declaration type
+KElimination/Basic.lean:31:24: error: unsolved goals
+X M A : Nat
+hM : M > 0
+hX : X < M * A
+⊢ X / M < A

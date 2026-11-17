@@ -1,0 +1,10 @@
+
+running 5 tests
+test circuit::tests::fixed_euclid_round_bound_exhaustive_through_eight_bits ... ok
+test circuit::tests::gcd_circuit_eight_bit_boundaries_and_seeded_cases ... ok
+test circuit::tests::exhaustive_unsigned_division_with_unequal_widths ... ok
+test circuit::tests::gcd_circuit_exhaustive_small_unequal_widths ... ok
+test circuit::tests::full_u64_boundaries_and_random_inputs ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

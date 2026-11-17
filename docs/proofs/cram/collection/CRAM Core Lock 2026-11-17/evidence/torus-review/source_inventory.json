@@ -1,0 +1,533 @@
+[
+  {
+    "name": "1-Torus-Fiber-Checks-Reproduction-Coprimality-Audit-and-Benchmark-Results.md",
+    "size": 24858,
+    "sha256": "c601980470ec6f8a429fa3110952c3f9de7ac0be68863247a1ee6797de13fda8"
+  },
+  {
+    "name": "10-Torus_Fiber_Checks_Reproduction_2026-11-17.zip",
+    "size": 49442,
+    "sha256": "7df56010e286baf8f7c18bc856e54f62bcc60f34fa404bd1f15edcd415d9aedf",
+    "members": [
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/SHA256SUMS",
+        "size": 2798,
+        "sha256": "35dde18ffd85caa91293047eee822d76eb46abf5c158744a1e19f8c35650b329"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/TORUS_FIBER_CHECKS_REPRO_REPORT_2026-11-17.md",
+        "size": 16422,
+        "sha256": "08c6d2d045351cb3cdde8229aad9146d1df0d086c8fb88ca2dedd7445a6673d2"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/input_archive/torus_fiber_checks_2.zip",
+        "size": 13485,
+        "sha256": "125112c0de435fa729d65df27cce5f10476b1f6194030020fca434bd37e9fea0"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/adapt_coprime_bench.py",
+        "size": 2457,
+        "sha256": "b75fafeeca5fe76490db0360b3838f56abe5ad613eb6e67eebd3a469d44ae631"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/carry_questions_rerun.txt",
+        "size": 1906,
+        "sha256": "264a71bf7a026984f021db3de5462d601d817435c97c1714a1b9f717414ff65b"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/coprime_composite_probe.py",
+        "size": 2741,
+        "sha256": "cb6b27e11d59d8b7410b28a505c4927089e7507c1940dde604a76d08f2fcffa5"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/coprime_composite_probe_output.txt",
+        "size": 379,
+        "sha256": "aceacaf536a8312b886c4da12e03230154d1b89650c33811d9a310990d637b73"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/exact_checks_rerun.txt",
+        "size": 1582,
+        "sha256": "ab6f10f535b4d55b5df6d143d4abdd964ff3be3275704d31547dc8bd7e3a7080"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/host_metadata.txt",
+        "size": 986,
+        "sha256": "d0429f9eb95e86108aea50f6ba6e87255edcdf3bc19a7968ef6c40c9d88cd35d"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_coprime.rs",
+        "size": 10017,
+        "sha256": "95f04e33c1b4656db7565003accdf244795f6ac6bc1ce843e53e220388aee5d1"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_coprime_run_1.txt",
+        "size": 970,
+        "sha256": "21822d25406bd7ffef928482bca0c27602b4fd44f3666790632a6c77422a580e"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_coprime_run_2.txt",
+        "size": 970,
+        "sha256": "dcef4379a342a0314f02e0fe92078dd5d0c0832173ac15b48749a45d2415080f"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_coprime_run_3.txt",
+        "size": 970,
+        "sha256": "8c84c11707b997955f5acdcc443b2af5c7d56b1863ec7291fec0e8d7fe004ac3"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_default_run_1.txt",
+        "size": 896,
+        "sha256": "9171176993badd7cda6b31dcd97308eab921a243a3e47ebcb2b55d90c10641de"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_default_run_2.txt",
+        "size": 896,
+        "sha256": "a4f37fba07cdfe7ec3369fb7052a04bd52ce419dbcc43e4ec1cb36e33d95326d"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_default_run_3.txt",
+        "size": 896,
+        "sha256": "bade719c653ea36b52bb116300dd3abc5912f6839eb26a1b600440f3305aa42f"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/lunations_rerun.txt",
+        "size": 1404,
+        "sha256": "d6a201fbaa20b0a591bb6e1137710b2598a71350085c12cf189dfd89331d19d5"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/strict_int_audit_rerun.txt",
+        "size": 18,
+        "sha256": "17234b3f35b98bdfbfb0375b9468376a7cd40a542b1ac7b4661a937d9f08f4da"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/README.txt",
+        "size": 706,
+        "sha256": "fa520e8d1d6106d6da3c765c096d53f5c0dded7e7353f843938bd606ab853ab4"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/carry_questions.py",
+        "size": 5805,
+        "sha256": "498cf7bae0be75298a50af24bcf74aa3fa4ad77e2383e9e46e1f0354e756492a"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/carry_questions_output.txt",
+        "size": 1906,
+        "sha256": "264a71bf7a026984f021db3de5462d601d817435c97c1714a1b9f717414ff65b"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/exact_checks.py",
+        "size": 5440,
+        "sha256": "46fbadedbca4cf74946d7afc0393d678f423671a648f6ac4800516b689406db2"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/exact_checks_output.txt",
+        "size": 1582,
+        "sha256": "ab6f10f535b4d55b5df6d143d4abdd964ff3be3275704d31547dc8bd7e3a7080"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/kbench.rs",
+        "size": 8945,
+        "sha256": "d4f006ab139f2972ed37e59133bb0dec1e883b04f21e39f75e15ed563daa40d7"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/kbench_output.txt",
+        "size": 896,
+        "sha256": "3f9f28e6457ea150f7f18574b4dab23c534f8e9ca945e49955bc83aa6cc1b314"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/lunations.py",
+        "size": 1106,
+        "sha256": "75d61617baaef55e9dbcf22baf96a47c1aced7bd01cf7764c02b732b765b296d"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/lunations_output.txt",
+        "size": 1404,
+        "sha256": "d6a201fbaa20b0a591bb6e1137710b2598a71350085c12cf189dfd89331d19d5"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/strict_int_audit.py",
+        "size": 3184,
+        "sha256": "476ca5b9460b76a8285ccfd95d59c1a59a9bd2076bf219ad88e6bdbf387446d4"
+      }
+    ]
+  },
+  {
+    "name": "2-kbench_arbitrary_composite.rs",
+    "size": 16666,
+    "sha256": "3bdc6d868c2381aec951931d21938d5fb49bd792822e79f579d4ddc16ef1654d"
+  },
+  {
+    "name": "3-TORUS_FIBER_CHECKS_REPRO_REPORT_2026-11-17.md",
+    "size": 16422,
+    "sha256": "08c6d2d045351cb3cdde8229aad9146d1df0d086c8fb88ca2dedd7445a6673d2"
+  },
+  {
+    "name": "4-Torus_Fiber_Checks_Reproduction_2026-11-17-2.zip",
+    "size": 48257,
+    "sha256": "798184126dc9e94f1905201d5ef650bdf5001ed3a2ac9fb5a27b746b11ec64a8",
+    "members": [
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/SHA256SUMS",
+        "size": 2798,
+        "sha256": "adfca6d54d4ab0c95823638615469ba4c274d81d6ca83e4e18094f3b92a43c97"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/TORUS_FIBER_CHECKS_REPRO_REPORT_2026-11-17.md",
+        "size": 13148,
+        "sha256": "8d439ecad1e4a09b07ae45a2cf20258ebcf9543b81c8a02889bb2db1e2fefa7d"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/input_archive/torus_fiber_checks_2.zip",
+        "size": 13485,
+        "sha256": "125112c0de435fa729d65df27cce5f10476b1f6194030020fca434bd37e9fea0"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/adapt_coprime_bench.py",
+        "size": 2457,
+        "sha256": "b75fafeeca5fe76490db0360b3838f56abe5ad613eb6e67eebd3a469d44ae631"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/carry_questions_rerun.txt",
+        "size": 1906,
+        "sha256": "264a71bf7a026984f021db3de5462d601d817435c97c1714a1b9f717414ff65b"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/coprime_composite_probe.py",
+        "size": 2741,
+        "sha256": "cb6b27e11d59d8b7410b28a505c4927089e7507c1940dde604a76d08f2fcffa5"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/coprime_composite_probe_output.txt",
+        "size": 379,
+        "sha256": "aceacaf536a8312b886c4da12e03230154d1b89650c33811d9a310990d637b73"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/exact_checks_rerun.txt",
+        "size": 1582,
+        "sha256": "ab6f10f535b4d55b5df6d143d4abdd964ff3be3275704d31547dc8bd7e3a7080"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/host_metadata.txt",
+        "size": 986,
+        "sha256": "d0429f9eb95e86108aea50f6ba6e87255edcdf3bc19a7968ef6c40c9d88cd35d"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_coprime.rs",
+        "size": 10017,
+        "sha256": "95f04e33c1b4656db7565003accdf244795f6ac6bc1ce843e53e220388aee5d1"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_coprime_run_1.txt",
+        "size": 970,
+        "sha256": "21822d25406bd7ffef928482bca0c27602b4fd44f3666790632a6c77422a580e"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_coprime_run_2.txt",
+        "size": 970,
+        "sha256": "dcef4379a342a0314f02e0fe92078dd5d0c0832173ac15b48749a45d2415080f"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_coprime_run_3.txt",
+        "size": 970,
+        "sha256": "8c84c11707b997955f5acdcc443b2af5c7d56b1863ec7291fec0e8d7fe004ac3"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_default_run_1.txt",
+        "size": 896,
+        "sha256": "9171176993badd7cda6b31dcd97308eab921a243a3e47ebcb2b55d90c10641de"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_default_run_2.txt",
+        "size": 896,
+        "sha256": "a4f37fba07cdfe7ec3369fb7052a04bd52ce419dbcc43e4ec1cb36e33d95326d"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_default_run_3.txt",
+        "size": 896,
+        "sha256": "bade719c653ea36b52bb116300dd3abc5912f6839eb26a1b600440f3305aa42f"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/lunations_rerun.txt",
+        "size": 1404,
+        "sha256": "d6a201fbaa20b0a591bb6e1137710b2598a71350085c12cf189dfd89331d19d5"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/strict_int_audit_rerun.txt",
+        "size": 18,
+        "sha256": "17234b3f35b98bdfbfb0375b9468376a7cd40a542b1ac7b4661a937d9f08f4da"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/README.txt",
+        "size": 706,
+        "sha256": "fa520e8d1d6106d6da3c765c096d53f5c0dded7e7353f843938bd606ab853ab4"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/carry_questions.py",
+        "size": 5805,
+        "sha256": "498cf7bae0be75298a50af24bcf74aa3fa4ad77e2383e9e46e1f0354e756492a"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/carry_questions_output.txt",
+        "size": 1906,
+        "sha256": "264a71bf7a026984f021db3de5462d601d817435c97c1714a1b9f717414ff65b"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/exact_checks.py",
+        "size": 5440,
+        "sha256": "46fbadedbca4cf74946d7afc0393d678f423671a648f6ac4800516b689406db2"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/exact_checks_output.txt",
+        "size": 1582,
+        "sha256": "ab6f10f535b4d55b5df6d143d4abdd964ff3be3275704d31547dc8bd7e3a7080"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/kbench.rs",
+        "size": 8945,
+        "sha256": "d4f006ab139f2972ed37e59133bb0dec1e883b04f21e39f75e15ed563daa40d7"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/kbench_output.txt",
+        "size": 896,
+        "sha256": "3f9f28e6457ea150f7f18574b4dab23c534f8e9ca945e49955bc83aa6cc1b314"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/lunations.py",
+        "size": 1106,
+        "sha256": "75d61617baaef55e9dbcf22baf96a47c1aced7bd01cf7764c02b732b765b296d"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/lunations_output.txt",
+        "size": 1404,
+        "sha256": "d6a201fbaa20b0a591bb6e1137710b2598a71350085c12cf189dfd89331d19d5"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/strict_int_audit.py",
+        "size": 3184,
+        "sha256": "476ca5b9460b76a8285ccfd95d59c1a59a9bd2076bf219ad88e6bdbf387446d4"
+      }
+    ]
+  },
+  {
+    "name": "5-certified_lift-2.tar.gz",
+    "size": 13782,
+    "sha256": "42530547da553ee30ca6bb1403ae59ca49c96eb617399dddcd71e7ff0fb169dc"
+  },
+  {
+    "name": "6-TORUS_FIBER_CHECKS_REPRO_REPORT_2026-11-17.pdf",
+    "size": 197780,
+    "sha256": "16532f21af112b53ae5abd1b7b25817ef4e909e47ef938fb90ae907580a4bc27"
+  },
+  {
+    "name": "7-PROOFS.pdf",
+    "size": 250338,
+    "sha256": "3ec3c73b212a0d152f070f8995437fc08f9a92eb4676498eb2f9852dbdb79c2a"
+  },
+  {
+    "name": "8-kbench_coprime.rs",
+    "size": 10017,
+    "sha256": "95f04e33c1b4656db7565003accdf244795f6ac6bc1ce843e53e220388aee5d1"
+  },
+  {
+    "name": "9-Torus_Fiber_Checks_Reproduction_2026-11-17-3.zip",
+    "size": 72063,
+    "sha256": "cd178f865faedf545eec035c5b194a0d696b4663261b4427679db61675ff6dcd",
+    "members": [
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/SHA256SUMS",
+        "size": 4123,
+        "sha256": "249e4e1a70b419ac24d0c1f410d6036b2ec8454ea50df2a863605dcae589654f"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/TORUS_FIBER_CHECKS_REPRO_REPORT_2026-11-17.md",
+        "size": 24858,
+        "sha256": "c601980470ec6f8a429fa3110952c3f9de7ac0be68863247a1ee6797de13fda8"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/input_archive/torus_fiber_checks_2.zip",
+        "size": 13485,
+        "sha256": "125112c0de435fa729d65df27cce5f10476b1f6194030020fca434bd37e9fea0"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/adapt_arbitrary_composite_bench.py",
+        "size": 13919,
+        "sha256": "f6a7ff14c08d61be52a5499e4d7b8da965fe0c2c0048bb6acf945f33392002cd"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/adapt_coprime_bench.py",
+        "size": 2457,
+        "sha256": "b75fafeeca5fe76490db0360b3838f56abe5ad613eb6e67eebd3a469d44ae631"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/arbitrary_composite_benchmark_summary.csv",
+        "size": 885,
+        "sha256": "4951e9154fde063c23bc570518d6acbc16f8554426a999e1ccb3a15c4c8a5bc5"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/arbitrary_composite_metadata.txt",
+        "size": 2721,
+        "sha256": "4f203c713894e6ae0a98b9aa8b14c747be1a20ee713a6f7982bcd0f3ef50abf3"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/arbitrary_composite_probe.py",
+        "size": 8780,
+        "sha256": "1f122f52acfb3775073b00caed0224bcc0ee323bfdf1974d299e2633c1a8bf3a"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/arbitrary_composite_probe_output.txt",
+        "size": 715,
+        "sha256": "4eedd28536c977cfad03a1f7a3229dbb3fba792dac4395e0667a83e21d40330c"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/arbitrary_shared_checks.txt",
+        "size": 16,
+        "sha256": "fd7601e33e5654556f75c780d5e128e68cf213245be51a2120577af9d8a8ebfd"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/arbitrary_shared_checks_output.txt",
+        "size": 440,
+        "sha256": "02d37671e64625aa4f13a6d4e6fea816bf95e92167e8c54fad82dc14da15a2f1"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/carry_questions_rerun.txt",
+        "size": 1906,
+        "sha256": "264a71bf7a026984f021db3de5462d601d817435c97c1714a1b9f717414ff65b"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/coprime_composite_probe.py",
+        "size": 2741,
+        "sha256": "cb6b27e11d59d8b7410b28a505c4927089e7507c1940dde604a76d08f2fcffa5"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/coprime_composite_probe_output.txt",
+        "size": 379,
+        "sha256": "aceacaf536a8312b886c4da12e03230154d1b89650c33811d9a310990d637b73"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/exact_checks_rerun.txt",
+        "size": 1582,
+        "sha256": "ab6f10f535b4d55b5df6d143d4abdd964ff3be3275704d31547dc8bd7e3a7080"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/host_metadata.txt",
+        "size": 986,
+        "sha256": "d0429f9eb95e86108aea50f6ba6e87255edcdf3bc19a7968ef6c40c9d88cd35d"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_arbitrary_composite.rs",
+        "size": 16666,
+        "sha256": "3bdc6d868c2381aec951931d21938d5fb49bd792822e79f579d4ddc16ef1654d"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_arbitrary_composite_run_1.txt",
+        "size": 1020,
+        "sha256": "31b7035d0d49e9f493aaf71d1c76de396757a2703fe1bd877a3ce255675e3122"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_arbitrary_composite_run_2.txt",
+        "size": 1020,
+        "sha256": "af11b312a42216ae58bcf285b2c985e83d23cb6a57a656764896a5a0b7f64875"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_arbitrary_composite_run_3.txt",
+        "size": 1020,
+        "sha256": "11b2816fa3ae2f94ceb900a98dfe3c863e10c2139baf8abe9f3847a23980f3e2"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_coprime.rs",
+        "size": 10017,
+        "sha256": "95f04e33c1b4656db7565003accdf244795f6ac6bc1ce843e53e220388aee5d1"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_coprime_run_1.txt",
+        "size": 970,
+        "sha256": "21822d25406bd7ffef928482bca0c27602b4fd44f3666790632a6c77422a580e"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_coprime_run_2.txt",
+        "size": 970,
+        "sha256": "dcef4379a342a0314f02e0fe92078dd5d0c0832173ac15b48749a45d2415080f"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_coprime_run_3.txt",
+        "size": 970,
+        "sha256": "8c84c11707b997955f5acdcc443b2af5c7d56b1863ec7291fec0e8d7fe004ac3"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_default_run_1.txt",
+        "size": 896,
+        "sha256": "9171176993badd7cda6b31dcd97308eab921a243a3e47ebcb2b55d90c10641de"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_default_run_2.txt",
+        "size": 896,
+        "sha256": "a4f37fba07cdfe7ec3369fb7052a04bd52ce419dbcc43e4ec1cb36e33d95326d"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/kbench_default_run_3.txt",
+        "size": 896,
+        "sha256": "bade719c653ea36b52bb116300dd3abc5912f6839eb26a1b600440f3305aa42f"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/lunations_rerun.txt",
+        "size": 1404,
+        "sha256": "d6a201fbaa20b0a591bb6e1137710b2598a71350085c12cf189dfd89331d19d5"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/reproduction/strict_int_audit_rerun.txt",
+        "size": 18,
+        "sha256": "17234b3f35b98bdfbfb0375b9468376a7cd40a542b1ac7b4661a937d9f08f4da"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/README.txt",
+        "size": 706,
+        "sha256": "fa520e8d1d6106d6da3c765c096d53f5c0dded7e7353f843938bd606ab853ab4"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/carry_questions.py",
+        "size": 5805,
+        "sha256": "498cf7bae0be75298a50af24bcf74aa3fa4ad77e2383e9e46e1f0354e756492a"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/carry_questions_output.txt",
+        "size": 1906,
+        "sha256": "264a71bf7a026984f021db3de5462d601d817435c97c1714a1b9f717414ff65b"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/exact_checks.py",
+        "size": 5440,
+        "sha256": "46fbadedbca4cf74946d7afc0393d678f423671a648f6ac4800516b689406db2"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/exact_checks_output.txt",
+        "size": 1582,
+        "sha256": "ab6f10f535b4d55b5df6d143d4abdd964ff3be3275704d31547dc8bd7e3a7080"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/kbench.rs",
+        "size": 8945,
+        "sha256": "d4f006ab139f2972ed37e59133bb0dec1e883b04f21e39f75e15ed563daa40d7"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/kbench_output.txt",
+        "size": 896,
+        "sha256": "3f9f28e6457ea150f7f18574b4dab23c534f8e9ca945e49955bc83aa6cc1b314"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/lunations.py",
+        "size": 1106,
+        "sha256": "75d61617baaef55e9dbcf22baf96a47c1aced7bd01cf7764c02b732b765b296d"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/lunations_output.txt",
+        "size": 1404,
+        "sha256": "d6a201fbaa20b0a591bb6e1137710b2598a71350085c12cf189dfd89331d19d5"
+      },
+      {
+        "name": "Torus_Fiber_Checks_Reproduction_2026-11-17/torus_fiber_checks/strict_int_audit.py",
+        "size": 3184,
+        "sha256": "476ca5b9460b76a8285ccfd95d59c1a59a9bd2076bf219ad88e6bdbf387446d4"
+      }
+    ]
+  }
+]

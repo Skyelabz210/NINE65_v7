@@ -1,0 +1,386 @@
+[package]
+name = "nine65"
+description = "QMNF-Accelerated BFV FHE with AHOP Quantum Simulation"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+# Every bench target is declared explicitly via a [[bench]] stanza below.
+# Auto-discovery is off so that benches/threading_comparison.rs (a rayon
+# comparison bench for a rejected parallelism approach) is not pulled into
+# the build merely by existing on disk.
+autobenches = false
+license = "LicenseRef-Proprietary-AllRightsReserved"
+
+[features]
+# Optional diagnostic instrumentation; absent from default timing paths.
+architecture-meter = ["dep:cram-core"]
+# Explicit clear-residue producer/query interface; does not enable an encrypted
+# remainder producer or change the default evaluator's representation.
+residue-query = ["dep:cram-core"]
+# Default build: O(N log N) FFT-based NTT, exact integer/rational extensions,
+# Clockwork integrity helpers, live shadow monitoring and MANA/UNHAL.
+# These optional APIs are available; selecting a feature does not route every
+# evaluator through it. FPD/prepared keys are selected by CramMainEvaluator.
+# Rayon is strictly opt-in via `parallel`/`generic-rayon` and
+# is NOT part of any default graph — unhal is consumed with
+# default-features = false to keep it that way.
+default = ["exact_transcendentals_backend", "accelerated", "exact_rational", "clockwork", "adaptive-threading"]
+
+# Core feature flags
+# reference_ntt: Use O(N^2) DFT instead of O(N log N) FFT for NTT operations.
+# Only for validation/testing -- the FFT path is unconditionally preferred.
+reference_ntt = []
+# Legacy alias -- ntt_fft is now always active; this flag is kept for
+# downstream Cargo.toml entries that enable it explicitly.
+ntt_fft = []
+
+# Acceleration via proprietary MANA/UNHAL crates (recommended over rayon).
+# MANA (Modular Anchored Number Arithmetic) is designed specifically for this
+# system's RNS lane structure and integer-only arithmetic. It outperforms
+# general-purpose thread pools for this workload.
+accelerated = ["mana", "unhal"]
+
+# CRT shadow entropy subsystem.
+# Shadow entropy: a proprietary entropy measurement technique derived from
+# Landauer's principle and Shannon information-theoretic entropy, applied to
+# monitor computational noise state in FHE operations. Internal use only —
+# not intended as a user-facing feature.
+shadow-entropy = []
+# NOTE: `wassan` and `v2` meta-features were removed (2026-03-01).
+# `wassan` had zero cfg gates — its only effect was enabling shadow-entropy,
+# which should be activated directly.  `v2` combined the no-op `ntt_fft`
+# alias with `wassan`, making it a double no-op.  If you previously used
+# `--features v2`, replace with `--features shadow-entropy` (or whichever
+# constituent flags you actually need).
+
+# Exact transcendentals via integer CORDIC/AGM backend (no floats).
+exact_transcendentals_backend = ["dep:exact_transcendentals"]
+
+# Exact rational arithmetic bridge (nexgen_rational i128 backend).
+exact_rational = ["nexgen_rational"]
+
+# Clockwork timing gates, GRO bound tracking, key lifecycle integrity.
+clockwork = ["clockwork-core", "crc32fast"]
+
+# Deterministic RNG for reproducible testing.
+deterministic_rng = ["dep:rand_chacha", "dep:rand_core"]
+
+# Serialization support (JSON + bincode).
+serde = ["dep:serde", "dep:serde_json", "dep:bincode"]
+
+# Optional structured diagnostics via the `log` facade.
+logging = ["dep:log"]
+
+# OS CSPRNG seeding convenience for ShadowHarvester.
+secure_seed = []
+
+# Verbose debug output for DualRNS K-Elimination rescaling.
+debug_dual_mul = []
+
+# Research/test opt-in. Release library builds deliberately reject this flag.
+allow_insecure = []
+
+# Opt-in flags for expensive test/bench runs.
+slow_tests = []  # TEST-ONLY: gates long-running tests in ops/rns_fhe.rs
+benchmarks = []
+
+# Adaptive threading driven by shadow-entropy state monitoring.
+# Based on Landauer/Shannon entropy metrics applied to FHE noise budgets.
+# Internal subsystem — requires deep familiarity with QMNF architecture.
+adaptive-threading = ["shadow-entropy"]
+
+# Rayon opt-in variants (explicit only — not in default build).
+# For most use cases, --features accelerated (MANA) is the better choice.
+parallel = ["rayon"]
+generic-rayon = ["rayon"]
+
+# Force sequential execution (disables all parallelism).
+sequential = []
+
+[dependencies]
+cram-core = { path = "../cram-core", optional = true }
+mana = { path = "../mana", optional = true }
+# default-features = false: unhal's `parallel` default would silently pull
+# rayon (and mana/parallel) into `--features accelerated`, contradicting the
+# MANA-over-rayon posture documented above. Rayon remains strictly opt-in via
+# this crate's own `parallel` / `generic-rayon` features.
+unhal = { path = "../unhal", optional = true, default-features = false }
+rayon = { workspace = true, optional = true }
+zeroize = { workspace = true }
+getrandom = { workspace = true }
+subtle = { workspace = true }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
+bincode = { version = "2.0", optional = true }
+rand_core = { workspace = true, optional = true }
+rand_chacha = { workspace = true, optional = true }
+nexgen_rational = { path = "../nexgen_rational", optional = true }
+clockwork-core = { path = "../clockwork-core", optional = true }
+crc32fast = { version = "1.3", optional = true }
+exact_transcendentals = { path = "../exact_transcendentals", optional = true }
+log = { version = "0.4", optional = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+proptest = { workspace = true }
+rand_core = { workspace = true }
+rand_chacha = { workspace = true }
+# NOTE: rayon is deliberately NOT a dev-dependency. It is an *optional* runtime
+# dependency behind the `parallel` / `generic-rayon` features only. MANA
+# (crates/mana, feature `accelerated`) is the canonical parallelism layer for
+# this workload; rayon is slower here. Any bench or test that needs rayon must
+# declare `required-features = ["parallel"]` rather than pulling rayon in
+# unconditionally as a dev-dependency.
+
+[[bin]]
+name = "nine65_v7_demo"
+path = "src/bin/nine65_v7_demo.rs"
+
+[[bin]]
+name = "nine65_bench"
+path = "src/bin/nine65_bench.rs"
+required-features = ["serde"]
+
+[[bin]]
+name = "cram_exploratory_probe"
+path = "src/bin/cram_exploratory_probe.rs"
+required-features = ["serde"]
+
+[[bin]]
+name = "cram_modulus_probe"
+path = "src/bin/cram_modulus_probe.rs"
+required-features = ["serde"]
+
+[[bin]]
+name = "cram_comparative_probe"
+path = "src/bin/cram_comparative_probe.rs"
+required-features = ["serde"]
+
+[[bin]]
+name = "test_phase1_fix"
+path = "src/bin/test_phase1_fix.rs"
+required-features = ["allow_insecure"]
+
+# Why `allow_insecure` appears in every bench (and many [[test]]) stanzas below:
+# integration-test and bench targets link the nine65 *library* compiled WITHOUT
+# `cfg(test)` (Cargo only sets that for the lib's own unit-test build). In a
+# `--release` invocation the library therefore compiles the enforcing arm of
+# `entropy::require_secure_rng`, and any target that drives keygen/encrypt with
+# a seeded `ShadowHarvester` panics with SECURITY ERROR. Workspace-wide runs
+# (`cargo test --release --workspace`) never hit this because fhe-service's
+# dev-dependency on `nine65/allow_insecure` unifies the feature in; standalone
+# `-p nine65` runs of these targets do. `required-features` makes the
+# requirement explicit: Cargo reports the missing feature instead of the
+# library panicking mid-test.
+[[test]]
+name = "op_timings"
+required-features = ["allow_insecure"]
+
+# Current FPD + persistent-Montgomery + prepared-key service route.
+# OS randomness permits a real release build without allow_insecure.
+[[example]]
+name = "fpd_stack_timings"
+required-features = ["serde"]
+
+# This target constructs toy rings below the production floor and uses seeded
+# test randomness. It must link the explicit research library in development
+# mode, just like the other research integration targets.
+[[test]]
+name = "coefficient_slot_gate"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "expanded_phase1"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "expanded_bootstrap"
+required-features = ["allow_insecure", "exact_transcendentals_backend"]
+
+[[test]]
+name = "prime_power_phase"
+required-features = ["allow_insecure"]
+
+[[bench]]
+name = "fhe_scaling"
+harness = false
+required-features = ["allow_insecure"]
+
+[[bench]]
+name = "nine65_vs_seal_comparison"
+harness = false
+required-features = ["allow_insecure"]
+
+# benches/threading_comparison.rs has NO [[bench]] stanza on purpose.
+# It benchmarks rayon against MANA — a rejected parallelism approach — so it is
+# not part of the built/tested surface. `autobenches = false` (see [package])
+# keeps Cargo from re-discovering it. The source file is retained for reference.
+
+[[bench]]
+name = "throughput"
+harness = false
+required-features = ["parallel", "allow_insecure"]
+
+[[bench]]
+name = "adaptive_rayon"
+harness = false
+required-features = ["parallel", "allow_insecure"]
+
+[[bench]]
+name = "timing"
+harness = false
+required-features = ["benchmarks", "allow_insecure"]
+
+# Correctness-gated multiplicative-depth chain. This is the only bench that
+# chains ct x ct multiplies; every other ct x ct id in the suite re-multiplies
+# the same two fixed ciphertexts, which is depth 1 repeated. No
+# `required-features`: it uses only default-feature public API so the depth
+# floor can never become unmeasurable because a feature flag drifted.
+# (`allow_insecure` is still required: the bench generates keys with a seeded
+# ShadowHarvester, which the release-mode secure-RNG gate otherwise rejects.)
+[[bench]]
+name = "depth_chain"
+harness = false
+required-features = ["allow_insecure"]
+
+
+# Integration-test targets that generate keys/ciphertexts with a seeded
+# ShadowHarvester (see the bench-stanza note above for why the feature is
+# required in standalone `-p nine65 --release` runs).
+[[test]]
+name = "anchor_drift_diagnostics"
+required-features = ["allow_insecure"]
+
+# Arrow-emission no-leak gate matrix over the real FHE surface
+# (CONFIGS x MODES x GATES, secure_128 .. secure_256, PUBLIC and SYMMETRIC).
+# Drives keygen/encrypt with a seeded ShadowHarvester, so it needs the same
+# feature as every other target in this block.
+[[test]]
+name = "arrow_emission_fhe_gate_matrix"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "basis_invariance"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "bootstrap_integration"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "bootstrap_parameter_exploration"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "bootstrap_residue_shape_regression"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "depth2_isolation"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "depth2_full_matrix_issue81"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "depth2_python_oracle_vectors_issue81"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "depth_and_noise"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "full_system_exercise"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "noise_profile"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "ntt_encoder_caching"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "random_encrypt"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "residue_space_ciphertext"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "cram_public_mode"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "m2b_manufactured_rescale"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "cram_public_guardrails"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "cram_public_timings"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "security_integration"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "test_192_256_bootstrap"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "time_crystal_verification"
+required-features = ["allow_insecure"]
+
+# Before/after performance evidence for issue #93 (per-ciphertext noise
+# tracking). Drives keygen/encrypt with a seeded ShadowHarvester, so it needs
+# the same feature as every other target in this block.
+[[test]]
+name = "noise_tracking_perf_issue93"
+required-features = ["allow_insecure"]
+
+# Issue #74: this example calls FHEConfig::deep_circuit_insecure() and three
+# other `*_insecure` constructors that are themselves compiled only under
+# `cfg(any(test, debug_assertions, feature = "allow_insecure"))` (see
+# params/mod.rs) -- so, like every `[[test]]` target above, it needs
+# `allow_insecure` active just to COMPILE, not only to run its seeded
+# ShadowHarvester correctly. This stanza previously existed with no
+# `required-features`, which meant `cargo test --release --workspace` tried
+# (and, once nothing else in the graph unified `allow_insecure` in any more,
+# failed: E0599, `deep_circuit_insecure` not found) to compile it
+# unconditionally, instead of skipping it the way every sibling target here
+# does.
+[[example]]
+name = "test_mod_switch"
+required-features = ["allow_insecure"]
+
+[[example]]
+name = "canonical_lift_feasibility"
+required-features = ["serde"]
+
+[[example]]
+name = "public_refresh_review_packet"
+required-features = ["allow_insecure", "serde"]
+
+[[test]]
+name = "architecture_meter"
+required-features = ["architecture-meter", "allow_insecure"]
+
+# These diagnostic targets import the optional exact-transcendentals backend.
+[[bin]]
+name = "deep_rigorous_audit"
+path = "src/bin/deep_rigorous_audit.rs"
+required-features = ["exact_transcendentals_backend"]
+
+[[example]]
+name = "export_parameter_registry"
+required-features = ["exact_transcendentals_backend"]

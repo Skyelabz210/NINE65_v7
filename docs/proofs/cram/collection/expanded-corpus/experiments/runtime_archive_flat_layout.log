@@ -1,0 +1,144 @@
+   Compiling cram v0.1.0 (/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout)
+warning: unused import: `verify_roundtrip`
+  --> tests/integration_tests.rs:12:81
+   |
+12 | use cram::garner::{GarnerConstants, garner_reconstruct, decompose, reconstruct, verify_roundtrip};
+   |                                                                                 ^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: `cram` (test "integration_tests") generated 1 warning (run `cargo fix --test "integration_tests"` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.85s
+     Running unittests src/lib.rs (k-elimination-audit/expanded-corpus/build-runtime/target-flat-layout/debug/deps/cram-49ee3ab3e4038f8c)
+
+running 66 tests
+test ahop::tests::classical_reflect_matches_descartes_formula ... ok
+test ahop::tests::classical_orbit_is_deterministic ... ok
+test ahop::tests::cram_reflect_non_associative_orbit ... ok
+test ahop::tests::cram_orbit_is_deterministic ... ok
+test ahop::tests::cram_reflect_differs_from_classical ... ok
+test arith::tests::test_canonical_negative ... ok
+test arith::tests::test_extended_gcd_basic ... ok
+test arith::tests::test_mod_inverse_exceptional ... ok
+test arith::tests::test_mod_inverse_known ... ok
+test arith::tests::test_mod_square ... ok
+test arith::tests::test_pairwise_coprime_rejects_composites ... ok
+test arith::tests::test_pairwise_coprime_s4 ... ok
+test arith::tests::test_pairwise_coprime_s6 ... ok
+test engine::tests::canonical_paper_result_17_op_23_is_165 ... ok
+test ahop::tests::orbit_walk_collects_exceptional_stats ... ok
+test engine::tests::exceptional_set_is_detected ... ok
+test engine::tests::phase1_decomposition_17_23 ... ok
+test engine::tests::cram_s4_is_not_associative ... ok
+test engine::tests::cram_s4_is_not_commutative ... ok
+test engine::tests::residue_native_execute_produces_valid_tuple ... ok
+test engine::tests::phase2_root_operator_intermediate ... ok
+test engine::tests::phase3_all_sqr_post_processing ... ok
+test engine::tests::theorem1_lazy_equals_eager_s4 ... ok
+test engine::tests::theorem1_lazy_equals_eager_s6 ... ok
+test fhe::tests::encrypt_decrypt_roundtrip ... ok
+test fhe::tests::auto_bootstrapping_fires_on_deep_chain ... ok
+test fhe::tests::homomorphic_add_correctness ... ok
+test fhe::tests::k_elimination_resets_noise_to_one ... ok
+test fhe::tests::noise_asymptotics_are_bounded ... ok
+test garner::tests::decompose_17_s4 ... ok
+test garner::tests::decompose_23_s4 ... ok
+test engine::tests::theorem3_empirical_validity_s4 ... ok
+test garner::tests::garner_s4_exactly_6_multiplications ... ok
+test garner::tests::garner_s6_exactly_15_multiplications ... ok
+test garner::tests::paper_trace_diagnostic_confirmation ... ok
+test garner::tests::paper_trace_reconstruct_165 ... ok
+test garner::tests::roundtrip_s4_all_residues ... ok
+test operators::tests::div_by_zero_is_exceptional ... ok
+test fhe::tests::unlimited_depth_chain_completes ... ok
+test operators::tests::invert_zero_is_exceptional ... ok
+test operators::tests::trace_lane1_mul_mod2 ... ok
+test operators::tests::trace_lane2_sub_mod3 ... ok
+test operators::tests::trace_lane3_add_mod5 ... ok
+test operators::tests::trace_lane4_div_mod7 ... ok
+test operators::tests::trace_sqr_lane1 ... ok
+test operators::tests::trace_sqr_lane2_zero ... ok
+test operators::tests::trace_sqr_lane3_zero ... ok
+test operators::tests::trace_sqr_lane4 ... ok
+test operators::tests::validity_div_mod13 ... ok
+test operators::tests::validity_div_mod7 ... ok
+test operators::tests::validity_total_ops ... ok
+test topology::tests::all_champions_are_all_sqr ... ok
+test topology::tests::s4_garner_mult_count ... ok
+test topology::tests::s4_modulus_is_210 ... ok
+test topology::tests::s4_operator_state_space ... ok
+test ahop::tests::s6_exceptional_rate_near_seven_percent ... ok
+test topology::tests::s4_plus_has_higher_validity_than_s4 ... ok
+test topology::tests::s4_shadow_entropy_16_bits ... ok
+test topology::tests::s4_validity_is_six_sevenths ... ok
+test topology::tests::s6_garner_mult_count ... ok
+test topology::tests::s6_modulus_is_30030 ... ok
+test topology::tests::s6_operator_state_space ... ok
+test topology::tests::s6_shadow_entropy_24_bits ... ok
+test topology::tests::s6_validity_is_twelve_thirteenths ... ok
+test topology::tests::topologies_are_pairwise_coprime ... ok
+test garner::tests::roundtrip_s6_spot_check ... ok
+
+test result: ok. 66 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/main.rs (k-elimination-audit/expanded-corpus/build-runtime/target-flat-layout/debug/deps/cram_demo-b39e588a6a9be15b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/integration_tests.rs (k-elimination-audit/expanded-corpus/build-runtime/target-flat-layout/debug/deps/integration_tests-81c471ec936b38a1)
+
+running 28 tests
+test a2_zero_has_no_inverse_in_any_prime_field ... ok
+test a1_mod_inverse_all_residues_mod7 ... ok
+test a3_canonical_handles_large_negative_values ... ok
+test b1_all_four_root_operators_evaluated_paper_lane4 ... ok
+test b2_sqr_output_is_always_quadratic_residue ... ok
+test c1_paper_canonical_result_165 ... ok
+test c2_mixed_radix_coefficients_match_paper ... ok
+test c4_garner_multiplication_count_theorem4 ... ok
+test d1_operator_state_space_table_from_paper ... ok
+test d2_s4_validity_exact_fraction_six_sevenths ... ok
+test d3_s6_validity_exact_fraction_twelve_thirteenths ... ok
+test d4_s6_modulus_is_30030 ... ok
+test d5_theorem5_larger_primes_yield_higher_validity ... ok
+test c3_crt_bijection_is_perfect_over_z210 ... ok
+test e1_canonical_paper_result ... ok
+test e2_engine_rejects_exceptional_inputs ... ok
+test e4_non_commutativity_proven ... ok
+test e5_non_associativity_proven ... ok
+test f1_homomorphic_addition_is_exact ... ok
+test f2_k_elimination_resets_noise_exactly ... ok
+test e3_theorem1_lazy_equals_eager_comprehensive ... ok
+test g1_classical_descartes_ford_circles ... ok
+test e6_theorem3_empirical_validity_s4_convergence ... ok
+test g2_cram_orbit_is_deterministic ... ok
+test f3_encrypt_decrypt_identity_for_all_residues ... ok
+test f4_200_operation_unlimited_depth_chain_completes ... ok
+test g4_s6_exceptional_rate_is_positive ... FAILED
+test g3_orbit_walk_statistics_are_self_consistent ... ok
+
+failures:
+
+---- g4_s6_exceptional_rate_is_positive stdout ----
+
+thread 'g4_s6_exceptional_rate_is_positive' panicked at tests/integration_tests.rs:385:5:
+S6 exceptional rate 0 is outside expected range (0%, 50%)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    g4_s6_exceptional_rate_is_positive
+
+test result: FAILED. 27 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--test integration_tests`
+   Doc-tests cram
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: 1 target failed:
+    `--test integration_tests`

@@ -1,0 +1,361 @@
+{
+  "source_base_commit": "88a7bdadbf0e1f8fbfdb2b37e9843101b8db3484",
+  "scope": "Explicitly linked repository evidence; this is not whole-repository read coverage",
+  "files": [
+    {
+      "path": "crates/clockwork-core/src/bound_tracker.rs",
+      "sha256": "31f5f426c5fd7fb2209a1b98cff48ae0014a4aea2c2c22d20a3d0d71b5bff262",
+      "bytes": 6563
+    },
+    {
+      "path": "crates/clockwork-core/src/gearstack.rs",
+      "sha256": "fed39e0faf7695b76ff434d2ff7e79949bef19d51a9d25a0814fbcfae76556b0",
+      "bytes": 16420
+    },
+    {
+      "path": "crates/clockwork-core/src/gro.rs",
+      "sha256": "2f3923e1d81a6215b18da27f8497a40915c4debc8cc6ffbc7a00a813b598d7da",
+      "bytes": 15086
+    },
+    {
+      "path": "crates/clockwork-core/src/integrity.rs",
+      "sha256": "211548dde09441a62d4d6543eb134262f3d12a0fb393f91ad7cf3deed5401982",
+      "bytes": 13353
+    },
+    {
+      "path": "crates/cram-core/src/anchor.rs",
+      "sha256": "ca10bd5c4a277e27e60e63ad3cf025c34e0465140dafa2ca9e6f9c9b1a4925ab",
+      "bytes": 5150
+    },
+    {
+      "path": "crates/cram-core/src/lib.rs",
+      "sha256": "f30a5d7e4fb19a74272e1f10ea9dd0cd79dde4cd88481d41fed238457ce124b8",
+      "bytes": 13613
+    },
+    {
+      "path": "crates/cram-core/src/phase_lock.rs",
+      "sha256": "3b48b83d1521729b6cecd829b44554e118e4d00a48f5537bb74f1241d5acdb7a",
+      "bytes": 13017
+    },
+    {
+      "path": "crates/exact_transcendentals/src/arrow_step.rs",
+      "sha256": "d8d56550952bf46d86d82554bc358a5a6390c40803b482d411ecbc9d90b25e66",
+      "bytes": 21782
+    },
+    {
+      "path": "crates/exact_transcendentals/src/cram_anchor.rs",
+      "sha256": "61e623fc91edace7df63bcf03462523bb59b02296f1d91360ad991a4c076f0b4",
+      "bytes": 43126
+    },
+    {
+      "path": "crates/exact_transcendentals/src/cram_carry.rs",
+      "sha256": "6e8e92e0e6196d5f4d3243e470a03eeafff97d591d061e588098f55eb837b851",
+      "bytes": 14179
+    },
+    {
+      "path": "crates/exact_transcendentals/src/cram_machine.rs",
+      "sha256": "2bf0eff1aefc09655aa69b72952dce37c1fe705cd0cac969a713f3ed4c7d011c",
+      "bytes": 64816
+    },
+    {
+      "path": "crates/exact_transcendentals/src/cram_ops.rs",
+      "sha256": "f6046ed8088a3637a3fe83fe4c55ba5d43f134ac4b28779089b5c01e08fd2b04",
+      "bytes": 24618
+    },
+    {
+      "path": "crates/exact_transcendentals/src/cram_pde.rs",
+      "sha256": "1b87d3f77a6c329f996a48ed71647b85217dfcf12c04b702a90e1039ad0715e2",
+      "bytes": 29077
+    },
+    {
+      "path": "crates/exact_transcendentals/src/crt_rational.rs",
+      "sha256": "4830c83fb2cfea03f144921c44785659fa3b2d9e4e85947f0338b25870b6d142",
+      "bytes": 8539
+    },
+    {
+      "path": "crates/exact_transcendentals/src/crt_torus.rs",
+      "sha256": "e8442709afebd713bcbca3a0d4d452c14cbb704cccfa4a639bffd03b00114307",
+      "bytes": 7730
+    },
+    {
+      "path": "crates/exact_transcendentals/src/dyn_crt.rs",
+      "sha256": "3dcd7e18d441e08063930e65b092e18c009b71309813cb0e3c5033176f6529dd",
+      "bytes": 34892
+    },
+    {
+      "path": "crates/exact_transcendentals/src/lib.rs",
+      "sha256": "8dfeef69096a35e0c6576959f898e971ac209b29236e326efbd987c2f84f35b2",
+      "bytes": 54514
+    },
+    {
+      "path": "crates/exact_transcendentals/src/lifted_transduction.rs",
+      "sha256": "f56a32f84455996e250ede366ff3b13352915f9df55357d39a25d9551f013f75",
+      "bytes": 27225
+    },
+    {
+      "path": "crates/exact_transcendentals/src/transduction.rs",
+      "sha256": "38d462863903787d1e1ecbaf785f5bf10d10fd00147e9f9dfbe94256c74ee3b0",
+      "bytes": 40575
+    },
+    {
+      "path": "crates/exact_transcendentals/src/triad.rs",
+      "sha256": "7bd7e9b5df4b085141cbfdf75d40529337e96d30501fc3ba7fc5063c072db5b0",
+      "bytes": 17358
+    },
+    {
+      "path": "crates/exact_transcendentals/tests/holte_reversibility.rs",
+      "sha256": "aeb82d99a55da0efd04d62d2fd2cfba4c3b28f9c516079411229015a16366705",
+      "bytes": 10087
+    },
+    {
+      "path": "crates/exact_transcendentals/tests/tropical_theta_k_lift.rs",
+      "sha256": "2e7c7ff7ce8a1d26d18700323de4e726a0602577425024d96da0e1867e63f75b",
+      "bytes": 8913
+    },
+    {
+      "path": "crates/mana/src/executor.rs",
+      "sha256": "71978c7586f9462966c1a1cd835cacfc17b2fde00e9b883e1f5e71d9e230bb8c",
+      "bytes": 7009
+    },
+    {
+      "path": "crates/mana/src/gso.rs",
+      "sha256": "3f075e9d488d63b65ae25dd126c8ede06245ba390a53cbe0b5ebf21c855641db",
+      "bytes": 13028
+    },
+    {
+      "path": "crates/mana/src/lane.rs",
+      "sha256": "3b2aac029344b76df4aaf3e9c1b02fbcb8960e975a5e3aeac2734b10f0aa7dd5",
+      "bytes": 20827
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/barrett.rs",
+      "sha256": "2738fa19e9ec599845c6f40ae5667283e4c99e7fa2bf55c009676156463627a3",
+      "bytes": 16820
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/cyclotomic_phase.rs",
+      "sha256": "5409064f7be3aae60db90812460744c26b5f0f889e469473b5659815b1198f61",
+      "bytes": 6821
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/integer_softmax.rs",
+      "sha256": "6995d679a641b39f4c6b48cbd425b22b81c590703c5c2971a44bdbd8f3662f28",
+      "bytes": 12151
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/mobius_int.rs",
+      "sha256": "a6318c3eaf58bd0e6e6bc5d2d2a23dbfc4f1b31cecd95a65f8c2dfb67b98415d",
+      "bytes": 22426
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/mq_relu.rs",
+      "sha256": "347aefd45fa050a6d4eefcb9339d8cd56afaa684a7c89eab015f93b71e83b551",
+      "bytes": 8003
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/ntt.rs",
+      "sha256": "159952195ac045229f7794ea29dfac147b6c215e232281df422226837908cd2c",
+      "bytes": 39214
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/pade_engine.rs",
+      "sha256": "608dbf9e913056b0215f03b5e234036b38d7a0810cede360e6878070d90cbdb9",
+      "bytes": 6192
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/persistent_montgomery.rs",
+      "sha256": "fb2db0815211c4cb691ee075f7fb432d2320777dc0ac3f4ace971d2f07af2b2d",
+      "bytes": 10841
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/rank_residue_divider.rs",
+      "sha256": "30d7b05fb285d94a53717ceb0d8677d36939b368eddfcc06146d2e923bd88603",
+      "bytes": 19030
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/rational_bridge.rs",
+      "sha256": "89d3678e6f226cea629c9b45f2121d473a4a6745674f276bcb833d6bb93aa06f",
+      "bytes": 7015
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/recumbent.rs",
+      "sha256": "f5ef292ff438157dcc6668691f968d6fa96db45f7a8b4b448a126edd0dd31078",
+      "bytes": 35121
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/transcendental_backend.rs",
+      "sha256": "f26305719db9ceaa19e1d5453b327be60bcd69c8935e5d39369300ea75b16bb0",
+      "bytes": 4554
+    },
+    {
+      "path": "crates/nine65/src/compiler.rs",
+      "sha256": "a10899e226298a4f3fc5f8aa2a249ae6b8ddd479355c81bcf053f3796268d6d4",
+      "bytes": 20928
+    },
+    {
+      "path": "crates/nine65/src/cram_ct_wrap.rs",
+      "sha256": "0066ecb9eec7999b6780587d8afbfadcdbb07284b156cfe14970e9ac69239975",
+      "bytes": 19393
+    },
+    {
+      "path": "crates/nine65/src/entropy/secure.rs",
+      "sha256": "9d8594da22e2df906eef969772cc1919879f2a1058a30d6219e145a6634eeaee",
+      "bytes": 15964
+    },
+    {
+      "path": "crates/nine65/src/entropy/shadow.rs",
+      "sha256": "b3a26292232cb33ea844a918545f7eb9715c8e8c5b8b73b10a2566e4540ffc88",
+      "bytes": 8939
+    },
+    {
+      "path": "crates/nine65/src/kiosk/mod.rs",
+      "sha256": "11cc6474a81fd263f5887856556095f6cfe16c71d80fa279ed9630f28a4d88b5",
+      "bytes": 1612
+    },
+    {
+      "path": "crates/nine65/src/ops/bounded_digit_circuit.rs",
+      "sha256": "92fe09431f13b1f165d8586f706127eff1d533323df6130f01aeaae4ab251c76",
+      "bytes": 35316
+    },
+    {
+      "path": "crates/nine65/src/ops/cram_main_division.rs",
+      "sha256": "ebd8b2a307b2c7c5193510295e0fcb8fce6e0dea0ba0cf5effeed41b4ba3a7e7",
+      "bytes": 10308
+    },
+    {
+      "path": "crates/nine65/src/ops/gso_fhe.rs",
+      "sha256": "14e9f223198e25b5816b9742bebe363992976e9aa257cb1c10f83642ad8bd6c6",
+      "bytes": 65494
+    },
+    {
+      "path": "crates/nine65/src/ops/integer_division_circuit.rs",
+      "sha256": "cad679ede21e85689d6a1febcfab2ae5aff7c08988261d07e59a96a1f5625bd9",
+      "bytes": 11984
+    },
+    {
+      "path": "crates/nine65/src/ops/neural.rs",
+      "sha256": "f5fc65a3d283fd504123d89faa73c27cd61e0b86d2668067bf242329c4a0af25",
+      "bytes": 18111
+    },
+    {
+      "path": "crates/nine65/src/ops/public_refresh_circuit.rs",
+      "sha256": "8894f47baf9b277a59fd7f1c722a7556688a4ace8f91f7f46cf470b62baed26f",
+      "bytes": 19123
+    },
+    {
+      "path": "crates/nine65/src/ops/public_refresh_return.rs",
+      "sha256": "df4278e9c2e7bd3d032394872ecef368940bb677db9953f7cb10f41fb885d56f",
+      "bytes": 6273
+    },
+    {
+      "path": "crates/nine65/src/ops/public_refresh_source.rs",
+      "sha256": "3471fda4d5d3e516111149331cb0b02ec17f8136972b2577ebf7b44153c58ef2",
+      "bytes": 18558
+    },
+    {
+      "path": "crates/nine65/src/ops/rns_fhe.rs",
+      "sha256": "28794ee2bcab44f86737c8f3fa9d2c7c36e6079d3722e967e571318d16e29c7b",
+      "bytes": 708901
+    },
+    {
+      "path": "crates/private-feedback-core/README.md",
+      "sha256": "b09cdbb1444bef67403a6d1c3ec0ada9b2526853b63bf2744c46ce5cf8b23829",
+      "bytes": 1044
+    },
+    {
+      "path": "crates/private-feedback-core/src/lib.rs",
+      "sha256": "68cd61c5590e07e41436d1d336588fd11ae04270d920deff50be59253f953b5d",
+      "bytes": 9639
+    },
+    {
+      "path": "crates/private-feedback-nine65/README.md",
+      "sha256": "f1b8e9a9fcd6d57df2a4925bccc86ec9458fe31734d34803fe1f1cd8e1a70d5a",
+      "bytes": 1013
+    },
+    {
+      "path": "crates/qmnf-crtbigint/README.md",
+      "sha256": "e3929e4a113a35744b4fa57d3e399f23a5c5d8e272e7b9728cb3c04be81b6aca",
+      "bytes": 2990
+    },
+    {
+      "path": "crates/qmnf-crtbigint/src/lib.rs",
+      "sha256": "9cc53b368850950d364d2d63e616c8fc424a7c76bb4079b86190151df1a3da99",
+      "bytes": 48687
+    },
+    {
+      "path": "crates/unhal/src/accelerator.rs",
+      "sha256": "54c776271f2a049ca1eaae15c90e203bfe766dd7af5d2ec5d628204b84746cd2",
+      "bytes": 16463
+    },
+    {
+      "path": "crates/unhal/src/lib.rs",
+      "sha256": "d43ad4765405a4d69f72b83b61a2a6e5d2f81285a487431b6dd9b25fbee6ce3e",
+      "bytes": 3493
+    },
+    {
+      "path": "crates/unhal/src/ntt_simd32.rs",
+      "sha256": "0adcaf3011c2ec5dabe623a6a62c9eefe5c341759623459e328b782035366bb3",
+      "bytes": 12085
+    },
+    {
+      "path": "docs/CLAIM_EVIDENCE_LEDGER.md",
+      "sha256": "35d13feef40b18cce6fb77d5fed87b29e159353b403d9497500b03893e75af1d",
+      "bytes": 8954
+    },
+    {
+      "path": "docs/CRAM_INTEGRATION_CONTRACT.md",
+      "sha256": "ba516f6b67fa237b7d89f1e81fffc7ca663747c11bf4d9f48ba1bfb3a206292e",
+      "bytes": 6989
+    },
+    {
+      "path": "docs/ENCRYPTED_INTEGER_DIVISION_2026-11-02.md",
+      "sha256": "bd099bdfbefa7f2d0f7e6061d7c8966280edd567092c36b42d3d9d669cec5cdf",
+      "bytes": 9396
+    },
+    {
+      "path": "docs/K_ELIMINATION_IMPLEMENTATIONS_2026-09-03.md",
+      "sha256": "ab0331009c414473d5dbcc714bfd84fbb1ddf083cd0a8de061cf42b6ea23ddbb",
+      "bytes": 11434
+    },
+    {
+      "path": "docs/PUBLIC_REFRESH_STATUS.md",
+      "sha256": "c04631ab1bb82d3f85b114c4bf8ad2db9fe8982d537128fe507151f83755be0b",
+      "bytes": 9724
+    },
+    {
+      "path": "docs/WASSAN_A1_CONTRACT.md",
+      "sha256": "e95531b1c358a87c430f3cec78019938537d51ac29f9efc2a8260a2092a328c2",
+      "bytes": 6998
+    },
+    {
+      "path": "docs/execution/2026-11-12/CRAM_PATH_REPAIR.md",
+      "sha256": "aa213ba58c480e7533ac37b0165942fec76e0bacd551c4d8cfa5f7f7654b3826",
+      "bytes": 6472
+    },
+    {
+      "path": "docs/execution/2026-11-12/UNIVERSAL_CROSS_POLLINATION.md",
+      "sha256": "e8689c6b11ff7e735091e46c0073e779a9c433ddab5ce1a89eadd70012a4a4a6",
+      "bytes": 4716
+    },
+    {
+      "path": "lean4/KElimination/KElimination/PublicRefreshDigit.lean",
+      "sha256": "5bce4f18881234b2b5061fcbf6335c4e097fd8ae00f00de2e433dda7f96cbc15",
+      "bytes": 8627
+    },
+    {
+      "path": "verified-innovations/docs/VALIDATION_SUMMARY.md",
+      "sha256": "cb0477fdbff1874853b2dd45c4aa89a4fa4eeab29b0945fb18f2a94ddd3b761f",
+      "bytes": 7713
+    },
+    {
+      "path": "verified-innovations/proofs/coq/EncryptedQuantum.v",
+      "sha256": "aa59108d8e561bbbd499622eda9a405df085fed9afa33a77ce4bddaa539b9b86",
+      "bytes": 3014
+    },
+    {
+      "path": "verified-innovations/proofs/coq/StateCompression.v",
+      "sha256": "cea0f0124cf72d3ed9028142104d539d85792f17d12ef3b88f47baa7b70b684a",
+      "bytes": 5039
+    }
+  ]
+}

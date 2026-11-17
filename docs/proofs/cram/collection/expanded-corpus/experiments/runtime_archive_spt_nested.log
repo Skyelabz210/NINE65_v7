@@ -1,0 +1,93 @@
+warning: function `mod_add` is never used
+  --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/arith.rs:58:8
+   |
+58 | pub fn mod_add(a: i128, b: i128, m: i128) -> i128 {
+   |        ^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: function `mod_sub` is never used
+  --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/arith.rs:64:8
+   |
+64 | pub fn mod_sub(a: i128, b: i128, m: i128) -> i128 {
+   |        ^^^^^^^
+
+warning: function `mod_neg` is never used
+  --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/arith.rs:70:8
+   |
+70 | pub fn mod_neg(x: i128, m: i128) -> i128 {
+   |        ^^^^^^^
+
+warning: field `modulus` is never read
+  --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/garner.rs:32:9
+   |
+28 | pub struct GarnerResult {
+   |            ------------ field in this struct
+...
+32 |     pub modulus: i128,
+   |         ^^^^^^^
+   |
+   = note: `GarnerResult` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `modulus` is never read
+   --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/subproduct_tree.rs:228:9
+    |
+224 | pub struct SubproductCrtResult {
+    |            ------------------- field in this struct
+...
+228 |     pub modulus: i128,
+    |         ^^^^^^^
+    |
+    = note: `SubproductCrtResult` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: method `reconstruct_full` is never used
+   --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/subproduct_tree.rs:342:12
+    |
+330 | impl SubproductTreeCrt {
+    | ---------------------- method in this implementation
+...
+342 |     pub fn reconstruct_full(&self, residues: &[i128]) -> SubproductCrtResult {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: 6 warnings emitted
+
+
+running 35 tests
+test arith::tests::test_canonical_negative ... ok
+test arith::tests::test_extended_gcd_basic ... ok
+test arith::tests::test_mod_inverse_exceptional ... ok
+test arith::tests::test_mod_inverse_known ... ok
+test arith::tests::test_mod_square ... ok
+test arith::tests::test_pairwise_coprime_rejects_composites ... ok
+test arith::tests::test_pairwise_coprime_s4 ... ok
+test arith::tests::test_pairwise_coprime_s6 ... ok
+test garner::tests::decompose_17_s4 ... ok
+test garner::tests::decompose_23_s4 ... ok
+test garner::tests::garner_s4_exactly_6_multiplications ... ok
+test garner::tests::garner_s6_exactly_15_multiplications ... ok
+test garner::tests::paper_trace_diagnostic_confirmation ... ok
+test garner::tests::paper_trace_reconstruct_165 ... ok
+test subproduct_tree::tests::crt_combine_exhaustive_mod6 ... ok
+test subproduct_tree::tests::crt_combine_sentinel_identity ... ok
+test subproduct_tree::tests::crt_combine_two_prime_example ... ok
+test subproduct_tree::tests::large_k_operation_counts ... ok
+test garner::tests::roundtrip_s4_all_residues ... ok
+test subproduct_tree::tests::matches_garner_s4_plus ... ok
+test subproduct_tree::tests::next_pow2_values ... ok
+test subproduct_tree::tests::paper_trace_reconstruct_165 ... ok
+test subproduct_tree::tests::reconstruct_n_minus_1 ... ok
+test subproduct_tree::tests::reconstruct_zero ... ok
+test subproduct_tree::tests::s4_operation_counts ... ok
+test subproduct_tree::tests::s6_operation_counts ... ok
+test subproduct_tree::tests::single_prime_topology ... ok
+test subproduct_tree::tests::subproduct_tree_crt_reconstruct_identity ... ok
+test subproduct_tree::tests::tree_s4_root_equals_modulus ... ok
+test subproduct_tree::tests::tree_s6_internal_products_correct ... ok
+test subproduct_tree::tests::tree_s6_root_equals_modulus ... ok
+test subproduct_tree::tests::matches_garner_all_z210 ... ok
+test subproduct_tree::tests::verify_matches_garner_confirms_agreement ... ok
+test garner::tests::roundtrip_s6_spot_check ... ok
+test subproduct_tree::tests::matches_garner_s6_spot_check ... ok
+
+test result: ok. 35 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

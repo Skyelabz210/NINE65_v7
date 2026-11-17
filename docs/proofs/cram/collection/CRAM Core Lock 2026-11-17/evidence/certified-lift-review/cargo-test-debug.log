@@ -1,0 +1,99 @@
+    Updating crates.io index
+ Downloading crates ...
+  Downloaded autocfg v1.5.1
+  Downloaded num-bigint v0.4.8
+  Downloaded num-integer v0.1.47
+   Compiling autocfg v1.5.1
+   Compiling num-traits v0.2.19
+   Compiling num-integer v0.1.47
+   Compiling num-bigint v0.4.8
+   Compiling certified_lift v0.1.0 (/workspace/scratch/cram-lock-2026-11-17/certified-lift-review/certified_lift)
+warning: variable `cmps` is assigned to, but never used
+  --> examples/depth.rs:12:28
+   |
+12 |     let (mut refusals, mut cmps) = (0u64, 0u64);
+   |                            ^^^^
+   |
+   = note: consider using `_cmps` instead
+   = note: `#[warn(unused_variables)]` on by default
+
+warning: `certified_lift` (example "depth") generated 1 warning
+warning: method `below` is never used
+  --> tests/wide.rs:18:15
+   |
+17 | impl Rng { fn next(&mut self) -> u64 { let mut x = self.0; x ^= x >> 12; x ^= x << 25; x ^= x >> 27; self.0 = x; x.wrapping_mul(0x2545F49...
+   | -------- method in this implementation
+18 |            fn below(&mut self, n: u64) -> u64 { self.next() % n } }
+   |               ^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: `certified_lift` (test "wide") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.89s
+     Running unittests src/lib.rs (/workspace/scratch/cram-lock-2026-11-17/certified-lift-review/target/debug/deps/certified_lift-097de47cf15716af)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/anchor23.rs (/workspace/scratch/cram-lock-2026-11-17/certified-lift-review/target/debug/deps/anchor23-0539caad3adee4f3)
+
+running 2 tests
+test dividing_by_a_shell_factor_is_refused_not_wrong ... ok
+test anchor_23_reads_k_over_the_s0_shell ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/composite.rs (/workspace/scratch/cram-lock-2026-11-17/certified-lift-review/target/debug/deps/composite-34d3f841b401f522)
+
+running 3 tests
+test growth_picks_coprime_composites_not_primes ... ok
+test composite_adjacent_pairs_recover_k_exhaustively ... ok
+test composite_basis_order_sign_and_division ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 31.15s
+
+     Running tests/properties.rs (/workspace/scratch/cram-lock-2026-11-17/certified-lift-review/target/debug/deps/properties-6bf7a2af805616a6)
+
+running 5 tests
+test comparing_never_needs_x_and_ordering_survives_growth ... ok
+test sub_underflow_and_exact_division_rules ... ok
+test window_1332_adjacency_is_exact_and_refuses_at_the_wall ... ok
+test order_is_total_and_matches_integers ... ok
+test random_program_with_growth_matches_bigints ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s
+
+     Running tests/signed_and_tighten.rs (/workspace/scratch/cram-lock-2026-11-17/certified-lift-review/target/debug/deps/signed_and_tighten-40bf72f8674d960c)
+
+running 5 tests
+test signed_arithmetic_crosses_zero_exactly ... ok
+test signed_exhaustive_on_the_1332_window ... ok
+test tighten_never_loosens_and_always_contains_the_value ... ok
+test signed_random_program_with_growth_matches_bigints ... ok
+test tightening_reduces_growth_and_stays_exact ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.15s
+
+     Running tests/sk.rs (/workspace/scratch/cram-lock-2026-11-17/certified-lift-review/target/debug/deps/sk-a7cbd26aecc50b48)
+
+running 2 tests
+test sk_route_equals_full_combine_whenever_certified ... ok
+test sk_refuses_to_run_when_the_certificate_does_not_cover_k ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests/wide.rs (/workspace/scratch/cram-lock-2026-11-17/certified-lift-review/target/debug/deps/wide-a3394c55a0a740cb)
+
+running 2 tests
+test wide_machine_grows_exactly_and_combines_only_after_growth ... ok
+test wide_anchor_window_is_128_bits_and_needs_no_combine ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+   Doc-tests certified_lift
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

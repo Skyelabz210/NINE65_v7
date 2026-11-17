@@ -1,0 +1,34 @@
+=== cargo test --release ===
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 10 tests
+test exact_division_when_m_divides_x ... ok
+test k_elim_adjacent_matches_general ... ok
+test k_elim_dual_exhaustive ... ok
+test k_elim_exhaustive_coprime_pairs ... ok
+test resolution_gradient_exhaustive ... ok
+test selector_dispatch_correct ... ok
+test signed_comparison_exhaustive ... ok
+test tower_digit_levels ... ok
+test winding_residue_in_residue_space ... ok
+test winding_residues_are_independent_coordinates ... ok
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+=== cargo run --release --bin encoder_demo ===
+Multi-turn absolute encoder — 35/36 adjacent-composite gears
+Supercycle: 1260 positions
+Exhaustive self-test: 0 errors
+
+      X |  gear35  gear36 |  recovered
+      0 |       0       0 |          0  OK
+    100 |      30      28 |        100  OK
+    629 |      34      17 |        629  OK
+    630 |       0      18 |        630  OK
+   1000 |      20      28 |       1000  OK
+   1259 |      34      35 |       1259  OK
+
+Per-readout: 1 subtraction, 1 modulo, 1 multiply, 1 add.

@@ -1,0 +1,33 @@
+{
+  "research_commit": "7bde8d8dc92b604f2f1bfee5bc198f07892e0cda",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 18382,
+      "sha256": "4811a2a3056bca62ea9a7201bcf471dc85175430d03bf4808fcaa9b3c71cc402"
+    },
+    {
+      "path": "check_claims.py",
+      "bytes": 5858,
+      "sha256": "41975d5e5a789d817b99c13f8159c7175b9d6241f38e76a8536a3d6945e35727"
+    },
+    {
+      "path": "eclipse_phase.py",
+      "bytes": 1299,
+      "sha256": "a5e594d0eacf4129a658fc9821fb18f459c69aebb3620238739a357885843f45"
+    },
+    {
+      "path": "verification.json",
+      "bytes": 6199,
+      "sha256": "1e1a45479215cdeca3f253f0f8cab90b0746e73505211c7ff15ae3eca48a9387"
+    },
+    {
+      "path": "sources.json",
+      "bytes": 2627,
+      "sha256": "6ce0b31ef649418ba4164183f62aa9af8982dae90a964df6661917012b377c88"
+    }
+  ],
+  "run": "python3 check_claims.py",
+  "dependencies": "Python standard library only",
+  "private_source_text_included": false
+}

@@ -1,0 +1,72 @@
+{
+  "source_base": "d883d24",
+  "prior_declarations": 144,
+  "foundation": "../../universal-cross-pollination/lean",
+  "unchanged_sources": [
+    {
+      "file": "ExactObservation.lean",
+      "sha256": "3e4f0dc07d9ecb189b4b3a7e490d07fad3a0f828e4ad773fa251876263a3f195",
+      "matches_previous": true
+    },
+    {
+      "file": "UniversalLift.lean",
+      "sha256": "00da716f76d10806dc86f3d5a4206c380ea8f6b5a99c6d4f788c4053efba2924",
+      "matches_previous": true
+    },
+    {
+      "file": "RingReadout.lean",
+      "sha256": "033dc2f2903b7fcffcb7576fcbdfba70dff2cf247b9a9f0d8ce2dd5495d1e67b",
+      "matches_previous": true
+    },
+    {
+      "file": "IntegerSpecialization.lean",
+      "sha256": "c7788921b59a7244e54d53cf1bda2013e3bacea98b9392b29c67b1fe91a3fa88",
+      "matches_previous": true
+    },
+    {
+      "file": "CostedReadout.lean",
+      "sha256": "2946863aa7d1252b8687f0feb9073f073b4ba769368567cc9ea9cc3987a534d7",
+      "matches_previous": true
+    },
+    {
+      "file": "ReferenceChange.lean",
+      "sha256": "ecd6296ba0e850d03a6cd7093947a0d1803b37f3502c1c77256c8f242711b0e1",
+      "matches_previous": true
+    },
+    {
+      "file": "CoupledAnchors.lean",
+      "sha256": "4357100f2e4b0632d36c1e16cfcaa5da10fe2285a8029773aa1b2112a8b9e95d",
+      "matches_previous": true
+    },
+    {
+      "file": "ResidueAlgorithms.lean",
+      "sha256": "852030cea0a3404654d2a77f677e35a147efc917be33d26ba85ceb6b6d5b7b67",
+      "matches_previous": true
+    },
+    {
+      "file": "ResiduePrimitives.lean",
+      "sha256": "61ad481a6dd7e7c9831259416a883a90c8b82162ab326dbc293945425ef9de95",
+      "matches_previous": true
+    },
+    {
+      "file": "StarLift.lean",
+      "sha256": "90947ad64ef314f2e4f07af16a1586f2685ba9e453e74da097b5ea9b44cdde9c",
+      "matches_previous": true
+    },
+    {
+      "file": "UniversalKElimination.lean",
+      "sha256": "0b1ea7311dc2ed7d1259668649e35e63d9ac71a5899f24345bdff4bc1bdbd458",
+      "matches_previous": true
+    },
+    {
+      "file": "ConsumerTransport.lean",
+      "sha256": "7f112491a2c01eef4508f7dffbd18afbe8718121e3cb50687171e056649219a7",
+      "matches_previous": true
+    },
+    {
+      "file": "AllResearch.lean",
+      "sha256": "2849639703577815b9d8a016898adc4e60beb1c649fd91b6bac86e4f44867a7b",
+      "matches_previous": true
+    }
+  ]
+}

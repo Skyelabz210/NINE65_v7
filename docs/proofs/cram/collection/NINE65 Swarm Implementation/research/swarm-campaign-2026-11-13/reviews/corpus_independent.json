@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "scope": "Independent source-byte rehash and ID accounting; not renewed reading or proof of source claims",
+  "records": 181,
+  "verified_source_bytes": 150,
+  "sources_jsonl_sha256": "8fb8f0b91a1af1f4613a4d3f9c55b7a06e3decff1204f2ac6a19b4723e09ad1c"
+}

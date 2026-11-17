@@ -1,0 +1,90 @@
+{
+  "captured_at": "2026-11-13",
+  "sources": [
+    {
+      "source_id": "drive-frontiers",
+      "drive_id": "1W2FjqYGlpYY3C2GVuquhuAB4QGC5t1AE",
+      "title": "CRT_Foundations_Frontiers_Divergence_QMNF.docx",
+      "modifiedTime": "2026-03-16T08:38:59.923Z",
+      "read_ranges": [
+        [
+          105,
+          160
+        ]
+      ],
+      "url": "https://docs.google.com/document/d/1W2FjqYGlpYY3C2GVuquhuAB4QGC5t1AE/edit",
+      "total_returned_lines": 160,
+      "account": "hackfate.ai@gmail.com",
+      "sha256": "6a3449258a58e1b6be056429c1852b637df0d31883933c5a52cf070ae79142be",
+      "hash_kind": "connector_returned_utf8_text_not_original_binary"
+    },
+    {
+      "source_id": "drive-synthesis",
+      "drive_id": "1JLZSoyE2PRQxF-K8jNDrF55PaNOgb6Dx",
+      "title": "UNIFIED_FRAMEWORK_SYNTHESIS.txt",
+      "modifiedTime": "2026-03-20T00:11:34.179Z",
+      "read_ranges": [
+        [
+          1,
+          181
+        ]
+      ],
+      "url": "https://drive.google.com/file/d/1JLZSoyE2PRQxF-K8jNDrF55PaNOgb6Dx/view",
+      "total_returned_lines": 181,
+      "account": "hackfate.ai@gmail.com",
+      "sha256": "c332ac3ff85f31e4af5fb96d5a37753000dc620e397f0cc30f4e22eaa357b3b0",
+      "hash_kind": "connector_returned_utf8_text_not_original_binary"
+    },
+    {
+      "source_id": "drive-nsproof",
+      "drive_id": "1qy8BoYD9wBeNEezA7qOg2iwMIIsMRKRP",
+      "title": "NS REGULARITY PROOF COMPLETE.md",
+      "modifiedTime": "2026-04-09T18:43:46.569Z",
+      "read_ranges": [
+        [
+          14,
+          100
+        ]
+      ],
+      "url": "https://drive.google.com/file/d/1qy8BoYD9wBeNEezA7qOg2iwMIIsMRKRP/view",
+      "total_returned_lines": 226,
+      "account": "hackfate.ai@gmail.com",
+      "sha256": "4285a1c352d56d337881054123f0cdd7171643e7c3907840d3150b14584f61ae",
+      "hash_kind": "connector_returned_utf8_text_not_original_binary"
+    },
+    {
+      "source_id": "drive-blueprint",
+      "drive_id": "1ItakoJNb4InkkRoRl4oEsg7NcoGQXQlyNo5xR_nByf0",
+      "title": "3D_NS_BUILD_BLUEPRINT",
+      "modifiedTime": "2026-05-06T10:17:00.029Z",
+      "read_ranges": [
+        [
+          103,
+          187
+        ]
+      ],
+      "url": "https://docs.google.com/document/d/1ItakoJNb4InkkRoRl4oEsg7NcoGQXQlyNo5xR_nByf0/edit",
+      "total_returned_lines": 745,
+      "account": "hackfate.ai@gmail.com",
+      "sha256": "b80339d34f96ff8f39f8913bf460ec94b5f1c959a6a08aa5f2d0b720525841b8",
+      "hash_kind": "connector_returned_utf8_text_not_original_binary"
+    },
+    {
+      "source_id": "drive-register",
+      "drive_id": "1aCacCOtRQHZWHpMkqRT320KjY_GyHdOCZm9nIlciYxM",
+      "title": "14_major_theorems_register",
+      "modifiedTime": "2026-05-03T06:57:33.400Z",
+      "read_ranges": [
+        [
+          1,
+          175
+        ]
+      ],
+      "url": "https://docs.google.com/document/d/1aCacCOtRQHZWHpMkqRT320KjY_GyHdOCZm9nIlciYxM/edit",
+      "total_returned_lines": 395,
+      "account": "hackfate.ai@gmail.com",
+      "sha256": "fe251268771a42da33f4f8d1446f927de4795ddcda151ee85b2750104813f585",
+      "hash_kind": "connector_returned_utf8_text_not_original_binary"
+    }
+  ]
+}

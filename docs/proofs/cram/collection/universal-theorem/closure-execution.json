@@ -1,0 +1,51 @@
+{
+  "status": "PASS",
+  "scope": "standalone clear residue algorithm executable wiring; not FHE or performance",
+  "toolchain": "leanprover/lean4:v4.27.0-rc1",
+  "command": "lake env lean ClosureSmoke.lean",
+  "pairs": 1809,
+  "exhaustive_frames": [
+    [
+      2,
+      3
+    ],
+    [
+      6,
+      7
+    ]
+  ],
+  "boundary_fixture_frame": [
+    36,
+    37
+  ],
+  "boundary_fixture_pairs": 9,
+  "additional_controls": 4,
+  "proof_total_declarations": 130,
+  "new_closure_and_starlift_declarations": 55,
+  "files": [
+    {
+      "file": "ClosureSmoke.lean",
+      "sha256": "be184f35cb9c82256e9b55ead4fee6e5ce7e7c8df447f31c538fea74cab2a43e"
+    },
+    {
+      "file": "closure-smoke.log",
+      "sha256": "7c20cf621a8a3b6c6153246ac4a405d49366ddfa165b4b2e5920f71ee8e2473a"
+    },
+    {
+      "file": "verification.json",
+      "sha256": "29e8edaca3dc8feda52811a9bb0c10e0b431ab55b6efe35b75fba9493d8c01ab"
+    },
+    {
+      "file": "lakefile.toml",
+      "sha256": "85620606b10273014739fcbf1a7ad5a0f3453504dcce75efb4827cb63654bf6a"
+    },
+    {
+      "file": "lake-build.log",
+      "sha256": "045d2f0b3ba1a0b2260bceddfe364c1ab524f606aaee0a4a400023d93d1d4b13"
+    },
+    {
+      "file": "check_proofs.py",
+      "sha256": "436f095a353609644ec8144f9f0d7f29a1e01d71a39ed31d6768511e0c5710d2"
+    }
+  ]
+}

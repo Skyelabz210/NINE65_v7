@@ -1,0 +1,54 @@
+{
+  "private_sources": [
+    {
+      "title": "QMNF_Shadow_Entropy_Complete_Technical_Reference.docx",
+      "url": "https://drive.google.com/file/d/1NxuDENEWzsmRFlpE_KypnrvCpgL6BLPn/view",
+      "extracted_utf8_bytes": 57728,
+      "extracted_sha256": "efd313375a9a5e579618abc88b7a714469697b2a3576b2759b986892a5bc7da6",
+      "scope": "Targeted definitions and searches for the cited titles, 23 and calendar/cosmological claims. Other claims not audited.",
+      "repository_includes_source_text": false
+    },
+    {
+      "title": "UNIFIED_FRAMEWORK_SYNTHESIS.txt",
+      "url": "https://drive.google.com/file/d/1JLZSoyE2PRQxF-K8jNDrF55PaNOgb6Dx/view",
+      "extracted_utf8_bytes": 11506,
+      "extracted_sha256": "992bd5fe9b094511cf1b0f3a830987e2515e1d4476b22a85f42ed09aa2daf77b",
+      "scope": "Targeted definitions and searches for the cited titles, 23 and calendar/cosmological claims. Other claims not audited.",
+      "repository_includes_source_text": false
+    },
+    {
+      "title": "bed6da90b92e47446d31662fe521a496.md",
+      "url": "https://drive.google.com/file/d/1Ihp0_SdfClYxRv6cedScAZsgKGA2TUJL/view",
+      "extracted_utf8_bytes": 88994,
+      "extracted_sha256": "a225d3ff05e789f2fc16f24fd57535acf672b7c90249f687dadbf4f4a437eddd",
+      "scope": "Targeted definitions and searches for the cited titles, 23 and calendar/cosmological claims. Other claims not audited.",
+      "repository_includes_source_text": false
+    }
+  ],
+  "formal_sources": [
+    {
+      "path": "research/swarm-campaign-2026-11-13/proofs/UniversalLift.lean",
+      "sha256": "00da716f76d10806dc86f3d5a4206c380ea8f6b5a99c6d4f788c4053efba2924",
+      "scope": "Previously checked snapshot; source inspected, no fresh Lean execution this turn."
+    },
+    {
+      "path": "research/swarm-campaign-2026-11-13/proofs/ExactObservation.lean",
+      "sha256": "3e4f0dc07d9ecb189b4b3a7e490d07fad3a0f828e4ad773fa251876263a3f195",
+      "scope": "Previously checked snapshot; source inspected, no fresh Lean execution this turn."
+    },
+    {
+      "path": "research/swarm-campaign-2026-11-13/proofs/mathlib/AnchorSaturation.lean",
+      "sha256": "b51563e36a26f2c9e1b8483ba6e7f769b5441c4101a78e045403134aeb3a3e24",
+      "scope": "Previously checked snapshot; source inspected, no fresh Lean execution this turn."
+    }
+  ],
+  "search_counts": {
+    "external_calls": 2,
+    "external_requested_result_slots": 7,
+    "external_unique_fetched_pages": 3,
+    "drive_searches": 4,
+    "drive_fetches": 3
+  },
+  "exact_named_titles_located": false,
+  "source_discovery_scope": "Scoped searches, not an exhaustive account-wide absence proof."
+}

@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "normalization_cases": 1953,
+  "multiplication_cases": 11025,
+  "refusal_controls": 5,
+  "cross_cancellation_capacity_example": "200/3 * 3/200 = 1 within 8 bits",
+  "scope": "clear reference, not residue-native or encrypted implementation"
+}

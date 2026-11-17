@@ -1,0 +1,85 @@
+warning: unused variable: `att`
+   --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor_fix.rs:491:13
+    |
+491 |         let att = FourthAttractor::new(m, 0);
+    |             ^^^ help: if this is intentional, prefix it with an underscore: `_att`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: 1 warning emitted
+
+
+running 11 tests
+test tests::all_zones_produce_positive_step ... ok
+test tests::convergence_at_m_is_instant ... ok
+test tests::feedback_fixed_boosts_when_high_variance ... ok
+test tests::battery_fixed_passes_target_depth_range ... FAILED
+test tests::effective_k_zones_are_correct ... ok
+test tests::convergence_depth_is_in_resonance_range_for_large_m ... FAILED
+test tests::feedback_fixed_reduces_when_low_variance ... ok
+test tests::fibonacci_gate_covers_full_range ... ok
+test tests::fixed_outperforms_buggy_on_s0_zero ... ok
+test tests::phi_ratio_is_correct ... ok
+test tests::raw_feedback_is_non_negative ... ok
+
+failures:
+
+---- tests::battery_fixed_passes_target_depth_range stdout ----
+
+thread 'tests::battery_fixed_passes_target_depth_range' panicked at /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor_fix.rs:351:9:
+Fixed implementation must pass ≥ 27/40 tests; passed 0/40.
+Failing:
+Test 1: M=210 s0=0 depth=11 converged=true
+Test 2: M=210 s0=10 depth=10 converged=true
+Test 3: M=210 s0=21 depth=10 converged=true
+Test 4: M=210 s0=52 depth=9 converged=true
+Test 5: M=210 s0=69 depth=8 converged=true
+Test 6: M=210 s0=105 depth=6 converged=true
+Test 7: M=210 s0=138 depth=5 converged=true
+Test 8: M=210 s0=157 depth=4 converged=true
+Test 9: M=210 s0=189 depth=1 converged=true
+Test 10: M=210 s0=207 depth=1 converged=true
+Test 11: M=2310 s0=0 depth=10 converged=true
+Test 12: M=2310 s0=115 depth=10 converged=true
+Test 13: M=2310 s0=231 depth=10 converged=true
+Test 14: M=2310 s0=577 depth=9 converged=true
+Test 15: M=2310 s0=762 depth=8 converged=true
+Test 16: M=2310 s0=1155 depth=6 converged=true
+Test 17: M=2310 s0=1524 depth=5 converged=true
+Test 18: M=2310 s0=1732 depth=4 converged=true
+Test 19: M=2310 s0=2079 depth=1 converged=true
+Test 20: M=2310 s0=2286 depth=1 converged=true
+Test 21: M=30030 s0=0 depth=10 converged=true
+Test 22: M=30030 s0=1501 depth=10 converged=true
+Test 23: M=30030 s0=3003 depth=10 converged=true
+Test 24: M=30030 s0=7507 depth=9 converged=true
+Test 25: M=30030 s0=9909 depth=8 converged=true
+Test 26: M=30030 s0=15015 depth=6 converged=true
+Test 27: M=30030 s0=19819 depth=5 converged=true
+Test 28: M=30030 s0=22522 depth=4 converged=true
+Test 29: M=30030 s0=27027 depth=1 converged=true
+Test 30: M=30030 s0=29729 depth=1 converged=true
+Test 31: M=9699690 s0=0 depth=10 converged=true
+Test 32: M=9699690 s0=484984 depth=10 converged=true
+Test 33: M=9699690 s0=969969 depth=10 converged=true
+Test 34: M=9699690 s0=2424922 depth=9 converged=true
+Test 35: M=9699690 s0=3200897 depth=8 converged=true
+Test 36: M=9699690 s0=4849845 depth=6 converged=true
+Test 37: M=9699690 s0=6401795 depth=5 converged=true
+Test 38: M=9699690 s0=7274767 depth=4 converged=true
+Test 39: M=9699690 s0=8729721 depth=1 converged=true
+Test 40: M=9699690 s0=9602693 depth=1 converged=true
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- tests::convergence_depth_is_in_resonance_range_for_large_m stdout ----
+
+thread 'tests::convergence_depth_is_in_resonance_range_for_large_m' panicked at /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor_fix.rs:385:13:
+M=30030 s0=0: depth 10 outside target [18, 35]
+
+
+failures:
+    tests::battery_fixed_passes_target_depth_range
+    tests::convergence_depth_is_in_resonance_range_for_large_m
+
+test result: FAILED. 9 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -1,0 +1,130 @@
+{
+  "status": "PASS",
+  "executed_at_utc": "2026-11-13T02:32:08.613810+00:00",
+  "repo": "/workspace/NINE65-cross-pollination",
+  "commit": "3ff079e0b0b712ec8f589e19146f4bc872ea24bf",
+  "scope": "Focused combined-tree execution; separate feature sets as listed; not all-feature or whole-workspace testing",
+  "cargo_version": "cargo 1.89.0 (c24e10642 2025-06-23)",
+  "target_dir": "/workspace/.tooling/target-gcd-campaign",
+  "runs": [
+    {
+      "name": "core",
+      "command": [
+        "/workspace/.tooling/cargo/bin/cargo",
+        "test",
+        "--locked",
+        "-p",
+        "cram-core",
+        "--no-fail-fast"
+      ],
+      "exit_code": 0,
+      "passed": 29,
+      "failed": 0,
+      "expected_passed": 29,
+      "elapsed_seconds": 7.994,
+      "log": "evidence/integrated-core.log",
+      "log_sha256": "3dd46e234473b35abc540d827c3ac61cc95341ade215d294eda5bbdf54c36986"
+    },
+    {
+      "name": "adapter-serial",
+      "command": [
+        "/workspace/.tooling/cargo/bin/cargo",
+        "test",
+        "--locked",
+        "-p",
+        "nine65",
+        "--no-default-features",
+        "--features",
+        "residue-query",
+        "--test",
+        "residue_query_adapter",
+        "--no-fail-fast"
+      ],
+      "exit_code": 0,
+      "passed": 3,
+      "failed": 0,
+      "expected_passed": 3,
+      "elapsed_seconds": 15.075,
+      "log": "evidence/integrated-adapter-serial.log",
+      "log_sha256": "c6867092c1075acf63f70e4ac016d8f99cadb82402ee883812b51fa4c0d3d520"
+    },
+    {
+      "name": "adapter-accelerated",
+      "command": [
+        "/workspace/.tooling/cargo/bin/cargo",
+        "test",
+        "--locked",
+        "-p",
+        "nine65",
+        "--no-default-features",
+        "--features",
+        "residue-query,accelerated",
+        "--test",
+        "residue_query_adapter",
+        "--no-fail-fast"
+      ],
+      "exit_code": 0,
+      "passed": 3,
+      "failed": 0,
+      "expected_passed": 3,
+      "elapsed_seconds": 15.212,
+      "log": "evidence/integrated-adapter-accelerated.log",
+      "log_sha256": "c546b92a1b70d72dc06e57be413c4125f8d73b3ec7a18b0f9e15ab97732a5c83"
+    },
+    {
+      "name": "gcd",
+      "command": [
+        "/workspace/.tooling/cargo/bin/cargo",
+        "test",
+        "--locked",
+        "-p",
+        "nine65",
+        "--lib",
+        "division::gcd_tests::",
+        "--no-fail-fast",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "passed": 7,
+      "failed": 0,
+      "expected_passed": 7,
+      "elapsed_seconds": 86.347,
+      "log": "evidence/integrated-gcd.log",
+      "log_sha256": "3d99e153bc0799e200ba73b4508ecf5298670573b73a3d23689ad0c4f21140d0"
+    },
+    {
+      "name": "private-feedback",
+      "command": [
+        "/workspace/.tooling/cargo/bin/cargo",
+        "test",
+        "--locked",
+        "-p",
+        "private-feedback-nine65",
+        "public_adapter_encrypts_and_aggregates_live_dual_rns_slots",
+        "--no-fail-fast",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "expected_passed": 1,
+      "elapsed_seconds": 13.648,
+      "log": "evidence/integrated-private-feedback.log",
+      "log_sha256": "7ac61049b8bf1c4b9d9afa6da4e3a152639d7452ec8c662088c4b586836a0748"
+    }
+  ],
+  "source_sha256": {
+    "crates/cram-core/src/query_runtime.rs": "8de791bc08ebeb00baa17278280bf07b03a1942704732adf4d5b8dc0c908648b",
+    "crates/cram-core/tests/query_runtime.rs": "5ee561c09698638b07ea9703051a0c34435f38d1da6df29e7d7c0c43f7d93859",
+    "crates/nine65/Cargo.toml": "bbaae1f8626935ca8fa1effad12feb4ccc5666e5205b3174d9ed4feb17249884",
+    "crates/nine65/src/compiler.rs": "03b16b97d2bb126805664ae65fd75088ce1503b04c9f8dc8527b73cacfb82d77",
+    "crates/nine65/src/compiler/residue_query.rs": "0edf74fdf0307a7f0a48b5508a674143401724e5fcff68a18acc36f43f4abf94",
+    "crates/nine65/tests/residue_query_adapter.rs": "203147e3a78b106ecb54c6af8d2cf3d6aff5809870e5dc5c35d49f9135475d25",
+    "crates/nine65/src/ops/cram_main_division.rs": "922379ec84dca6eec76718c10d9f9aef6847ea45810f57b24785727d40a12480",
+    "crates/nine65/src/ops/cram_main_gcd_tests.rs": "04c9f6676e2403b85926e4f4adae272d1bf0081e4fb61d6beba8bdcbecf49d06",
+    "crates/nine65/src/ops/cram_public.rs": "d92544ffd6423d189097d2ed18b9f45c609d69f50cb201321ccf312f9c5d5514",
+    "crates/nine65/src/ops/integer_division_circuit.rs": "032dc4e275e3138e96dc7c43caf4b2218243e35cb3b8e6b97eedc506df62dbd2"
+  }
+}

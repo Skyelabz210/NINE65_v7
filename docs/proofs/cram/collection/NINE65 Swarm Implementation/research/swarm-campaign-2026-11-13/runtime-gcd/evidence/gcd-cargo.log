@@ -1,0 +1,36 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65-swarm-gcd/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65-swarm-gcd/Cargo.toml
+   Compiling crc32fast v1.5.0
+   Compiling mana v0.1.0 (/workspace/NINE65-swarm-gcd/crates/mana)
+   Compiling nine65 v0.1.0 (/workspace/NINE65-swarm-gcd/crates/nine65)
+   Compiling nexgen_rational v0.1.0 (/workspace/NINE65-swarm-gcd/crates/nexgen_rational)
+   Compiling clockwork-core v0.1.0 (/workspace/NINE65-swarm-gcd/crates/clockwork-core)
+   Compiling unhal v0.1.0 (/workspace/NINE65-swarm-gcd/crates/unhal)
+   Compiling exact_transcendentals v1.0.0 (/workspace/NINE65-swarm-gcd/crates/exact_transcendentals)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 28.18s
+     Running unittests src/lib.rs (/workspace/.tooling/target-gcd-campaign/debug/deps/nine65-36b47786ddf418df)
+
+running 8 tests
+test keys::bootstrap::tests::test_gcd_u64_bootstrap_primes_coprime ... ok
+test keys::bootstrap::tests::test_gcd_u64_basic ... ok
+GCD width 1: rounds=2, gates=10, products=4, budget=136000
+GCD width 2: rounds=4, gates=92, products=54, budget=72000
+encrypted GCD n=8 exhaustive one-bit plan: (2, 10, 4, 136000)
+test ops::rns_fhe::cram_main::division::gcd_tests::encrypted_gcd_one_bit_exhaustive_and_public_schedule ... ok
+test ops::rns_fhe::cram_main::division::circuit::tests::gcd_circuit_eight_bit_boundaries_and_seeded_cases ... ok
+test ops::rns_fhe::cram_main::division::gcd_tests::encrypted_gcd_width_key_and_noise_refusals ... ok
+test ops::rns_fhe::cram_main::division::circuit::tests::gcd_circuit_exhaustive_small_unequal_widths ... ok
+GCD width 3: REFUSED at gate 625: certified phase bound exhausted before operation
+GCD width 4: REFUSED at gate 2295: certified phase bound exhausted before operation
+GCD width 5: REFUSED at gate 131: certified phase bound exhausted before operation
+GCD width 6: REFUSED at gate 138: certified phase bound exhausted before operation
+GCD width 7: REFUSED at gate 145: certified phase bound exhausted before operation
+GCD width 8: REFUSED at gate 147: certified phase bound exhausted before operation
+test ops::rns_fhe::cram_main::division::gcd_tests::encrypted_gcd_profiles_and_admitted_two_bit_cases ... ok
+native GCD n=8192 rounds=2 products=4
+native GCD n=8192 rounds=2 products=4
+test ops::rns_fhe::cram_main::division::gcd_tests::native_encrypted_gcd_checks_every_plaintext_coefficient ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 1402 filtered out; finished in 7.97s
+

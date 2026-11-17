@@ -1,0 +1,110 @@
+{
+  "status": "PASS",
+  "toolchain": "leanprover/lean4:v4.27.0-rc1",
+  "source": "ResiduePrimitives.lean",
+  "source_sha256": "61ad481a6dd7e7c9831259416a883a90c8b82162ab326dbc293945425ef9de95",
+  "theorem_count": 14,
+  "theorems": [
+    {
+      "name": "KElimination.ResiduePrimitives.zero_eq_encode",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "KElimination.ResiduePrimitives.kQuery_exact",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.ResiduePrimitives.increment_encode",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "KElimination.ResiduePrimitives.subtract_encode",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "KElimination.ResiduePrimitives.euclidean_lex_order",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.ResiduePrimitives.less_encode",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.ResiduePrimitives.encode_injective_on_window",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.ResiduePrimitives.capacity_positive",
+      "axioms": []
+    },
+    {
+      "name": "KElimination.ResiduePrimitives.isZero_encode",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.ResiduePrimitives.adjacent_query",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.ResiduePrimitives.ops_correct",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.ResiduePrimitives.divmod_correct",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.ResiduePrimitives.divmod_zero_refused",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.ResiduePrimitives.gcd_correct",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    }
+  ]
+}

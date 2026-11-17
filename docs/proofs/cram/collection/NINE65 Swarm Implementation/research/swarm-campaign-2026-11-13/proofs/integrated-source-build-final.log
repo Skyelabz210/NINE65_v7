@@ -1,0 +1,242 @@
+ℹ [2/417] Replayed KElimination.UniversalResearch.ExactObservation
+info: KElimination/UniversalResearch/ExactObservation.lean:136:0: 'KElimination.ExactObservation.recoverable_iff' depends on axioms: [Classical.choice]
+info: KElimination/UniversalResearch/ExactObservation.lean:137:0: 'KElimination.ExactObservation.refined_observation_suffices' does not depend on any axioms
+info: KElimination/UniversalResearch/ExactObservation.lean:138:0: 'KElimination.ExactObservation.collision_obstructs_query' does not depend on any axioms
+info: KElimination/UniversalResearch/ExactObservation.lean:139:0: 'KElimination.ExactObservation.refines_identity' does not depend on any axioms
+info: KElimination/UniversalResearch/ExactObservation.lean:140:0: 'KElimination.ExactObservation.refines_composition' does not depend on any axioms
+info: KElimination/UniversalResearch/ExactObservation.lean:141:0: 'KElimination.ExactObservation.finite_program_exact' does not depend on any axioms
+info: KElimination/UniversalResearch/ExactObservation.lean:142:0: 'KElimination.ExactObservation.finite_program_identifies_result' does not depend on any axioms
+info: KElimination/UniversalResearch/ExactObservation.lean:143:0: 'KElimination.ExactObservation.transduction_composes' does not depend on any axioms
+info: KElimination/UniversalResearch/ExactObservation.lean:144:0: 'KElimination.ExactObservation.transduction_round_trip' does not depend on any axioms
+ℹ [3/417] Replayed KElimination.UniversalResearch.UniversalLift
+info: KElimination/UniversalResearch/UniversalLift.lean:233:0: 'KElimination.UniversalLift.AddMap.map_zero' depends on axioms: [propext]
+info: KElimination/UniversalResearch/UniversalLift.lean:234:0: 'KElimination.UniversalLift.AddMap.map_neg' depends on axioms: [propext]
+info: KElimination/UniversalResearch/UniversalLift.lean:235:0: 'KElimination.UniversalLift.AddMap.map_sub' depends on axioms: [propext]
+info: KElimination/UniversalResearch/UniversalLift.lean:236:0: 'KElimination.UniversalLift.AddMap.same_reading_iff' depends on axioms: [propext]
+info: KElimination/UniversalResearch/UniversalLift.lean:237:0: 'KElimination.UniversalLift.phase_difference' does not depend on any axioms
+info: KElimination/UniversalResearch/UniversalLift.lean:238:0: 'KElimination.UniversalLift.candidate_iff_kernel' depends on axioms: [propext]
+info: KElimination/UniversalResearch/UniversalLift.lean:239:0: 'KElimination.UniversalLift.separation_iff' depends on axioms: [propext]
+info: KElimination/UniversalResearch/UniversalLift.lean:240:0: 'KElimination.UniversalLift.lift_query_exists_iff' depends on axioms: [propext, Classical.choice]
+info: KElimination/UniversalResearch/UniversalLift.lean:241:0: 'KElimination.UniversalLift.target_factor_exists_iff' depends on axioms: [propext, Classical.choice]
+info: KElimination/UniversalResearch/UniversalLift.lean:242:0: 'KElimination.UniversalLift.target_factor_unique' does not depend on any axioms
+info: KElimination/UniversalResearch/UniversalLift.lean:243:0: 'KElimination.UniversalLift.target_factor_additive' does not depend on any axioms
+info: KElimination/UniversalResearch/UniversalLift.lean:244:0: 'KElimination.UniversalLift.constructive_query_correct' does not depend on any axioms
+info: KElimination/UniversalResearch/UniversalLift.lean:245:0: 'KElimination.UniversalLift.constructive_lift_correct' does not depend on any axioms
+info: KElimination/UniversalResearch/UniversalLift.lean:246:0: 'KElimination.UniversalLift.target_projection' does not depend on any axioms
+info: KElimination/UniversalResearch/UniversalLift.lean:247:0: 'KElimination.UniversalLift.direct_target_query' does not depend on any axioms
+ℹ [4/417] Replayed KElimination.UniversalResearch.RingReadout
+info: KElimination/UniversalResearch/RingReadout.lean:183:0: 'KElimination.RingReadout.Observation.map_zero' depends on axioms: [propext]
+info: KElimination/UniversalResearch/RingReadout.lean:184:0: 'KElimination.RingReadout.Observation.map_sub' does not depend on any axioms
+info: KElimination/UniversalResearch/RingReadout.lean:185:0: 'KElimination.RingReadout.Observation.map_neg' depends on axioms: [propext]
+info: KElimination/UniversalResearch/RingReadout.lean:186:0: 'KElimination.RingReadout.left_mul_sub' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/RingReadout.lean:187:0: 'KElimination.RingReadout.phase_defect' does not depend on any axioms
+info: KElimination/UniversalResearch/RingReadout.lean:188:0: 'KElimination.RingReadout.unit_readout' does not depend on any axioms
+info: KElimination/UniversalResearch/RingReadout.lean:189:0: 'KElimination.RingReadout.right_unit_readout' does not depend on any axioms
+info: KElimination/UniversalResearch/RingReadout.lean:190:0: 'KElimination.RingReadout.solution_fiber' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/RingReadout.lean:191:0: 'KElimination.RingReadout.injective_on_iff_lift_null_separates' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/RingReadout.lean:192:0: 'KElimination.RingReadout.unit_lift_null_iff' does not depend on any axioms
+info: KElimination/UniversalResearch/RingReadout.lean:193:0: 'KElimination.RingReadout.lift_null_zero' depends on axioms: [propext]
+info: KElimination/UniversalResearch/RingReadout.lean:194:0: 'KElimination.RingReadout.lift_null_add' does not depend on any axioms
+info: KElimination/UniversalResearch/RingReadout.lean:195:0: 'KElimination.RingReadout.lift_null_neg' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/RingReadout.lean:196:0: 'KElimination.RingReadout.lift_null_mul_right' does not depend on any axioms
+info: KElimination/UniversalResearch/RingReadout.lean:197:0: 'KElimination.RingReadout.lift_null_mul_left' does not depend on any axioms
+info: KElimination/UniversalResearch/RingReadout.lean:198:0: 'KElimination.RingReadout.target_projection' does not depend on any axioms
+ℹ [5/417] Replayed KElimination.UniversalResearch.IntegerSpecialization
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:363:0: 'KElimination.IntegerSpecialization.query_fused' depends on axioms: [propext]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:364:0: 'KElimination.IntegerSpecialization.query_of_decomposition' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:365:0: 'KElimination.IntegerSpecialization.query_chart_of_decomposition' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:366:0: 'KElimination.IntegerSpecialization.query_quotient_congruence' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:367:0: 'KElimination.IntegerSpecialization.query_exact_of_quotient_window' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:368:0: 'KElimination.IntegerSpecialization.query_exact_of_source_window' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:369:0: 'KElimination.IntegerSpecialization.window_decode_exact' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:370:0: 'KElimination.IntegerSpecialization.query_exact_signed_window' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:371:0: 'KElimination.IntegerSpecialization.star_inverse_certificate' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:372:0: 'KElimination.IntegerSpecialization.star_query_congruence' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:373:0: 'KElimination.IntegerSpecialization.adjacent_query_subtraction' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:374:0: 'KElimination.IntegerSpecialization.adjacent_readout_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:375:0: 'KElimination.IntegerSpecialization.affine_defect_reduction' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:376:0: 'KElimination.IntegerSpecialization.nonunit_query_of_affine_defect' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:377:0: 'KElimination.IntegerSpecialization.nonunit_query_of_decomposition' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:378:0: 'KElimination.IntegerSpecialization.nonunit_chart_query' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:379:0: 'KElimination.IntegerSpecialization.nonunit_chart_query_signed_window' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:380:0: 'KElimination.IntegerSpecialization.target_projection_of_decomposition' depends on axioms: [propext]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:381:0: 'KElimination.IntegerSpecialization.target_projection_of_period_dvd' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:382:0: 'KElimination.IntegerSpecialization.query_target_projection_of_period_dvd' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:383:0: 'KElimination.IntegerSpecialization.target_lane_projection_eq' depends on axioms: [propext]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:384:0: 'KElimination.IntegerSpecialization.chart_query_target_lane_transport' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:385:0: 'KElimination.IntegerSpecialization.nonunit_chart_target_lane_transport' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:386:0: 'KElimination.IntegerSpecialization.query_target_projection' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:387:0: 'KElimination.IntegerSpecialization.signed_query_target_projection' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:388:0: 'KElimination.IntegerSpecialization.same_views_source_unique' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:389:0: 'KElimination.IntegerSpecialization.paired_views_periodic' depends on axioms: [propext]
+info: KElimination/UniversalResearch/IntegerSpecialization.lean:390:0: 'KElimination.IntegerSpecialization.no_unbounded_pair_quotient_decoder' depends on axioms: [propext]
+ℹ [6/417] Replayed KElimination.UniversalResearch.CostedReadout
+info: KElimination/UniversalResearch/CostedReadout.lean:117:0: 'KElimination.CostedReadout.program_counts' does not depend on any axioms
+info: KElimination/UniversalResearch/CostedReadout.lean:118:0: 'KElimination.CostedReadout.program_evaluates_to_readout' does not depend on any axioms
+info: KElimination/UniversalResearch/CostedReadout.lean:119:0: 'KElimination.CostedReadout.program_correct' does not depend on any axioms
+info: KElimination/UniversalResearch/CostedReadout.lean:120:0: 'KElimination.CostedReadout.modular_program_evaluates_to_query' depends on axioms: [propext]
+info: KElimination/UniversalResearch/CostedReadout.lean:121:0: 'KElimination.CostedReadout.adjacent_program_counts' does not depend on any axioms
+info: KElimination/UniversalResearch/CostedReadout.lean:122:0: 'KElimination.CostedReadout.adjacent_program_evaluates_to_query' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+info: KElimination/UniversalResearch/CostedReadout.lean:123:0: 'KElimination.CostedReadout.ring_is_universal_instance' does not depend on any axioms
+ℹ [7/417] Replayed KElimination.UniversalResearch.ReferenceChange
+info: KElimination/UniversalResearch/ReferenceChange.lean:56:0: 'KElimination.ReferenceChange.shifted_decomposition' depends on axioms: [propext]
+info: KElimination/UniversalResearch/ReferenceChange.lean:57:0: 'KElimination.ReferenceChange.shifted_defect' depends on axioms: [propext]
+info: KElimination/UniversalResearch/ReferenceChange.lean:58:0: 'KElimination.ReferenceChange.target_invariant_under_reference_change' depends on axioms: [propext]
+ℹ [8/417] Replayed KElimination.UniversalResearch.CoupledAnchors
+info: KElimination/UniversalResearch/CoupledAnchors.lean:218:0: 'KElimination.CoupledAnchors.anchor_lcm_dvd_iff' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:219:0: 'KElimination.CoupledAnchors.anchor_lcm_pos' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:220:0: 'KElimination.CoupledAnchors.nat_reduced_kernel' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:221:0: 'KElimination.CoupledAnchors.int_reduced_kernel' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:222:0: 'KElimination.CoupledAnchors.anchor_lcm_int_dvd_iff' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:223:0: 'KElimination.CoupledAnchors.combined_kernel' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:224:0: 'KElimination.CoupledAnchors.resolution_pos' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:225:0: 'KElimination.CoupledAnchors.source_period' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:226:0: 'KElimination.CoupledAnchors.combined_kernel_two' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:227:0: 'KElimination.CoupledAnchors.combined_kernel_as_lcm_of_resolutions' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:228:0: 'KElimination.CoupledAnchors.resolution_eq_lcm_reduced' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:229:0: 'KElimination.CoupledAnchors.same_affine_readings_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:230:0: 'KElimination.CoupledAnchors.signed_window_unique' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:231:0: 'KElimination.CoupledAnchors.target_period_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:232:0: 'KElimination.CoupledAnchors.combined_target_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:233:0: 'KElimination.CoupledAnchors.resolution_minimal' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:234:0: 'KElimination.CoupledAnchors.source_readings_iff' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:235:0: 'KElimination.CoupledAnchors.main_and_anchor_readings_iff' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/CoupledAnchors.lean:236:0: 'KElimination.CoupledAnchors.dependent_anchor_resolution' depends on axioms: [propext, Quot.sound]
+ℹ [9/417] Replayed KElimination.UniversalResearch.ResidueAlgorithms
+info: KElimination/UniversalResearch/ResidueAlgorithms.lean:160:0: 'KElimination.ResidueAlgorithms.divLoop_correct' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/ResidueAlgorithms.lean:161:0: 'KElimination.ResidueAlgorithms.encode_injective_on' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/ResidueAlgorithms.lean:162:0: 'KElimination.ResidueAlgorithms.divmod_correct' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/ResidueAlgorithms.lean:163:0: 'KElimination.ResidueAlgorithms.divmod_zero_refused' depends on axioms: [propext]
+info: KElimination/UniversalResearch/ResidueAlgorithms.lean:164:0: 'KElimination.ResidueAlgorithms.gcdLoop_correct' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/ResidueAlgorithms.lean:165:0: 'KElimination.ResidueAlgorithms.gcd_correct' depends on axioms: [propext, Quot.sound]
+ℹ [10/417] Replayed KElimination.UniversalResearch.ResiduePrimitives
+info: KElimination/UniversalResearch/ResiduePrimitives.lean:190:0: 'KElimination.ResiduePrimitives.zero_eq_encode' depends on axioms: [propext]
+info: KElimination/UniversalResearch/ResiduePrimitives.lean:191:0: 'KElimination.ResiduePrimitives.kQuery_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/ResiduePrimitives.lean:192:0: 'KElimination.ResiduePrimitives.increment_encode' depends on axioms: [propext]
+info: KElimination/UniversalResearch/ResiduePrimitives.lean:193:0: 'KElimination.ResiduePrimitives.subtract_encode' depends on axioms: [propext]
+info: KElimination/UniversalResearch/ResiduePrimitives.lean:194:0: 'KElimination.ResiduePrimitives.euclidean_lex_order' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/ResiduePrimitives.lean:195:0: 'KElimination.ResiduePrimitives.less_encode' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/ResiduePrimitives.lean:196:0: 'KElimination.ResiduePrimitives.encode_injective_on_window' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/ResiduePrimitives.lean:197:0: 'KElimination.ResiduePrimitives.capacity_positive' does not depend on any axioms
+info: KElimination/UniversalResearch/ResiduePrimitives.lean:198:0: 'KElimination.ResiduePrimitives.isZero_encode' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/ResiduePrimitives.lean:199:0: 'KElimination.ResiduePrimitives.adjacent_query' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/ResiduePrimitives.lean:200:0: 'KElimination.ResiduePrimitives.ops_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/ResiduePrimitives.lean:201:0: 'KElimination.ResiduePrimitives.divmod_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/ResiduePrimitives.lean:202:0: 'KElimination.ResiduePrimitives.divmod_zero_refused' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/ResiduePrimitives.lean:203:0: 'KElimination.ResiduePrimitives.gcd_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+ℹ [11/417] Replayed KElimination.UniversalResearch.StarLift
+info: KElimination/UniversalResearch/StarLift.lean:128:0: 'KElimination.StarLift.negate_residue' depends on axioms: [propext]
+info: KElimination/UniversalResearch/StarLift.lean:129:0: 'KElimination.StarLift.negative_query_eq_negate' depends on axioms: [propext]
+info: KElimination/UniversalResearch/StarLift.lean:130:0: 'KElimination.StarLift.negative_query_of_decomposition' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/StarLift.lean:131:0: 'KElimination.StarLift.positive_adjacent_congruence' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/StarLift.lean:132:0: 'KElimination.StarLift.adjacent_orientations' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/StarLift.lean:133:0: 'KElimination.StarLift.negative_adjacent_congruence' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/StarLift.lean:134:0: 'KElimination.StarLift.negative_query_adjacent' depends on axioms: [propext]
+info: KElimination/UniversalResearch/StarLift.lean:135:0: 'KElimination.StarLift.negative_decode_exact' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/StarLift.lean:136:0: 'KElimination.StarLift.negative_adjacent_exact_window' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/StarLift.lean:137:0: 'KElimination.StarLift.positive_adjacent_exact_source_window' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/StarLift.lean:138:0: 'KElimination.StarLift.unit_kernel_equal' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/StarLift.lean:139:0: 'KElimination.StarLift.adjacent_kernel_equal' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/StarLift.lean:140:0: 'KElimination.StarLift.negative_nonunit_chart_query' depends on axioms: [propext, Classical.choice, Quot.sound]
+ℹ [13/417] Replayed KElimination.UniversalResearch.ConsumerTransport
+info: KElimination/UniversalResearch/ConsumerTransport.lean:214:0: 'KElimination.ConsumerTransport.paired_queries_iff' does not depend on any axioms
+info: KElimination/UniversalResearch/ConsumerTransport.lean:215:0: 'KElimination.ConsumerTransport.indexed_queries_iff' depends on axioms: [Quot.sound]
+info: KElimination/UniversalResearch/ConsumerTransport.lean:216:0: 'KElimination.ConsumerTransport.postprocess_sufficient' does not depend on any axioms
+info: KElimination/UniversalResearch/ConsumerTransport.lean:217:0: 'KElimination.ConsumerTransport.injective_postprocess_iff' does not depend on any axioms
+info: KElimination/UniversalResearch/ConsumerTransport.lean:218:0: 'KElimination.ConsumerTransport.quotient_transition_exists_iff' depends on axioms: [propext, Classical.choice]
+info: KElimination/UniversalResearch/ConsumerTransport.lean:219:0: 'KElimination.ConsumerTransport.quotient_transition_unique' depends on axioms: [Quot.sound]
+info: KElimination/UniversalResearch/ConsumerTransport.lean:220:0: 'KElimination.ConsumerTransport.stable_transports_consumer' does not depend on any axioms
+info: KElimination/UniversalResearch/ConsumerTransport.lean:221:0: 'KElimination.ConsumerTransport.stable_composition' does not depend on any axioms
+info: KElimination/UniversalResearch/ConsumerTransport.lean:222:0: 'KElimination.ConsumerTransport.stable_finite_program' does not depend on any axioms
+info: KElimination/UniversalResearch/ConsumerTransport.lean:223:0: 'KElimination.ConsumerTransport.finite_program_consumer_sufficient' does not depend on any axioms
+info: KElimination/UniversalResearch/ConsumerTransport.lean:224:0: 'KElimination.ConsumerTransport.terminal_query_exists_iff' depends on axioms: [Classical.choice]
+info: KElimination/UniversalResearch/ConsumerTransport.lean:225:0: 'KElimination.ConsumerTransport.stable_under_equivalent_observations' does not depend on any axioms
+info: KElimination/UniversalResearch/ConsumerTransport.lean:226:0: 'KElimination.ConsumerTransport.additive_stability_iff_kernel_invariant' depends on axioms: [propext]
+info: KElimination/UniversalResearch/ConsumerTransport.lean:227:0: 'KElimination.ConsumerTransport.parity_halving_not_stable' does not depend on any axioms
+ℹ [15/417] Replayed KElimination.UniversalResearch.FutureQuotient
+info: KElimination/UniversalResearch/FutureQuotient.lean:297:0: 'KElimination.FutureQuotient.future_refl' does not depend on any axioms
+info: KElimination/UniversalResearch/FutureQuotient.lean:298:0: 'KElimination.FutureQuotient.future_symm' does not depend on any axioms
+info: KElimination/UniversalResearch/FutureQuotient.lean:299:0: 'KElimination.FutureQuotient.future_trans' does not depend on any axioms
+info: KElimination/UniversalResearch/FutureQuotient.lean:300:0: 'KElimination.FutureQuotient.future_determines_outputs' does not depend on any axioms
+info: KElimination/UniversalResearch/FutureQuotient.lean:301:0: 'KElimination.FutureQuotient.future_preserved' does not depend on any axioms
+info: KElimination/UniversalResearch/FutureQuotient.lean:302:0: 'KElimination.FutureQuotient.future_is_coarsest' does not depend on any axioms
+info: KElimination/UniversalResearch/FutureQuotient.lean:303:0: 'KElimination.FutureQuotient.quotient_query_correct' does not depend on any axioms
+info: KElimination/UniversalResearch/FutureQuotient.lean:304:0: 'KElimination.FutureQuotient.quotient_step_correct' depends on axioms: [Quot.sound]
+info: KElimination/UniversalResearch/FutureQuotient.lean:305:0: 'KElimination.FutureQuotient.quotient_equal_iff_future' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/FutureQuotient.lean:306:0: 'KElimination.FutureQuotient.refined_monotone' does not depend on any axioms
+info: KElimination/UniversalResearch/FutureQuotient.lean:307:0: 'KElimination.FutureQuotient.refined_determines_outputs' does not depend on any axioms
+info: KElimination/UniversalResearch/FutureQuotient.lean:308:0: 'KElimination.FutureQuotient.future_refines_every_round' does not depend on any axioms
+info: KElimination/UniversalResearch/FutureQuotient.lean:309:0: 'KElimination.FutureQuotient.refined_iff_bounded_future' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/FutureQuotient.lean:310:0: 'KElimination.FutureQuotient.fixed_point_is_future_equivalence' does not depend on any axioms
+info: KElimination/UniversalResearch/FutureQuotient.lean:311:0: 'KElimination.FutureQuotient.additive_run_zero' depends on axioms: [propext]
+info: KElimination/UniversalResearch/FutureQuotient.lean:312:0: 'KElimination.FutureQuotient.additive_run_add' does not depend on any axioms
+info: KElimination/UniversalResearch/FutureQuotient.lean:313:0: 'KElimination.FutureQuotient.additive_run_sub' depends on axioms: [propext]
+info: KElimination/UniversalResearch/FutureQuotient.lean:314:0: 'KElimination.FutureQuotient.invisible_zero' depends on axioms: [propext]
+info: KElimination/UniversalResearch/FutureQuotient.lean:315:0: 'KElimination.FutureQuotient.invisible_add' does not depend on any axioms
+info: KElimination/UniversalResearch/FutureQuotient.lean:316:0: 'KElimination.FutureQuotient.invisible_sub' depends on axioms: [propext]
+info: KElimination/UniversalResearch/FutureQuotient.lean:317:0: 'KElimination.FutureQuotient.invisible_preserved' does not depend on any axioms
+info: KElimination/UniversalResearch/FutureQuotient.lean:318:0: 'KElimination.FutureQuotient.invisible_is_largest' does not depend on any axioms
+info: KElimination/UniversalResearch/FutureQuotient.lean:319:0: 'KElimination.FutureQuotient.future_eq_iff_invisible_difference' depends on axioms: [propext]
+ℹ [16/417] Replayed KElimination.UniversalResearch.AnchorValuations
+info: KElimination/UniversalResearch/AnchorValuations.lean:92:0: 'KElimination.AnchorValuations.exponent_feasible' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/AnchorValuations.lean:93:0: 'KElimination.AnchorValuations.exponent_minimal' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/AnchorValuations.lean:94:0: 'KElimination.AnchorValuations.missing_exponent_zero_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/AnchorValuations.lean:95:0: 'KElimination.AnchorValuations.saturation_zero' depends on axioms: [propext]
+info: KElimination/UniversalResearch/AnchorValuations.lean:96:0: 'KElimination.AnchorValuations.saturation_bounded' depends on axioms: [propext]
+info: KElimination/UniversalResearch/AnchorValuations.lean:97:0: 'KElimination.AnchorValuations.saturation_monotone' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/AnchorValuations.lean:98:0: 'KElimination.AnchorValuations.saturation_lower_bound' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/AnchorValuations.lean:99:0: 'KElimination.AnchorValuations.positive_saturation_reaches_cap' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/AnchorValuations.lean:100:0: 'KElimination.AnchorValuations.missing_saturation_is_required' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/AnchorValuations.lean:101:0: 'KElimination.AnchorValuations.saturation_fixed' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/AnchorValuations.lean:102:0: 'KElimination.AnchorValuations.vector_minimal_sufficient' depends on axioms: [propext, Quot.sound]
+ℹ [17/417] Replayed KElimination.UniversalResearch.ReflectionInvariant
+info: KElimination/UniversalResearch/ReflectionInvariant.lean:28:0: 'KElimination.ReflectionInvariant.reflection_involution' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/ReflectionInvariant.lean:29:0: 'KElimination.ReflectionInvariant.reflection_preserves_descartes' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+ℹ [1183/1185] Built KElimination.AnchorSaturation (2.0s)
+info: KElimination/AnchorSaturation.lean:158:0: 'KElimination.AnchorSaturation.seed_positive' depends on axioms: [propext, Quot.sound]
+info: KElimination/AnchorSaturation.lean:159:0: 'KElimination.AnchorSaturation.iterate_positive' depends on axioms: [propext, Quot.sound]
+info: KElimination/AnchorSaturation.lean:160:0: 'KElimination.AnchorSaturation.seed_factorization' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/AnchorSaturation.lean:161:0: 'KElimination.AnchorSaturation.step_factorization' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/AnchorSaturation.lean:162:0: 'KElimination.AnchorSaturation.iterate_factorization' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/AnchorSaturation.lean:163:0: 'KElimination.AnchorSaturation.saturation_after_bound' depends on axioms: [propext, Quot.sound]
+info: KElimination/AnchorSaturation.lean:164:0: 'KElimination.AnchorSaturation.anchor_factorization' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/AnchorSaturation.lean:165:0: 'KElimination.AnchorSaturation.iterate_is_least_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/AnchorSaturation.lean:166:0: 'KElimination.AnchorSaturation.demand_fuel_is_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/AnchorSaturation.lean:167:0: 'KElimination.AnchorSaturation.demand_fuel_is_fixed' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/AnchorSaturation.lean:168:0: 'KElimination.AnchorSaturation.iterate_add' does not depend on any axioms
+info: KElimination/AnchorSaturation.lean:169:0: 'KElimination.AnchorSaturation.fixed_point_stays' depends on axioms: [propext]
+info: KElimination/AnchorSaturation.lean:170:0: 'KElimination.AnchorSaturation.early_stop_is_least' depends on axioms: [propext, Classical.choice, Quot.sound]
+✔ [1184/1185] Built KElimination (2.3s)
+Build completed successfully (1185 jobs).

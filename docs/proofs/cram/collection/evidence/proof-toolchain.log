@@ -1,0 +1,5 @@
+info: downloading https://releases.lean-lang.org/lean4/v4.27.0-rc1/lean-4.27.0-rc1-linux.tar.zst
+info: installing /workspace/k-elimination-audit/proof-check/elan/toolchains/leanprover--lean4---v4.27.0-rc1
+
+leanprover/lean4:v4.27.0-rc1 installed - Lean (version 4.27.0-rc1, x86_64-unknown-linux-gnu, commit 2fcce7258eeb6e324366bc25f9058293b04b7547, Release)
+

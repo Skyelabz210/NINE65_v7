@@ -1,0 +1,60 @@
+{
+  "small_valid_base_counterexample": {
+    "moduli": [
+      2,
+      3,
+      5,
+      7
+    ],
+    "M": 210,
+    "xi": [
+      1,
+      2,
+      4,
+      6
+    ],
+    "residues": [
+      1,
+      2,
+      3,
+      5
+    ],
+    "S": 593,
+    "x": 173,
+    "alpha": 2
+  },
+  "undersized_readout_anchor_counterexample": {
+    "moduli": [
+      9,
+      25,
+      49,
+      121
+    ],
+    "M": 1334025,
+    "xi": [
+      8,
+      24,
+      48,
+      120
+    ],
+    "residues": [
+      5,
+      14,
+      19,
+      107
+    ],
+    "S": 5096264,
+    "x": 1094189,
+    "alpha": 3,
+    "alpha_readout_mod_2": 1,
+    "alpha_readout_mod_169": 3
+  },
+  "independent_exhaustive": {
+    "bases": 57,
+    "canonical_states": 10687,
+    "readouts": 39486,
+    "shifted_readouts": 118458,
+    "tropical_cases": 48040
+  },
+  "failures": 0
+}

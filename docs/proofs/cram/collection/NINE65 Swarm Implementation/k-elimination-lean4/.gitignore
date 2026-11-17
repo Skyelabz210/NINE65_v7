@@ -1,0 +1,13 @@
+# Lake build artifacts
+.lake/
+
+# Editor files
+*.swp
+*~
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+KElimination/ZMod.lean

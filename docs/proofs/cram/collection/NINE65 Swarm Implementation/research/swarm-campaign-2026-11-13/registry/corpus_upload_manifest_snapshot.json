@@ -1,0 +1,1559 @@
+{
+  "captured_at": "2026-11-13",
+  "manifest_hashes": [
+    {
+      "path": "/workspace/k-elimination-audit/evidence/input-manifest.json",
+      "sha256": "b82a8fa1ef53824e77f0f4d30f870939357c660513ef3faa5626058d00203c53"
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/input-manifest.json",
+      "sha256": "9a323c878fd2dcbed8601409f501ba81429b9f28b3cfdda040e55835803481e8"
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/extraction-manifest.json",
+      "sha256": "d94f0397f8c950ebff99e9f21dcb4942ec5f0d61fcbd48e5b8e7cd66ac327736"
+    }
+  ],
+  "original": [
+    {
+      "name": "1-The-Universal-Decomposition-Principle-and-Its-Boundaries_-Where-Factorization-Fails-Across-Mathematics-and-Science.pdf",
+      "sha256": "75846764cec92dcfcf7930ccd4e2c96b23ff99ebb8978d3800a084beaf88c61e",
+      "bytes": 116243,
+      "extracted": "/workspace/k-elimination-audit/extracted/1-The-Universal-Decomposition-Principle-and-Its-Boundaries_-Where-Factorization-Fails-Across-Mathematics-and-Science.txt"
+    },
+    {
+      "name": "2-CRAM-K-Elimination-Lifts-and-Exact-Reconstruction.md",
+      "sha256": "65ab7643528fdd36d304ffa353d8171b31e14110160137dbf44a219a90b2620c",
+      "bytes": 48895,
+      "extracted": "/workspace/k-elimination-audit/extracted/2-CRAM-K-Elimination-Lifts-and-Exact-Reconstruction.txt"
+    },
+    {
+      "name": "3-K-ELIMINATION-PAPER.pdf",
+      "sha256": "035707ec30cdbd020ff0887e9bb6b04bdfdbd0295fd59780e22a09d725258c36",
+      "bytes": 173362,
+      "extracted": "/workspace/k-elimination-audit/extracted/3-K-ELIMINATION-PAPER.txt"
+    },
+    {
+      "name": "4-K_ELIMINATION_SUBSTRATE_INVARIANT.md",
+      "sha256": "6efcb8b9d1826820015353ececde4351794a414ab9fbece89ed86ae87f2e491f",
+      "bytes": 6485,
+      "extracted": "/workspace/k-elimination-audit/extracted/4-K_ELIMINATION_SUBSTRATE_INVARIANT.txt"
+    },
+    {
+      "name": "5-kelim_encoder_demo.rs",
+      "sha256": "d9fd33c0cc6e97738cd73aa4d6512cb18579c3a7e3965fcbf284be4cfd05c0d6",
+      "bytes": 1729,
+      "extracted": "/workspace/k-elimination-audit/extracted/5-kelim_encoder_demo.txt"
+    },
+    {
+      "name": "6-KELIM_LUMINANCE_DECODE_REPORT.md",
+      "sha256": "091a1065f690406c66de408fda766bfae85213484b07286bc12be1737c4ee011",
+      "bytes": 15218,
+      "extracted": "/workspace/k-elimination-audit/extracted/6-KELIM_LUMINANCE_DECODE_REPORT.txt"
+    },
+    {
+      "name": "7-Unit_Anchor_K_Elimination_WhitePaper.docx",
+      "sha256": "8db7bda74d628a348253a7e4e8ee85d36ff1482d6b1a990ab1a21ed5395700c0",
+      "bytes": 35734,
+      "extracted": "/workspace/k-elimination-audit/extracted/7-Unit_Anchor_K_Elimination_WhitePaper.txt"
+    },
+    {
+      "name": "8-K_Elimination_Bootstrap_WhitePaper-2.md",
+      "sha256": "64c2d913234a8c23cd722fdacde9ea37f1f8977922aee2566420015694c0ca88",
+      "bytes": 43444,
+      "extracted": "/workspace/k-elimination-audit/extracted/8-K_Elimination_Bootstrap_WhitePaper-2.txt"
+    },
+    {
+      "name": "9-K_ELIMINATION_PAPER.md",
+      "sha256": "7de7678b8a968b65251662c70c4888d98370e604a7dd05f1e1587aeed934dc8d",
+      "bytes": 30459,
+      "extracted": "/workspace/k-elimination-audit/extracted/9-K_ELIMINATION_PAPER.txt"
+    },
+    {
+      "name": "10-CRAM-Lift-K-Elimination-and-Reconstruction-Inventory.md",
+      "sha256": "938fd8e7a97713aa8c6dc09ca6fa7ab76f40f28c1157073b243b9775dfe98782",
+      "bytes": 9962,
+      "extracted": "/workspace/k-elimination-audit/extracted/10-CRAM-Lift-K-Elimination-and-Reconstruction-Inventory.txt"
+    },
+    {
+      "name": "11-PAPER_1_COPRIME_LATTICE_STRATIFICATION-2.docx",
+      "sha256": "7ebf119e69fa11fa34db53c77468eddca02ca9ecdde69eef522a6559fb5b6b2c",
+      "bytes": 22613,
+      "extracted": "/workspace/k-elimination-audit/extracted/11-PAPER_1_COPRIME_LATTICE_STRATIFICATION-2.txt"
+    },
+    {
+      "name": "12-K_Elimination_Technical_Paper.pdf",
+      "sha256": "9e9f80e70912a03e701a5ee3f92d3b9205575a44cc6c009796d35be2a83bd8b0",
+      "bytes": 264610,
+      "extracted": "/workspace/k-elimination-audit/extracted/12-K_Elimination_Technical_Paper.txt"
+    },
+    {
+      "name": "13-k_elim_bootstrap_corrected.py",
+      "sha256": "4ad2efaf6ac717738303556f1e7e9dcb0ad652bf4b608e3fff18421192c1c9f6",
+      "bytes": 16592,
+      "extracted": "/workspace/k-elimination-audit/extracted/13-k_elim_bootstrap_corrected.txt"
+    },
+    {
+      "name": "14-U256_KELIM_FIX_SUMMARY.md",
+      "sha256": "a2d89a2caea1b8a942a299dc1604e8be729ad9013244b532a37538e2cac84b11",
+      "bytes": 2468,
+      "extracted": "/workspace/k-elimination-audit/extracted/14-U256_KELIM_FIX_SUMMARY.txt"
+    },
+    {
+      "name": "15-NINE65_Formal_Proofs-3.pdf",
+      "sha256": "e2149c11a33a343aa203b269175e41c7a9d4334096af93772cd4fb7c7bf2ef58",
+      "bytes": 165404,
+      "extracted": "/workspace/k-elimination-audit/extracted/15-NINE65_Formal_Proofs-3.txt"
+    },
+    {
+      "name": "16-acts.md",
+      "sha256": "0aa316ecdd5336e1614d578795c90dc90b4d252d39fec0b772bdbf2cad0a2900",
+      "bytes": 11281,
+      "extracted": "/workspace/k-elimination-audit/extracted/16-acts.txt"
+    },
+    {
+      "name": "17-k_elim_edge_cases.py",
+      "sha256": "14ca5e6460727dfeb2781e2dd6c81d4fc9e77d27585622ad244b91a636959341",
+      "bytes": 17852,
+      "extracted": "/workspace/k-elimination-audit/extracted/17-k_elim_edge_cases.txt"
+    },
+    {
+      "name": "18-kelim_crate.tar.gz",
+      "sha256": "5e2bfc4593f67a4df9e2a527671a1ff9e497c969f6609265bf8c0657ba83a4ba",
+      "bytes": 6947,
+      "extracted": null
+    },
+    {
+      "name": "19-PROOFS.pdf",
+      "sha256": "3ec3c73b212a0d152f070f8995437fc08f9a92eb4676498eb2f9852dbdb79c2a",
+      "bytes": 250338,
+      "extracted": "/workspace/k-elimination-audit/extracted/19-PROOFS.txt"
+    },
+    {
+      "name": "20-Untitled.docx",
+      "title": "CRAM, NINE65 and Tropical FHE",
+      "document_date": "2026-10-25",
+      "received": "2026-11-12",
+      "sha256": "cea69c53745d79b21cda86841ffa63bb3552ce5e0f70d4c7d0d60919a7acba11",
+      "bytes": 10531,
+      "original_path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/FA672DFF-C893-4FB1-82FA-D1DFC6697AD7/1-Untitled.docx",
+      "extracted": "/workspace/k-elimination-audit/extracted/20-Tropical_FHE_Untitled.txt",
+      "embedded_attachments": false
+    }
+  ],
+  "expanded": [
+    {
+      "number": 1,
+      "name": "1-deep-research-report-6.md",
+      "bytes": 43954,
+      "sha256": "b0df878cbe19b4a1a6ee39f7dbb727362a12d18ac9e377fb967be657ef512932",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/1-deep-research-report-6.md",
+      "duplicates_prior": null
+    },
+    {
+      "number": 2,
+      "name": "2-Untitled.docx",
+      "bytes": 10531,
+      "sha256": "cea69c53745d79b21cda86841ffa63bb3552ce5e0f70d4c7d0d60919a7acba11",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/2-Untitled.docx",
+      "duplicates_prior": "20-Untitled.docx"
+    },
+    {
+      "number": 3,
+      "name": "3-NINE65v7-Exhaustive-Audit-Fallback-Systems-and-Actual-Primary-Path-Usage.docx",
+      "bytes": 171157,
+      "sha256": "4e3f58861c7651ec8cb554c2b5afb2a6f4263d44aa6267da2139d9fee7977ae9",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/3-NINE65v7-Exhaustive-Audit-Fallback-Systems-and-Actual-Primary-Path-Usage.docx",
+      "duplicates_prior": null
+    },
+    {
+      "number": 4,
+      "name": "4-D-OD01-D024-THEOREM-STACK-2.pdf",
+      "bytes": 176247,
+      "sha256": "4bfed94aefcde808c910cd00aab33111b17cd3a5b50ad7f5747abcbaf2bba899",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/4-D-OD01-D024-THEOREM-STACK-2.pdf",
+      "duplicates_prior": null
+    },
+    {
+      "number": 5,
+      "name": "5-Exact_Division_Residue_Space_Resolution.pdf",
+      "bytes": 111878,
+      "sha256": "ec3325cf89decf9c6cbea55e770269dfa49d57dd4bdb5307228fbb85281dba64",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/5-Exact_Division_Residue_Space_Resolution.pdf",
+      "duplicates_prior": null
+    },
+    {
+      "number": 6,
+      "name": "6-CRAM_FULL_SYNTHESIS_EXPANDED.docx",
+      "bytes": 22397,
+      "sha256": "cfcf58e7601fce8eb16b83494ae762d158c1e1232e189dc6b9aeb68f89569315",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/6-CRAM_FULL_SYNTHESIS_EXPANDED.docx",
+      "duplicates_prior": null
+    },
+    {
+      "number": 7,
+      "name": "7-the-safe-basis.pdf",
+      "bytes": 168050,
+      "sha256": "2fc0df63afbbd2502842314257e03d1a385f55ec4163239afec169908ea58ff0",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/7-the-safe-basis.pdf",
+      "duplicates_prior": null
+    },
+    {
+      "number": 8,
+      "name": "8-KimiCRAM_QMNF_Technical_White_Paper_v1.0.md",
+      "bytes": 35797,
+      "sha256": "1cf492085b689667243d8a5182b8cd1aff385d3330adf948887eb9e7425995ea",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/8-KimiCRAM_QMNF_Technical_White_Paper_v1.0.md",
+      "duplicates_prior": null
+    },
+    {
+      "number": 9,
+      "name": "9-PROOFS.pdf",
+      "bytes": 250338,
+      "sha256": "3ec3c73b212a0d152f070f8995437fc08f9a92eb4676498eb2f9852dbdb79c2a",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/9-PROOFS.pdf",
+      "duplicates_prior": "19-PROOFS.pdf"
+    },
+    {
+      "number": 10,
+      "name": "10-Untitled.png",
+      "bytes": 41162,
+      "sha256": "78796a288442eea10a0a23e176cb0d51ac0990558795d14aebeb74399212a6fd",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/10-Untitled.png",
+      "duplicates_prior": null
+    },
+    {
+      "number": 11,
+      "name": "11-workspace.zip",
+      "bytes": 2779038,
+      "sha256": "39bfcf9d0cf4c1961543ff95bd191ca9fba5f84384dad160e287ad14dea1e082",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/11-workspace.zip",
+      "duplicates_prior": null,
+      "zip_entries": 34,
+      "uncompressed_bytes": 3996147,
+      "sample_entries": [
+        "workspace/downloads/1a008425-db12-86b8-8000-0000f1958f7b_CRAM_COMPENDIUM_2026-06-10_3.md",
+        "workspace/downloads/1a008441-9612-8630-8000-0000f7e6dd07_PhD-Level_Technical_Treatise_I_The_Topological_Lift_and_Transfinite_Winding_Tower_Architecture_in_the_Quantum-Modular_Nu",
+        "workspace/downloads/1a008441-8ef2-8d68-8000-0000ec40f9d5_CRAM_Lift_K-Elimination_and_Reconstruction_Inventory.md",
+        "workspace/downloads/1a008425-c6d2-8d13-8000-00002e7b62e7_gpai-20260616-CRAM-CRT-based-coprime-arithmetic.pdf",
+        "workspace/downloads/1a008425-be82-8382-8000-00007746f9a0_K-Elimination_Theorem.pdf",
+        "workspace/downloads/1a008425-d572-8f0a-8000-0000389032c1_CRAM_V6.0_O_1_Trivialized_Reconstruction_via_K-Elimination.pptx",
+        "workspace/downloads/1a008441-9b82-809e-8000-0000f59d2c48_NormalizedTheorem_Lift_andReconstructionMatrix.md",
+        "workspace/downloads/1a008425-c922-84fb-8000-0000ecd9aefb_COMPREHENSIVE_UNIFIED_COMPENDIUM_2025.pdf",
+        "workspace/downloads/1a008441-9242-8717-8000-0000d9959aa0_CRAM_Threaded_System_Documentation..docx",
+        "workspace/downloads/1a008441-9d42-8fb4-8000-00004785fe8b_RECOMBINANT_CRT_BRIDGE_TECHNICAL_PACKET.docx",
+        "workspace/downloads/1a008441-da92-86aa-8000-000063ac0d69_QMNF_ULTIMATE_MATHEMATICAL_COMPENDIUM_V7.pdf",
+        "workspace/downloads/1a008441-aea2-8e21-8000-0000fbb1b210_NINE65_v7_Comprehensive_Audit_Emissions_Report.pdf",
+        "workspace/downloads/1a008425-7d32-8bef-8000-000086e1a1c8_SAFE_BASIS_MASTER_COMPENDIUM.md",
+        "workspace/downloads/1a008441-9302-8ab8-8000-0000d63c09b8_Technical_Paper_1_The_Topological_Lift_Winding_Tower_Architecture.md",
+        "workspace/downloads/1a008441-ba62-8360-8000-0000a2db7985_Star_CRT_Scaling_Analysis.pdf",
+        "workspace/downloads/1a008441-a272-850f-8000-000031ac3532_CRAM_K-Elimination_Lifts_and_Exact_Reconstruction.md",
+        "workspace/downloads/1a008441-f4c2-8673-8000-0000a85e797c_ConfigurableResidueArithmeticMachines.docx",
+        "workspace/downloads/1a008441-8ea2-8d6f-8000-00003c85ab25_Refined_Technical_Paper_Collection_CRT_Lifts_Pha..md",
+        "workspace/downloads/1a008425-c2b2-8191-8000-000005b3457d_K_Elimination_Technical_Paper.pdf",
+        "workspace/skills/worker-safety/SKILL.md",
+        "workspace/skills/kimiim/SKILL.md",
+        "workspace/skills/time-awareness/SKILL.md",
+        "workspace/HEARTBEAT.md",
+        "workspace/USER.md",
+        "workspace/IDENTITY.md",
+        "workspace/AGENTS.md",
+        "workspace/BOOTSTRAP.md",
+        "workspace/memory_consolidation/memory_consolidation.template.env",
+        "workspace/memory_consolidation/memory_consolidation.py",
+        "workspace/memory_consolidation/prompts/diary_prompt.py",
+        "workspace/memory_consolidation/prompts/compact_prompt.py",
+        "workspace/memory_consolidation/memory_consolidation.env",
+        "workspace/TOOLS.md",
+        "workspace/SOUL.md"
+      ]
+    },
+    {
+      "number": 12,
+      "name": "12-gpai-20260616-CRAM-CRT-based-coprime-arithmetic.pdf",
+      "bytes": 319395,
+      "sha256": "518ac5bec46412d2cb1a2a9bb41207efd2ccc31964924acf2ddbabf766403f4d",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/12-gpai-20260616-CRAM-CRT-based-coprime-arithmetic.pdf",
+      "duplicates_prior": null
+    },
+    {
+      "number": 13,
+      "name": "13-cram-beta-synthesis-v1-.pdf",
+      "bytes": 476419,
+      "sha256": "1dc89cbdcbc88417a68d9d93a0377169b4d2a0379e0e482c4241bcba0c9afbbf",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/13-cram-beta-synthesis-v1-.pdf",
+      "duplicates_prior": null
+    },
+    {
+      "number": 14,
+      "name": "14-Crate-12.zip",
+      "bytes": 223390,
+      "sha256": "7d650c2e788e7022e0918c1428894be214d5789127783e032db279fba251967e",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/14-Crate-12.zip",
+      "duplicates_prior": null,
+      "zip_entries": 53,
+      "uncompressed_bytes": 713301,
+      "sample_entries": [
+        "OP_T7_6_Spectral_Gain.md",
+        "band_add.rs",
+        "T7_4_Corrected_Theorem.md",
+        "fourth_attractor.rs",
+        "PSPI_Composition_Law_Blueprint.docx",
+        "T7_T6_Complete_Theorems.md",
+        "fourth_attractor_fix.rs",
+        "Cargo.toml",
+        "integration_tests.rs",
+        "garner.rs",
+        "lib.rs",
+        "main.rs",
+        "engine.rs",
+        "arith.rs",
+        "ahop.rs",
+        "topology.rs",
+        "operators.rs",
+        "fhe.rs",
+        "mnt/user-data/outputs/cram_spt/Cargo.toml",
+        "mnt/user-data/outputs/cram_spt/tests/integration_tests.rs",
+        "subproduct_tree.rs",
+        "mnt/user-data/outputs/cram_spt/src/engine.rs",
+        "mnt/user-data/outputs/cram_spt/src/operators.rs",
+        "mnt/user-data/outputs/cram_spt/src/ahop.rs",
+        "mnt/user-data/outputs/cram_spt/src/main.rs",
+        "mnt/user-data/outputs/cram_spt/src/arith.rs",
+        "mnt/user-data/outputs/cram_spt/src/lib.rs",
+        "mnt/user-data/outputs/cram_spt/src/topology.rs",
+        "mnt/user-data/outputs/cram_spt/src/fhe.rs",
+        "mnt/user-data/outputs/cram_spt/src/garner.rs",
+        "mnt/user-data/outputs/cram/Cargo.toml",
+        "mnt/user-data/outputs/cram/tests/integration_tests.rs",
+        "mnt/user-data/outputs/cram/src/topology.rs",
+        "mnt/user-data/outputs/cram/src/operators.rs",
+        "mnt/user-data/outputs/cram/src/lib.rs"
+      ]
+    },
+    {
+      "number": 15,
+      "name": "15-report.pdf",
+      "bytes": 74850,
+      "sha256": "ad3006a3c40de6f7357a953b080d99c7b41f28dc520181f8475e3f9d374f67b5",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/15-report.pdf",
+      "duplicates_prior": null
+    },
+    {
+      "number": 16,
+      "name": "16-Configurable-Residue-Arithmetic-Machines-CRAM-A-Self-Contained-Non-Archimedean-Exact-Arithmetic-Substrate-Dual-Track-K-Elimination-and-Frame-Transduction.pdf",
+      "bytes": 141277,
+      "sha256": "52d3407a01f0180e07d00eb301bc4ada9c7e0466c9d52259bad5bd66266b80f6",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/16-Configurable-Residue-Arithmetic-Machines-CRAM-A-Self-Contained-Non-Archimedean-Exact-Arithmetic-Substrate-Dual-Track-K-Elimination-and-Frame-Transduction.pdf",
+      "duplicates_prior": null
+    },
+    {
+      "number": 17,
+      "name": "17-Master-Portfolio-Document-2.pdf",
+      "bytes": 1648585,
+      "sha256": "39399a9089c9305aeef85bd6db471ddd80c2bb47597c2d916a4c7ee204a97059",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/17-Master-Portfolio-Document-2.pdf",
+      "duplicates_prior": null
+    },
+    {
+      "number": 18,
+      "name": "18-gpai-20260616-Problem-6162026.pdf",
+      "bytes": 228225,
+      "sha256": "1a0fd2ed8f35dd90198cd7d8d8e28700147bb1e3371ac25bf61c8d7aea97968f",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/18-gpai-20260616-Problem-6162026.pdf",
+      "duplicates_prior": null
+    },
+    {
+      "number": 19,
+      "name": "19-Unit_Anchor_K_Elimination_WhitePaper.docx",
+      "bytes": 35734,
+      "sha256": "8db7bda74d628a348253a7e4e8ee85d36ff1482d6b1a990ab1a21ed5395700c0",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/19-Unit_Anchor_K_Elimination_WhitePaper.docx",
+      "duplicates_prior": "7-Unit_Anchor_K_Elimination_WhitePaper.docx"
+    },
+    {
+      "number": 20,
+      "name": "20-ConfigurableResidueArithmeticMachines.docx",
+      "bytes": 842254,
+      "sha256": "46a134b7ca4e0629fbebf964b06aef2c533ef0a7c1ce40683cd46cb842ca03b0",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/20-ConfigurableResidueArithmeticMachines.docx",
+      "duplicates_prior": null
+    },
+    {
+      "number": 21,
+      "name": "21-PROOFS.pdf",
+      "bytes": 250338,
+      "sha256": "3ec3c73b212a0d152f070f8995437fc08f9a92eb4676498eb2f9852dbdb79c2a",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/21-PROOFS.pdf",
+      "duplicates_prior": "19-PROOFS.pdf"
+    },
+    {
+      "number": 22,
+      "name": "22-claude-memory-2026-11-11.zip",
+      "bytes": 95414,
+      "sha256": "c07fef4d3a6e17fc2775c692f2fb4ac33da9ff1bbdef531f05a35f18a45fa0d4",
+      "path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/22-claude-memory-2026-11-11.zip",
+      "duplicates_prior": null,
+      "zip_entries": 44,
+      "uncompressed_bytes": 176382,
+      "sample_entries": [
+        "claude-memory-2026-11-11/",
+        "claude-memory-2026-11-11/areas/",
+        "claude-memory-2026-11-11/areas/ai-stock-picks.md",
+        "claude-memory-2026-11-11/areas/bold-explorer-skill.md",
+        "claude-memory-2026-11-11/areas/car-repair-2015-sonic.md",
+        "claude-memory-2026-11-11/areas/cram-df-forensics.md",
+        "claude-memory-2026-11-11/areas/cram-framework-docs.md",
+        "claude-memory-2026-11-11/areas/cram-standard-v1.md",
+        "claude-memory-2026-11-11/areas/enhance-v5.md",
+        "claude-memory-2026-11-11/areas/guitar-app.md",
+        "claude-memory-2026-11-11/areas/nine65-fhe.md",
+        "claude-memory-2026-11-11/areas/qmnf-cram.md",
+        "claude-memory-2026-11-11/areas/saros-liouville-test-suite.md",
+        "claude-memory-2026-11-11/areas/study-buddy.md",
+        "claude-memory-2026-11-11/preferences.md",
+        "claude-memory-2026-11-11/profile.md",
+        "claude-memory-2026-11-11/projects/",
+        "claude-memory-2026-11-11/projects/Astrology 21/",
+        "claude-memory-2026-11-11/projects/Astrology 21/index.md",
+        "claude-memory-2026-11-11/projects/Astrology 21/overview.md",
+        "claude-memory-2026-11-11/projects/Astrology 21/principles-and-ways-of-working.md",
+        "claude-memory-2026-11-11/projects/ASTRO22/",
+        "claude-memory-2026-11-11/projects/ASTRO22/index.md",
+        "claude-memory-2026-11-11/projects/ASTRO22/learnings.md",
+        "claude-memory-2026-11-11/projects/ASTRO22/overview.md",
+        "claude-memory-2026-11-11/projects/ASTRO22/ways-of-working.md",
+        "claude-memory-2026-11-11/projects/019dfa94-32fe-777f-bdf7-9390cb5de9dd/",
+        "claude-memory-2026-11-11/projects/019dfa94-32fe-777f-bdf7-9390cb5de9dd/findings-and-working-style.md",
+        "claude-memory-2026-11-11/projects/019dfa94-32fe-777f-bdf7-9390cb5de9dd/index.md",
+        "claude-memory-2026-11-11/projects/019dfa94-32fe-777f-bdf7-9390cb5de9dd/overview.md",
+        "claude-memory-2026-11-11/projects/019e07df-5efb-71aa-9be3-7fa9d9954a74/",
+        "claude-memory-2026-11-11/projects/019e07df-5efb-71aa-9be3-7fa9d9954a74/index.md",
+        "claude-memory-2026-11-11/projects/019e07df-5efb-71aa-9be3-7fa9d9954a74/overview.md",
+        "claude-memory-2026-11-11/projects/019e07df-5efb-71aa-9be3-7fa9d9954a74/ways-of-working.md",
+        "claude-memory-2026-11-11/projects/CRAM the number system/"
+      ]
+    }
+  ],
+  "extraction": [
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/1-deep-research-report-6.md",
+      "sha256": "b0df878cbe19b4a1a6ee39f7dbb727362a12d18ac9e377fb967be657ef512932",
+      "bytes": 43954,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/1-deep-research-report-6.md.txt",
+      "characters": 43544,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/2-Untitled.docx",
+      "sha256": "cea69c53745d79b21cda86841ffa63bb3552ce5e0f70d4c7d0d60919a7acba11",
+      "bytes": 10531,
+      "omml_math_count": 0,
+      "embedded_media_count": 0,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/2-Untitled.docx.txt",
+      "characters": 11540,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/3-NINE65v7-Exhaustive-Audit-Fallback-Systems-and-Actual-Primary-Path-Usage.docx",
+      "sha256": "4e3f58861c7651ec8cb554c2b5afb2a6f4263d44aa6267da2139d9fee7977ae9",
+      "bytes": 171157,
+      "omml_math_count": 8,
+      "embedded_media_count": 2,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/3-NINE65v7-Exhaustive-Audit-Fallback-Systems-and-Actual-Primary-Path-Usage.docx.txt",
+      "characters": 5690,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/4-D-OD01-D024-THEOREM-STACK-2.pdf",
+      "sha256": "4bfed94aefcde808c910cd00aab33111b17cd3a5b50ad7f5747abcbaf2bba899",
+      "bytes": 176247,
+      "pages": 12,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/4-D-OD01-D024-THEOREM-STACK-2.pdf.txt",
+      "characters": 22875,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/5-Exact_Division_Residue_Space_Resolution.pdf",
+      "sha256": "ec3325cf89decf9c6cbea55e770269dfa49d57dd4bdb5307228fbb85281dba64",
+      "bytes": 111878,
+      "pages": 5,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/5-Exact_Division_Residue_Space_Resolution.pdf.txt",
+      "characters": 8161,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/6-CRAM_FULL_SYNTHESIS_EXPANDED.docx",
+      "sha256": "cfcf58e7601fce8eb16b83494ae762d158c1e1232e189dc6b9aeb68f89569315",
+      "bytes": 22397,
+      "omml_math_count": 0,
+      "embedded_media_count": 0,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/6-CRAM_FULL_SYNTHESIS_EXPANDED.docx.txt",
+      "characters": 18801,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/7-the-safe-basis.pdf",
+      "sha256": "2fc0df63afbbd2502842314257e03d1a385f55ec4163239afec169908ea58ff0",
+      "bytes": 168050,
+      "pages": 11,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/7-the-safe-basis.pdf.txt",
+      "characters": 16325,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/8-KimiCRAM_QMNF_Technical_White_Paper_v1.0.md",
+      "sha256": "1cf492085b689667243d8a5182b8cd1aff385d3330adf948887eb9e7425995ea",
+      "bytes": 35797,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/8-KimiCRAM_QMNF_Technical_White_Paper_v1.0.md.txt",
+      "characters": 35001,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/9-PROOFS.pdf",
+      "sha256": "3ec3c73b212a0d152f070f8995437fc08f9a92eb4676498eb2f9852dbdb79c2a",
+      "bytes": 250338,
+      "pages": 6,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/9-PROOFS.pdf.txt",
+      "characters": 16735,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008425-db12-86b8-8000-0000f1958f7b_CRAM_COMPENDIUM_2026-06-10_3.md",
+      "sha256": "51edb57a71cedd891f24517e5c6705405d9be097b3b5f9c04b5a3bb582b5b95a",
+      "bytes": 484622,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008425-db12-86b8-8000-0000f1958f7b_CRAM_COMPENDIUM_2026-06-10_3.md.txt",
+      "characters": 478520,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008441-9612-8630-8000-0000f7e6dd07_PhD-Level_Technical_Treatise_I_The_Topological_Lift_and_Transfinite_Winding_Tower_Architecture_in_the_Quantum-Modular_Nu",
+      "sha256": "b6f17de1fb5cb386181d75a6db6ad52c91cbb217984b73d6b13c5c5a971edc7c",
+      "bytes": 8770,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008441-9612-8630-8000-0000f7e6dd07_PhD-Level_Technical_Treatise_I_The_Topological_Lift_and_Transfinite_Winding_Tower_Architecture_in_the_Quantum-Modular_Nu.txt",
+      "characters": 8760,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008441-8ef2-8d68-8000-0000ec40f9d5_CRAM_Lift_K-Elimination_and_Reconstruction_Inventory.md",
+      "sha256": "938fd8e7a97713aa8c6dc09ca6fa7ab76f40f28c1157073b243b9775dfe98782",
+      "bytes": 9962,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008441-8ef2-8d68-8000-0000ec40f9d5_CRAM_Lift_K-Elimination_and_Reconstruction_Inventory.md.txt",
+      "characters": 9956,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008425-c6d2-8d13-8000-00002e7b62e7_gpai-20260616-CRAM-CRT-based-coprime-arithmetic.pdf",
+      "sha256": "518ac5bec46412d2cb1a2a9bb41207efd2ccc31964924acf2ddbabf766403f4d",
+      "bytes": 319395,
+      "pages": 5,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008425-c6d2-8d13-8000-00002e7b62e7_gpai-20260616-CRAM-CRT-based-coprime-arithmetic.pdf.txt",
+      "characters": 7124,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008425-be82-8382-8000-00007746f9a0_K-Elimination_Theorem.pdf",
+      "sha256": "596763cb410c1b7e32c1fce4d99d23a4701859228359c1e51b6cbace2ab5b8c0",
+      "bytes": 235358,
+      "pages": 6,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008425-be82-8382-8000-00007746f9a0_K-Elimination_Theorem.pdf.txt",
+      "characters": 5536,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008425-d572-8f0a-8000-0000389032c1_CRAM_V6.0_O_1_Trivialized_Reconstruction_via_K-Elimination.pptx",
+      "sha256": "1a937ee9fde3101ae4a02a0032730463b13b35e831ff10bc09eda721139946ef",
+      "bytes": 332728,
+      "slides": 8,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008425-d572-8f0a-8000-0000389032c1_CRAM_V6.0_O_1_Trivialized_Reconstruction_via_K-Elimination.pptx.txt",
+      "characters": 4021,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008441-9b82-809e-8000-0000f59d2c48_NormalizedTheorem_Lift_andReconstructionMatrix.md",
+      "sha256": "b4ecb35c23c2af02465bd5f6047928d391e801411cb07d9d936f769eb3ed97d3",
+      "bytes": 11905,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008441-9b82-809e-8000-0000f59d2c48_NormalizedTheorem_Lift_andReconstructionMatrix.md.txt",
+      "characters": 11893,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008425-c922-84fb-8000-0000ecd9aefb_COMPREHENSIVE_UNIFIED_COMPENDIUM_2025.pdf",
+      "sha256": "1ded13e65241da5479c5b7b8f68d8f496ac5470b01236096f171d3ab6596db99",
+      "bytes": 326481,
+      "pages": 40,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008425-c922-84fb-8000-0000ecd9aefb_COMPREHENSIVE_UNIFIED_COMPENDIUM_2025.pdf.txt",
+      "characters": 50854,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008441-9242-8717-8000-0000d9959aa0_CRAM_Threaded_System_Documentation..docx",
+      "sha256": "9c972eb996eb6aff06324ceb436d96396997f8be3ed93dbca45c70850910958f",
+      "bytes": 12187,
+      "omml_math_count": 0,
+      "embedded_media_count": 0,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008441-9242-8717-8000-0000d9959aa0_CRAM_Threaded_System_Documentation..docx.txt",
+      "characters": 4344,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008441-9d42-8fb4-8000-00004785fe8b_RECOMBINANT_CRT_BRIDGE_TECHNICAL_PACKET.docx",
+      "sha256": "1d19fbd4e59770a3d788fb69abb850844e59800fa49d219d82ad1a4024394bb9",
+      "bytes": 26668,
+      "omml_math_count": 0,
+      "embedded_media_count": 0,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008441-9d42-8fb4-8000-00004785fe8b_RECOMBINANT_CRT_BRIDGE_TECHNICAL_PACKET.docx.txt",
+      "characters": 23590,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008441-da92-86aa-8000-000063ac0d69_QMNF_ULTIMATE_MATHEMATICAL_COMPENDIUM_V7.pdf",
+      "sha256": "2dcaca2ab528c0f16fc47c4cb8c1de085dde375f374ea07ffbd9410379b2c50b",
+      "bytes": 666519,
+      "pages": 54,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008441-da92-86aa-8000-000063ac0d69_QMNF_ULTIMATE_MATHEMATICAL_COMPENDIUM_V7.pdf.txt",
+      "characters": 84485,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008441-aea2-8e21-8000-0000fbb1b210_NINE65_v7_Comprehensive_Audit_Emissions_Report.pdf",
+      "sha256": "a23bd935a49d054465e673bc274ff6e72dbccf9b7062d1bdb634d752910dc705",
+      "bytes": 107755,
+      "pages": 3,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008441-aea2-8e21-8000-0000fbb1b210_NINE65_v7_Comprehensive_Audit_Emissions_Report.pdf.txt",
+      "characters": 3868,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008425-7d32-8bef-8000-000086e1a1c8_SAFE_BASIS_MASTER_COMPENDIUM.md",
+      "sha256": "c1c9e51c47ab1de9c0b975ed215425e2b394680776eb1b6ed3058fbd56dbd7a6",
+      "bytes": 64258,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008425-7d32-8bef-8000-000086e1a1c8_SAFE_BASIS_MASTER_COMPENDIUM.md.txt",
+      "characters": 62932,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008441-9302-8ab8-8000-0000d63c09b8_Technical_Paper_1_The_Topological_Lift_Winding_Tower_Architecture.md",
+      "sha256": "1925fb2e89d7d1ba268a675b7896b645e7f00789798fc6b92707a071698809e4",
+      "bytes": 5228,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008441-9302-8ab8-8000-0000d63c09b8_Technical_Paper_1_The_Topological_Lift_Winding_Tower_Architecture.md.txt",
+      "characters": 5224,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008441-ba62-8360-8000-0000a2db7985_Star_CRT_Scaling_Analysis.pdf",
+      "sha256": "9ed846389ee9fbd709e1165857b3e02d682936e2471d9c69704848247c0efeb6",
+      "bytes": 75292,
+      "pages": 2,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008441-ba62-8360-8000-0000a2db7985_Star_CRT_Scaling_Analysis.pdf.txt",
+      "characters": 4055,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008441-a272-850f-8000-000031ac3532_CRAM_K-Elimination_Lifts_and_Exact_Reconstruction.md",
+      "sha256": "65ab7643528fdd36d304ffa353d8171b31e14110160137dbf44a219a90b2620c",
+      "bytes": 48895,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008441-a272-850f-8000-000031ac3532_CRAM_K-Elimination_Lifts_and_Exact_Reconstruction.md.txt",
+      "characters": 48775,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008441-f4c2-8673-8000-0000a85e797c_ConfigurableResidueArithmeticMachines.docx",
+      "sha256": "46a134b7ca4e0629fbebf964b06aef2c533ef0a7c1ce40683cd46cb842ca03b0",
+      "bytes": 842254,
+      "omml_math_count": 0,
+      "embedded_media_count": 0,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008441-f4c2-8673-8000-0000a85e797c_ConfigurableResidueArithmeticMachines.docx.txt",
+      "characters": 120679,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008441-8ea2-8d6f-8000-00003c85ab25_Refined_Technical_Paper_Collection_CRT_Lifts_Pha..md",
+      "sha256": "489aac27b688a51cf480685c34178af49280c3c22be5f933c5cd5a9d02c9bf51",
+      "bytes": 5348,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008441-8ea2-8d6f-8000-00003c85ab25_Refined_Technical_Paper_Collection_CRT_Lifts_Pha..md.txt",
+      "characters": 5330,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/11-workspace/workspace/downloads/1a008425-c2b2-8191-8000-000005b3457d_K_Elimination_Technical_Paper.pdf",
+      "sha256": "66efa3f73baac80797dafcc77fea0ba23ece9a7ca219da8f49f346348f676ea3",
+      "bytes": 254286,
+      "pages": 6,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/11-workspace/1a008425-c2b2-8191-8000-000005b3457d_K_Elimination_Technical_Paper.pdf.txt",
+      "characters": 13070,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "11-workspace.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/12-gpai-20260616-CRAM-CRT-based-coprime-arithmetic.pdf",
+      "sha256": "518ac5bec46412d2cb1a2a9bb41207efd2ccc31964924acf2ddbabf766403f4d",
+      "bytes": 319395,
+      "pages": 5,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/12-gpai-20260616-CRAM-CRT-based-coprime-arithmetic.pdf.txt",
+      "characters": 7124,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/13-cram-beta-synthesis-v1-.pdf",
+      "sha256": "1dc89cbdcbc88417a68d9d93a0377169b4d2a0379e0e482c4241bcba0c9afbbf",
+      "bytes": 476419,
+      "pages": 24,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/13-cram-beta-synthesis-v1-.pdf.txt",
+      "characters": 58784,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/OP_T7_6_Spectral_Gain.md",
+      "sha256": "f427bc113ea95f8dbd57fa09225690f53049278efb90c91686b503f998484812",
+      "bytes": 6942,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/14-Crate-12/OP_T7_6_Spectral_Gain.md.txt",
+      "characters": 6617,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "14-Crate-12.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/band_add.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "e67d3b22dad4ff117d7ef665a63b3d217804f793abf56b1b730fac4e8742e694",
+      "bytes": 25386,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/T7_4_Corrected_Theorem.md",
+      "sha256": "2856cec1a612009c211205297f15034135952569c161799197dc10c621c54f3c",
+      "bytes": 8649,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/14-Crate-12/T7_4_Corrected_Theorem.md.txt",
+      "characters": 8484,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "14-Crate-12.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "250c63226f5d16ad111c99b2698f121d69de052c22b504b5e2bfac2a9050bac5",
+      "bytes": 23043,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/PSPI_Composition_Law_Blueprint.docx",
+      "sha256": "e37487e0ce6426b310e3a703eb4a7357e208b0439cec21bb8045465fc983518b",
+      "bytes": 17689,
+      "omml_math_count": 0,
+      "embedded_media_count": 0,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/14-Crate-12/PSPI_Composition_Law_Blueprint.docx.txt",
+      "characters": 14320,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "14-Crate-12.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/T7_T6_Complete_Theorems.md",
+      "sha256": "91a88bf26d7a415815672255acbd916b94c505f4d8c921c89fcb386527f90c5c",
+      "bytes": 4965,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/14-Crate-12/T7_T6_Complete_Theorems.md.txt",
+      "characters": 4873,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "14-Crate-12.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor_fix.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "fce1c48519ef5778401b45aa71891b3627745f80f466a6e0d083984effd53fa8",
+      "bytes": 21544,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/Cargo.toml",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "96da5ae7da5ba4ac477e09292e5d2235ebc47c93df7997f802f05df28980925f",
+      "bytes": 632,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/integration_tests.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "1c466f9052a62cea21f179e36b6cd51d2a4ad2cf3ea25180751c742399aaaab2",
+      "bytes": 17444,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/garner.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "f8f3893e3c59840fc46d216c546990ec27a37ebdeb511dab9e9bf322d0f0aee3",
+      "bytes": 12266,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/lib.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "a12e01c937dfd6bbf3761170aeeb51528eb281bec50b2a28ac3a38e8df516b4d",
+      "bytes": 1475,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/main.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "398432b626ecf1a1dcba4f66c0c7205438426a1d47d0ddd551e5a57450b482c7",
+      "bytes": 17811,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/engine.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "c6301197077423ced6a1c96c0f326c200642305603c0e90c8b49982a3c045ba2",
+      "bytes": 22137,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/arith.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "b68f63fd73dc6d45531a222cf9ec062a42eba498faa71474d945f8a2f9631168",
+      "bytes": 4819,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/ahop.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "90e89676ebf4021e5a8f11101fe5cefd0dddce9ed4bb0fa7d91e1ddde4ae1fba",
+      "bytes": 14990,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/topology.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "27274c42d50013f0959da9af6725a9c3d4b1c9150b41c062034e68b2d7bc95df",
+      "bytes": 12709,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/operators.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "de82f7b7ec5b0283fd97f53220332febf2208be00739f94de5bfa0d86f3cecb3",
+      "bytes": 9252,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fhe.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "d1e90d9706349b8a4422f2e71019ba9c9123ea4f45e85277381a9e33680aa5db",
+      "bytes": 16643,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/Cargo.toml",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "96da5ae7da5ba4ac477e09292e5d2235ebc47c93df7997f802f05df28980925f",
+      "bytes": 632,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/tests/integration_tests.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "73b853021c69782d78523e980aa662948150dee8779ed75b97d9ab93ca33ff1c",
+      "bytes": 21863,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/subproduct_tree.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "c30f33797eabe5b790446bb2fd5c91841b497096efdd180243659ac867197ef6",
+      "bytes": 29158,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/engine.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "c6301197077423ced6a1c96c0f326c200642305603c0e90c8b49982a3c045ba2",
+      "bytes": 22137,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/operators.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "de82f7b7ec5b0283fd97f53220332febf2208be00739f94de5bfa0d86f3cecb3",
+      "bytes": 9252,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/ahop.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "90e89676ebf4021e5a8f11101fe5cefd0dddce9ed4bb0fa7d91e1ddde4ae1fba",
+      "bytes": 14990,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/main.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "3f11fa3bc67a74d34cbe89f3c7df04b4cdaf239cc2f4f25004991ffadd4e0e8d",
+      "bytes": 23892,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/arith.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "b68f63fd73dc6d45531a222cf9ec062a42eba498faa71474d945f8a2f9631168",
+      "bytes": 4819,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/lib.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "c44746967d7a0494fbab47616b6a00b23d6d734450c3f749afbe5664f216b7d7",
+      "bytes": 1637,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/topology.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "27274c42d50013f0959da9af6725a9c3d4b1c9150b41c062034e68b2d7bc95df",
+      "bytes": 12709,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/fhe.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "d1e90d9706349b8a4422f2e71019ba9c9123ea4f45e85277381a9e33680aa5db",
+      "bytes": 16643,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/garner.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "f8f3893e3c59840fc46d216c546990ec27a37ebdeb511dab9e9bf322d0f0aee3",
+      "bytes": 12266,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/Cargo.toml",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "96da5ae7da5ba4ac477e09292e5d2235ebc47c93df7997f802f05df28980925f",
+      "bytes": 632,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/tests/integration_tests.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "1c466f9052a62cea21f179e36b6cd51d2a4ad2cf3ea25180751c742399aaaab2",
+      "bytes": 17444,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/topology.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "27274c42d50013f0959da9af6725a9c3d4b1c9150b41c062034e68b2d7bc95df",
+      "bytes": 12709,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/operators.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "de82f7b7ec5b0283fd97f53220332febf2208be00739f94de5bfa0d86f3cecb3",
+      "bytes": 9252,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/lib.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "a12e01c937dfd6bbf3761170aeeb51528eb281bec50b2a28ac3a38e8df516b4d",
+      "bytes": 1475,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/ahop.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "90e89676ebf4021e5a8f11101fe5cefd0dddce9ed4bb0fa7d91e1ddde4ae1fba",
+      "bytes": 14990,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/garner.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "e3858c9e6ba7a79cb6c32beee1415f32ae553d6f38c404c5caa7ddf1e087bb75",
+      "bytes": 11266,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/fhe.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "bc6316a704212a3a2ecca2ece6b7aee93f2319ce95b4f123b9b93d17cf3359c4",
+      "bytes": 16722,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/main.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "398432b626ecf1a1dcba4f66c0c7205438426a1d47d0ddd551e5a57450b482c7",
+      "bytes": 17811,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/engine.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "1f89885e41472649696723d1aee68766920a5dfb3c30c3779853e175e166964f",
+      "bytes": 22151,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/arith.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "b68f63fd73dc6d45531a222cf9ec062a42eba498faa71474d945f8a2f9631168",
+      "bytes": 4819,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/Cargo.toml",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "96da5ae7da5ba4ac477e09292e5d2235ebc47c93df7997f802f05df28980925f",
+      "bytes": 632,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/topology.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "27274c42d50013f0959da9af6725a9c3d4b1c9150b41c062034e68b2d7bc95df",
+      "bytes": 12709,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/engine.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "c6301197077423ced6a1c96c0f326c200642305603c0e90c8b49982a3c045ba2",
+      "bytes": 22137,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/subproduct_tree.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "251b9ec3b5429fa6147e72a81d7e38168c38890a245535d100f40fb90886d33e",
+      "bytes": 29972,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/arith.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "b68f63fd73dc6d45531a222cf9ec062a42eba498faa71474d945f8a2f9631168",
+      "bytes": 4819,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/fhe.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "d1e90d9706349b8a4422f2e71019ba9c9123ea4f45e85277381a9e33680aa5db",
+      "bytes": 16643,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/garner.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "f8f3893e3c59840fc46d216c546990ec27a37ebdeb511dab9e9bf322d0f0aee3",
+      "bytes": 12266,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/operators.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "de82f7b7ec5b0283fd97f53220332febf2208be00739f94de5bfa0d86f3cecb3",
+      "bytes": 9252,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/ahop.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "90e89676ebf4021e5a8f11101fe5cefd0dddce9ed4bb0fa7d91e1ddde4ae1fba",
+      "bytes": 14990,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/main.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "3936f6df394d30910be91794569de82236d0a1c3110e34c18473dec5f6fa9541",
+      "bytes": 24032,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/lib.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "50fd0b6719f20cda985a2f979b247d5151b879d339a8b0fa1f68d61debe86af6",
+      "bytes": 1710,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/tests/integration_tests.rs",
+      "parent_archive": "14-Crate-12.zip",
+      "sha256": "978011790a9ec31bfff221593e5a52299c859f52316b4b8776b4c77e7f64a640",
+      "bytes": 26474,
+      "status": "INVENTORIED_AND_SCOPED_CODE_REVIEW",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/reviews/runtime.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/15-report.pdf",
+      "sha256": "ad3006a3c40de6f7357a953b080d99c7b41f28dc520181f8475e3f9d374f67b5",
+      "bytes": 74850,
+      "pages": 11,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/15-report.pdf.txt",
+      "characters": 34374,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/16-Configurable-Residue-Arithmetic-Machines-CRAM-A-Self-Contained-Non-Archimedean-Exact-Arithmetic-Substrate-Dual-Track-K-Elimination-and-Frame-Transduction.pdf",
+      "sha256": "52d3407a01f0180e07d00eb301bc4ada9c7e0466c9d52259bad5bd66266b80f6",
+      "bytes": 141277,
+      "pages": 7,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/16-Configurable-Residue-Arithmetic-Machines-CRAM-A-Self-Contained-Non-Archimedean-Exact-Arithmetic-Substrate-Dual-Track-K-Elimination-and-Frame-Transduction.pdf.txt",
+      "characters": 10006,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/17-Master-Portfolio-Document-2.pdf",
+      "sha256": "39399a9089c9305aeef85bd6db471ddd80c2bb47597c2d916a4c7ee204a97059",
+      "bytes": 1648585,
+      "pages": 133,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/17-Master-Portfolio-Document-2.pdf.txt",
+      "characters": 321648,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/18-gpai-20260616-Problem-6162026.pdf",
+      "sha256": "1a0fd2ed8f35dd90198cd7d8d8e28700147bb1e3371ac25bf61c8d7aea97968f",
+      "bytes": 228225,
+      "pages": 7,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/18-gpai-20260616-Problem-6162026.pdf.txt",
+      "characters": 9864,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/19-Unit_Anchor_K_Elimination_WhitePaper.docx",
+      "sha256": "8db7bda74d628a348253a7e4e8ee85d36ff1482d6b1a990ab1a21ed5395700c0",
+      "bytes": 35734,
+      "omml_math_count": 0,
+      "embedded_media_count": 0,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/19-Unit_Anchor_K_Elimination_WhitePaper.docx.txt",
+      "characters": 33287,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/20-ConfigurableResidueArithmeticMachines.docx",
+      "sha256": "46a134b7ca4e0629fbebf964b06aef2c533ef0a7c1ce40683cd46cb842ca03b0",
+      "bytes": 842254,
+      "omml_math_count": 0,
+      "embedded_media_count": 0,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/20-ConfigurableResidueArithmeticMachines.docx.txt",
+      "characters": 120679,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/04024A30-7874-406A-9CCC-107C5432C2A4/21-PROOFS.pdf",
+      "sha256": "3ec3c73b212a0d152f070f8995437fc08f9a92eb4676498eb2f9852dbdb79c2a",
+      "bytes": 250338,
+      "pages": 6,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/text/21-PROOFS.pdf.txt",
+      "characters": 16735,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/areas/cram-df-forensics.md",
+      "sha256": "ab2657dacda5b1749ee341961832c69321f5d7ba74de904455187079b38af325",
+      "bytes": 4482,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/cram-df-forensics.md.txt",
+      "characters": 4443,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/areas/cram-framework-docs.md",
+      "sha256": "1c4346f6da4911c74dddc591f81e4e67b93258d1c09f966685faf9d244a94147",
+      "bytes": 5937,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/cram-framework-docs.md.txt",
+      "characters": 5906,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/areas/cram-standard-v1.md",
+      "sha256": "76e0d5cf60e2e31106b09696d366b6367808a5328f25c70ea17a07d2c68b67f6",
+      "bytes": 24316,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/cram-standard-v1.md.txt",
+      "characters": 24028,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/areas/nine65-fhe.md",
+      "sha256": "18222a1fc03c5e9e15f710e1a1d6644ca5d17277eb5db0aa4c3fab69d5171c11",
+      "bytes": 16587,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/nine65-fhe.md.txt",
+      "characters": 16458,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/areas/qmnf-cram.md",
+      "sha256": "9d735743f00c36b402c375a88eb3c097ba555ed801d3027dbcf8aade407cc6bd",
+      "bytes": 47424,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/qmnf-cram.md.txt",
+      "characters": 46954,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/areas/saros-liouville-test-suite.md",
+      "sha256": "047c48b64876a30f7fd13aab3053e374386e2ac067b129912b54b6d6648d1caf",
+      "bytes": 1465,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/saros-liouville-test-suite.md.txt",
+      "characters": 1459,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/projects/019dfa94-32fe-777f-bdf7-9390cb5de9dd/findings-and-working-style.md",
+      "sha256": "c740fbd1e23888bdd03a10df235ba3488f82105ad548779b91ef59221d1ccd30",
+      "bytes": 1614,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/019dfa94-32fe-777f-bdf7-9390cb5de9dd__findings-and-working-style.md.txt",
+      "characters": 1602,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/projects/019dfa94-32fe-777f-bdf7-9390cb5de9dd/index.md",
+      "sha256": "34dcdacebb1f93d47ace1d6688723d6be323762cda5e8687c4f3050383a657c7",
+      "bytes": 215,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/019dfa94-32fe-777f-bdf7-9390cb5de9dd__index.md.txt",
+      "characters": 213,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/projects/019dfa94-32fe-777f-bdf7-9390cb5de9dd/overview.md",
+      "sha256": "78cd68160ed8a81bbc93c6b0490edd7c1fe3ae13c7a46e2cdc51ad4eb052540e",
+      "bytes": 3205,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/019dfa94-32fe-777f-bdf7-9390cb5de9dd__overview.md.txt",
+      "characters": 3192,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/projects/019e07df-5efb-71aa-9be3-7fa9d9954a74/index.md",
+      "sha256": "1add6281726ff9f15a6fca051958cdb7bfd8874d1fbf93129cc5f21accf6f6e0",
+      "bytes": 143,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/019e07df-5efb-71aa-9be3-7fa9d9954a74__index.md.txt",
+      "characters": 141,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/projects/019e07df-5efb-71aa-9be3-7fa9d9954a74/overview.md",
+      "sha256": "fa2cec15fd398ddd92e83d737f8e585b2c9bde296a338db25ef5fa97c1598d96",
+      "bytes": 4756,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/019e07df-5efb-71aa-9be3-7fa9d9954a74__overview.md.txt",
+      "characters": 4723,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/projects/019e07df-5efb-71aa-9be3-7fa9d9954a74/ways-of-working.md",
+      "sha256": "985d5393f4933138279c9f9c832464d5df431d95184948e98b61161f93d669ca",
+      "bytes": 3231,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/019e07df-5efb-71aa-9be3-7fa9d9954a74__ways-of-working.md.txt",
+      "characters": 3224,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/projects/CRAM the number system/index.md",
+      "sha256": "c1e87a00e312db86728a94633224dffe434dd8d234fb230112686033aa6e6690",
+      "bytes": 177,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/index.md.txt",
+      "characters": 175,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/projects/CRAM the number system/overview.md",
+      "sha256": "2769e4da083a876971799e26c0b71f6c93f5e5938db6dccd671385a539cc9cfe",
+      "bytes": 2984,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/overview.md.txt",
+      "characters": 2948,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/projects/CRAM the number system/ways-of-working.md",
+      "sha256": "8014dd69ced7ad655d6ea124965782d4e8fda5e0c723b2da05076f3d22331d46",
+      "bytes": 968,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/ways-of-working.md.txt",
+      "characters": 962,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/topics/arrow-of-time.md",
+      "sha256": "e5a918d2450fe0488113f89e4419e4303bff6891ce2adaec9b2db10007f17951",
+      "bytes": 31226,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/arrow-of-time.md.txt",
+      "characters": 30675,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/topics/recent-work.md",
+      "sha256": "f2d0a3d738bb1de10c4695938c046ed0e29f829737894d1d29d1930122567f3b",
+      "bytes": 1227,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/recent-work.md.txt",
+      "characters": 1221,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    },
+    {
+      "source": "/workspace/k-elimination-audit/expanded-corpus/archives/22-claude-memory-2026-11-11/claude-memory-2026-11-11/topics/research-approach.md",
+      "sha256": "86ebba1f62734b7070568041ed009a5f009fe19aadc2e65ff0aba04aca68eddf",
+      "bytes": 1950,
+      "text": "/workspace/k-elimination-audit/expanded-corpus/archive-text/22-claude-memory-2026-11-11/research-approach.md.txt",
+      "characters": 1940,
+      "status": "READ_FULL_EXTRACTED_TEXT_OR_IDENTICAL_PREVIOUSLY_READ",
+      "parent_archive": "22-claude-memory-2026-11-11.zip",
+      "review_date": "2026-11-12",
+      "coverage_record": "expanded-corpus/COVERAGE.md"
+    }
+  ],
+  "coverage_hashes": [
+    {
+      "path": "/workspace/k-elimination-audit/evidence/coverage.md",
+      "sha256": "af207880a073d6371a879a9fb0a7a97f693a435f5c9116611c677c1e94c69c03"
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/COVERAGE.md",
+      "sha256": "60a12aa14f065f39b68d59618260e9bf938050316ea4f4210c3174a581c31a7e"
+    }
+  ]
+}

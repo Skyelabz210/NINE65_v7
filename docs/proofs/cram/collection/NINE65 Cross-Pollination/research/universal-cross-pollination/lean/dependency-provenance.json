@@ -1,0 +1,74 @@
+{
+  "source_packet": "/workspace/k-elimination-audit/universal-theorem",
+  "source_packet_theorem_count": 130,
+  "source_packet_verification_sha256": "29e8edaca3dc8feda52811a9bb0c10e0b431ab55b6efe35b75fba9493d8c01ab",
+  "source_files": [
+    {
+      "file": "ExactObservation.lean",
+      "original_path": "/workspace/k-elimination-audit/universal-theorem/ExactObservation.lean",
+      "sha256": "3e4f0dc07d9ecb189b4b3a7e490d07fad3a0f828e4ad773fa251876263a3f195",
+      "copied_unchanged": true
+    },
+    {
+      "file": "UniversalLift.lean",
+      "original_path": "/workspace/k-elimination-audit/universal-theorem/UniversalLift.lean",
+      "sha256": "00da716f76d10806dc86f3d5a4206c380ea8f6b5a99c6d4f788c4053efba2924",
+      "copied_unchanged": true
+    },
+    {
+      "file": "RingReadout.lean",
+      "original_path": "/workspace/k-elimination-audit/universal-theorem/RingReadout.lean",
+      "sha256": "033dc2f2903b7fcffcb7576fcbdfba70dff2cf247b9a9f0d8ce2dd5495d1e67b",
+      "copied_unchanged": true
+    },
+    {
+      "file": "IntegerSpecialization.lean",
+      "original_path": "/workspace/k-elimination-audit/universal-theorem/IntegerSpecialization.lean",
+      "sha256": "c7788921b59a7244e54d53cf1bda2013e3bacea98b9392b29c67b1fe91a3fa88",
+      "copied_unchanged": true
+    },
+    {
+      "file": "CostedReadout.lean",
+      "original_path": "/workspace/k-elimination-audit/universal-theorem/CostedReadout.lean",
+      "sha256": "2946863aa7d1252b8687f0feb9073f073b4ba769368567cc9ea9cc3987a534d7",
+      "copied_unchanged": true
+    },
+    {
+      "file": "ReferenceChange.lean",
+      "original_path": "/workspace/k-elimination-audit/universal-theorem/ReferenceChange.lean",
+      "sha256": "ecd6296ba0e850d03a6cd7093947a0d1803b37f3502c1c77256c8f242711b0e1",
+      "copied_unchanged": true
+    },
+    {
+      "file": "CoupledAnchors.lean",
+      "original_path": "/workspace/k-elimination-audit/universal-theorem/CoupledAnchors.lean",
+      "sha256": "4357100f2e4b0632d36c1e16cfcaa5da10fe2285a8029773aa1b2112a8b9e95d",
+      "copied_unchanged": true
+    },
+    {
+      "file": "ResidueAlgorithms.lean",
+      "original_path": "/workspace/k-elimination-audit/universal-theorem/ResidueAlgorithms.lean",
+      "sha256": "852030cea0a3404654d2a77f677e35a147efc917be33d26ba85ceb6b6d5b7b67",
+      "copied_unchanged": true
+    },
+    {
+      "file": "ResiduePrimitives.lean",
+      "original_path": "/workspace/k-elimination-audit/universal-theorem/ResiduePrimitives.lean",
+      "sha256": "61ad481a6dd7e7c9831259416a883a90c8b82162ab326dbc293945425ef9de95",
+      "copied_unchanged": true
+    },
+    {
+      "file": "StarLift.lean",
+      "original_path": "/workspace/k-elimination-audit/universal-theorem/StarLift.lean",
+      "sha256": "90947ad64ef314f2e4f07af16a1586f2685ba9e453e74da097b5ea9b44cdde9c",
+      "copied_unchanged": true
+    },
+    {
+      "file": "UniversalKElimination.lean",
+      "original_path": "/workspace/k-elimination-audit/universal-theorem/UniversalKElimination.lean",
+      "sha256": "0b1ea7311dc2ed7d1259668649e35e63d9ac71a5899f24345bdff4bc1bdbd458",
+      "copied_unchanged": true
+    }
+  ],
+  "nine65_base_commit": "88a7bdadbf0e1f8fbfdb2b37e9843101b8db3484"
+}

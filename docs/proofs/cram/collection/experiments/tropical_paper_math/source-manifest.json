@@ -1,0 +1,13 @@
+{
+  "repo_commit": "88a7bdadbf0e1f8fbfdb2b37e9843101b8db3484",
+  "sources": [
+    {
+      "path": "/workspace/NINE65_v7/scripts/check_holte_reversibility.py",
+      "sha256": "bacbebd7b125898508ba749ca1e2bcbb7254ab84c6ca76b3a4eabcb5b6cb156d"
+    },
+    {
+      "path": "/workspace/NINE65_v7/docs/execution/2026-10-27/HOLTE_REVERSIBILITY.md",
+      "sha256": "0c160a4da8c4a3abb95b29ac6035010e82a1e8deff8c204c0621ea2287f8b680"
+    }
+  ]
+}

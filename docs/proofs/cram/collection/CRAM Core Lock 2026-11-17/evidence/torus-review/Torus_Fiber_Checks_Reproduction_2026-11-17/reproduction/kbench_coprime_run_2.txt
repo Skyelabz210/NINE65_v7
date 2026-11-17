@@ -1,0 +1,9 @@
+composite lane/check moduli; all pairwise gcd=1; extended-Euclid inverses
+   k garner_mm     sk_mm | ns/garnerMRC   ns/skAlpha ratio_x100 |  ns/full(garn)    ns/full(sk) ratio_x100 | ok
+   2         1         5 |           44          171        25 |            122            271        45 | PASS
+   4         6         9 |          237          308        76 |            328            457        71 | PASS
+   8        28        17 |         1104          566       195 |           1304            890       146 | PASS
+  16       120        33 |         4719         1085       434 |           5259           2106       249 | PASS
+  32       496        65 |        19499         2244       868 |          21336           5476       389 | PASS
+  64      2016       129 |        79268         4189      1892 |          85301          16414       519 | PASS
+ 128      8128       257 |       320100         8331      3842 |         343302          55030       623 | PASS

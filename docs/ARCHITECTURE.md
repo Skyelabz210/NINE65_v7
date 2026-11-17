@@ -18,6 +18,8 @@ and the [security mode matrix](SECURITY_MODE_MATRIX.md) for capability scope.
 | `crates/fhe-service/` | Operator-owned session-key HTTP service |
 | `crates/private-feedback-core/`, `crates/private-feedback-nine65/` | Structured feedback and encrypted aggregation reference path |
 | `lean4/KElimination/` | Maintained formalization; theorem assumptions remain scoped |
+| `lean4/CRAMUniversal/` | Standalone universal CRAM arithmetic proofs and engine contracts; separate package |
+| `docs/proofs/cram/` | Full CRAM proof/evidence collection, reproduction records and publication inventory |
 
 The workspace contains `crates/*` except the explicitly excluded Python, WASM
 and FFI binding crates; `fuzz` is separate too. The `NINE65-Rust-Guide`

@@ -1,0 +1,56 @@
+'KElimination.IntegerSpecialization.query_fused' depends on axioms: [propext]
+'KElimination.IntegerSpecialization.query_of_decomposition' depends on axioms: [propext, Classical.choice, Quot.sound]
+'KElimination.IntegerSpecialization.query_chart_of_decomposition' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'KElimination.IntegerSpecialization.query_quotient_congruence' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'KElimination.IntegerSpecialization.query_exact_of_quotient_window' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'KElimination.IntegerSpecialization.query_exact_of_source_window' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'KElimination.IntegerSpecialization.window_decode_exact' depends on axioms: [propext, Quot.sound]
+'KElimination.IntegerSpecialization.query_exact_signed_window' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'KElimination.IntegerSpecialization.star_inverse_certificate' depends on axioms: [propext, Classical.choice, Quot.sound]
+'KElimination.IntegerSpecialization.star_query_congruence' depends on axioms: [propext, Classical.choice, Quot.sound]
+'KElimination.IntegerSpecialization.adjacent_query_subtraction' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'KElimination.IntegerSpecialization.adjacent_readout_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'KElimination.IntegerSpecialization.affine_defect_reduction' depends on axioms: [propext, Classical.choice, Quot.sound]
+'KElimination.IntegerSpecialization.nonunit_query_of_affine_defect' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'KElimination.IntegerSpecialization.nonunit_query_of_decomposition' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'KElimination.IntegerSpecialization.nonunit_chart_query' depends on axioms: [propext, Classical.choice, Quot.sound]
+'KElimination.IntegerSpecialization.nonunit_chart_query_signed_window' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'KElimination.IntegerSpecialization.target_projection_of_decomposition' depends on axioms: [propext]
+'KElimination.IntegerSpecialization.target_projection_of_period_dvd' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'KElimination.IntegerSpecialization.query_target_projection_of_period_dvd' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'KElimination.IntegerSpecialization.target_lane_projection_eq' depends on axioms: [propext]
+'KElimination.IntegerSpecialization.chart_query_target_lane_transport' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'KElimination.IntegerSpecialization.nonunit_chart_target_lane_transport' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'KElimination.IntegerSpecialization.query_target_projection' depends on axioms: [propext, Classical.choice, Quot.sound]
+'KElimination.IntegerSpecialization.signed_query_target_projection' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'KElimination.IntegerSpecialization.same_views_source_unique' depends on axioms: [propext, Classical.choice, Quot.sound]
+'KElimination.IntegerSpecialization.paired_views_periodic' depends on axioms: [propext]
+'KElimination.IntegerSpecialization.no_unbounded_pair_quotient_decoder' depends on axioms: [propext]

@@ -1,0 +1,143 @@
+{
+  "research_commit": "4eb332fe8825a6c380d1eec3bfe7ac520dc9d32b",
+  "source_commit": "ad0c8380f02b1d0c4f05a3e00726be3bc9680058",
+  "files": [
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/package.json",
+      "bytes": 1388,
+      "sha256": "3c44b40ea26daac81ad8d7b0193b1bb68a9c370e0f98740ad37bdb0a3a6af202"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/anchor.js",
+      "bytes": 15944,
+      "sha256": "8f3b728b1f658991fc11cc790cf0e9d14d417072f93c3c07590264c97e8e7202"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/arrow.js",
+      "bytes": 9722,
+      "sha256": "67d3ab697f7bdf6c9e3b24905fcf7b1be63c94b6626800e9989f77bb55816f0c"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/basis.js",
+      "bytes": 3458,
+      "sha256": "6e3df6d9341fe192492350afa6cf0981d831af0056514d33aa78a1bc9f5fa4cb"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/carry.js",
+      "bytes": 8631,
+      "sha256": "b418767f2253fb03b59bec310f63e964fbeb806d4b889623aaf8979f1d18ccc2"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/cram.js",
+      "bytes": 34944,
+      "sha256": "dc9d71cd6a255aebb5e8a0f1bbd201efc5e16ae5ca56aa930e71a2c8fe703db6"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/div-chimera.js",
+      "bytes": 17182,
+      "sha256": "68e266e3125b091ae69f05f0efe65a6c073110d15fd933593ad6afa68656f757"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/fixture.js",
+      "bytes": 14657,
+      "sha256": "c30315f16ad8d37a6b32d1df31e6a8b73314eec72658a3bcd23dbee03f848f5e"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/gear-class.js",
+      "bytes": 956,
+      "sha256": "e1c951b10dbe2ab2002e516f2f613674723e983e51bc53db2475e8366dac1445"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/hcrm-core.js",
+      "bytes": 5190,
+      "sha256": "8df805e021edf9c05c39213a4859106c2dba1ce838ef3acbf742e2fcf5be3546"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/identity.js",
+      "bytes": 10449,
+      "sha256": "d85c74830d194ccfde9a149fd26e5b79dcf3a621897300e764a8a3c77dfa65ff"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/operators.js",
+      "bytes": 11325,
+      "sha256": "46d2815e7d7ac9708099f72a1d859b77736e089311c3d850e7d54d5716f252d4"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/residues.js",
+      "bytes": 1314,
+      "sha256": "a7ccceac2066fd9348a7f6b2a0d69b3bba3c46c40a1b82efea82431698a36a61"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/rho.js",
+      "bytes": 3540,
+      "sha256": "59949b258f24091f377f5fb55ea1803958e8305c1f5023677dba021b563f11de"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/ring.js",
+      "bytes": 6056,
+      "sha256": "c5433e1dd6fcbc37a7c6e614af77a7435e96034085697fdaee84657484f50115"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/safe-basis.js",
+      "bytes": 16792,
+      "sha256": "a25d5343acf4925f92e5835552e51a22b9a8dfa96cb08716644031660f51bf9c"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/shadow-spine.js",
+      "bytes": 14177,
+      "sha256": "30cc59aee4a9af410ba7d1cbef0081665c787ec6e660460b84ad571eae849adc"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/shell-kelim.js",
+      "bytes": 10402,
+      "sha256": "beb288fad509a65cd97ba6eae145136d8890c5921906348137ae855b2f48c355"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/tower-recover.js",
+      "bytes": 6284,
+      "sha256": "2a703f1c575fe6bed1e1a1b22f56b6b36c91da05f744bcce4662d2fba41028e3"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/tray.js",
+      "bytes": 10377,
+      "sha256": "63f4aedc43d354e10d9a9c1219264653cab134bcb5f63173aefcc6f4d7827fd1"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/validators.js",
+      "bytes": 2457,
+      "sha256": "68ecec280ec292beed5c1453b1fb81fccbf3ee4d5c92eb25e8c8f1f6011d0f96"
+    },
+    {
+      "path": "research/dccms-mechanism-investigation-2026-11-13/sources/astrology_remastered/project/src/core/variants.js",
+      "bytes": 28233,
+      "sha256": "7cf7fbdc6bfa7c19b72cefc7d805b157fb5a46ecf5c9d4c34481e51fc19cd9ee"
+    },
+    {
+      "path": "research/star-successor-clarification-2026-11-13/README.md",
+      "bytes": 15012,
+      "sha256": "a6f4f02e21ad2bd35b40a263b855d54ac4fb91c9b56e1f6a52384dec28d0513c"
+    },
+    {
+      "path": "research/star-successor-clarification-2026-11-13/evidence/verification.json",
+      "bytes": 7074,
+      "sha256": "91b66371a92fdbc90878ee83aaf5f4ff1dc1f8a497c1d3ec481205f07fd6f0fb"
+    },
+    {
+      "path": "research/star-successor-clarification-2026-11-13/experiments/star_transport.mjs",
+      "bytes": 1320,
+      "sha256": "a470a178ed82ef4bcde6e76d3d9b3ab2e9e5cdb3bc9acf97fa5a24994beef021"
+    },
+    {
+      "path": "research/star-successor-clarification-2026-11-13/experiments/verify.mjs",
+      "bytes": 8272,
+      "sha256": "95adce8c7e4896768e8764c4f175473e1cc4838f21236a00e2615adb8799528b"
+    },
+    {
+      "path": "research/winding-prediction-test-2026-11-13/protocol/user-clarification-v2.md",
+      "bytes": 1794,
+      "sha256": "48e92d15ee72cfd75f3a86c5c62153090d843f13e8f379d148434d8ff09938af"
+    }
+  ],
+  "entrypoint": "research/star-successor-clarification-2026-11-13/README.md",
+  "run": "node research/star-successor-clarification-2026-11-13/experiments/verify.mjs"
+}

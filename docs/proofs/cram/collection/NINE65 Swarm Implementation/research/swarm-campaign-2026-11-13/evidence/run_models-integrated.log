@@ -1,0 +1,40 @@
+{
+  "status": "PASS",
+  "scope": "Finite exact research models; no new Lean or ciphertext execution",
+  "module_queries": {
+    "certificates": 640,
+    "decoders": 312,
+    "obstructions": 328,
+    "source_vectors": 11335,
+    "fixed_composite_and_rectangular_controls": 4
+  },
+  "geometry": {
+    "ordered_point_triples": 15625,
+    "positive": 6444,
+    "negative": 6444,
+    "collinear": 2737,
+    "capacity_negative_controls": 1
+  },
+  "bbs": {
+    "configurations": 2046,
+    "carrier_prefixes": 36868,
+    "rational_interpolation_points": 149518,
+    "general_jump_negative_controls": 1
+  },
+  "jets_and_hensel": {
+    "jet_instances": 1560,
+    "hensel_steps": 48,
+    "ordinary_derivative_failure_controls": 1
+  },
+  "internal_bridges": {
+    "theta_charts": 2100,
+    "theta_walls": 300,
+    "maa_reflections": 2500,
+    "allocations": 1240,
+    "skew_energy_coordinate_bound_counterexamples": 1
+  },
+  "source_sha256": {
+    "models.py": "231b68b99ac9e1f80eebfb7488836c5a1fe896f6480442b342d68cd807d502cf",
+    "run_models.py": "437d8ace1464783c0199cc06d972c804c87b60bc134240460e374827236c7dd4"
+  }
+}

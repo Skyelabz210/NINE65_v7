@@ -1,0 +1,66 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65-cross-pollination/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65-cross-pollination/Cargo.toml
+   Compiling zerocopy v0.8.31
+   Compiling num-traits v0.2.19
+   Compiling once_cell v1.21.3
+   Compiling tempfile v3.24.0
+   Compiling rusty-fork v0.3.1
+   Compiling cram-core v0.1.0 (/workspace/NINE65-cross-pollination/crates/cram-core)
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_chacha v0.9.0
+   Compiling proptest v1.9.0
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.99s
+     Running unittests src/lib.rs (/workspace/.tooling/target-gcd-campaign/debug/deps/cram_core-1c0da283ee7cc32c)
+
+running 13 tests
+test anchor::tests::rejects_non_coprime_pair ... ok
+test phase_lock::tests::crt_pair_covers_every_residue ... ok
+test phase_lock::tests::nonzero_refresh_increment_is_independent_of_source_winding ... ok
+test phase_lock::tests::s8_joint_split_reference_and_invalid_inputs ... ok
+test phase_lock::tests::s8_shadow_elimination_refuses_changed_payload_and_aliases ... ok
+test tests::architecture_gate_detects_prohibited_activity ... ok
+test tests::authorized_projection_does_not_mark_internal_projection ... ok
+test tests::basis_rejects_non_coprime_moduli ... ok
+test tests::emission_policy_counts_reconstruction_but_rejects_synthetic_emissions ... ok
+test tests::lane_arithmetic_is_exact_and_canonical ... ok
+test anchor::tests::exhaustive_small_coprime_pairs ... ok
+test phase_lock::tests::shadow_elimination_matches_independent_integer_successors ... ok
+test anchor::tests::adjacent_path_matches_general_path ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+     Running tests/query_runtime.rs (/workspace/.tooling/target-gcd-campaign/debug/deps/query_runtime-0c62353a1550c50d)
+
+running 11 tests
+test catalog_validation_and_missing_observations_are_explicit ... ok
+test admission_is_public_conservative_and_failure_is_atomic ... ok
+test observed_operation_counts_match_executed_readout_routes ... ok
+test native_add_multiply_and_mixed_sequences_match_independent_oracle ... ok
+test planner_periods_match_signed_integer_queries ... ok
+test exhaustive_36_37_ingress_consumers_and_signed_coefficients ... ok
+test repeated_native_square_preserves_identity_and_public_admission ... ok
+test source_frame_and_epoch_authority_refuses_replays ... ok
+test producer_selection_matches_independent_subset_enumeration ... ok
+test exhaustive_general_division_including_nonunit_divisors ... ok
+test planner_minimal_anchor_agrees_with_exhaustive_divisibility_oracle ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.56s
+
+     Running tests/workload_scales.rs (/workspace/.tooling/target-gcd-campaign/debug/deps/workload_scales-cf6bd45c93ab609d)
+
+running 5 tests
+test architecture_counters_stay_clean_during_scaled_checks ... ok
+test bound_rules_remain_sound_at_profile_depth ... ok
+test anchor_phase_winding_scales_to_large_composite_frame ... ok
+test anchor_phase_winding_is_exhaustively_exact_on_small_pairs ... ok
+test residue_lane_correctness_scales_by_lanes_and_depth ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests cram_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

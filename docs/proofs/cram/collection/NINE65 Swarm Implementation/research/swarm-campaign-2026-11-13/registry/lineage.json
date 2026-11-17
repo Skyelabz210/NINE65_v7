@@ -1,0 +1,193 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-11-13",
+  "research_snapshot": "d883d24e6a1462c78564e554f42b3dd54044da59",
+  "purpose": "Evidence lineage and reuse map, not a claim of complete Git genealogy or universal validation.",
+  "repositories": [
+    {
+      "source_id": "repo-MANA-definitive",
+      "repository_full_name": "Skyelabz210/MANA-definitive",
+      "default_branch": "main",
+      "visibility": "public",
+      "revision": "e5a4f236a1ba566ff123ec480d5fc66da6abb04e",
+      "tree_sha": "42e7339684b6ecdb5e04c16a6bcaeaca257c17df",
+      "tree_entries": 214,
+      "truncated": false
+    },
+    {
+      "source_id": "repo-MANA-pages",
+      "repository_full_name": "Skyelabz210/MANA-pages",
+      "default_branch": "main",
+      "visibility": "public",
+      "revision": "3299c9bcdbdf9f1260b29ced3bde87d24e47b195",
+      "tree_sha": "89c4bcac00971dceafaaf3090a501ee3743e3a8d",
+      "tree_entries": 190,
+      "truncated": false
+    },
+    {
+      "source_id": "repo-NINE65-v5-proofstack",
+      "repository_full_name": "Skyelabz210/NINE65-v5-proofstack",
+      "default_branch": "main",
+      "visibility": "public",
+      "revision": "6b14d5cfa1efa60d61e24f8383d661c51d2ecbdb",
+      "tree_sha": "82342108e53551206cc310fa85cb63bd747f9a71",
+      "tree_entries": 437,
+      "truncated": false
+    },
+    {
+      "source_id": "repo-NINE65-v5",
+      "repository_full_name": "Skyelabz210/NINE65-v5",
+      "default_branch": "main",
+      "visibility": "public",
+      "revision": "8051fbe41b5d412340961c81fd799499b7b29651",
+      "tree_sha": "3acc9a153a2e00f47857d4600f6722c64baf339d",
+      "tree_entries": 657,
+      "truncated": false
+    },
+    {
+      "source_id": "repo-NINE65_v7",
+      "repository_full_name": "Skyelabz210/NINE65_v7",
+      "default_branch": "main",
+      "visibility": "public",
+      "revision": "88a7bdadbf0e1f8fbfdb2b37e9843101b8db3484",
+      "tree_sha": "0eebc818feb578ff5fefd238371b57d3af9511a4",
+      "tree_entries": 2927,
+      "truncated": false
+    },
+    {
+      "source_id": "repo-k-elimination-lean4",
+      "repository_full_name": "Skyelabz210/k-elimination-lean4",
+      "default_branch": "main",
+      "visibility": "public",
+      "revision": "0400092096962e3da45a8e5cbb82185a3c2c38fe",
+      "tree_sha": "b4f2f09af4cbdef2bee29071c2a8ea38e744441b",
+      "tree_entries": 38,
+      "truncated": false
+    },
+    {
+      "source_id": "repo-qmnf-lean-coq-security-proofs",
+      "repository_full_name": "Skyelabz210/qmnf-lean-coq-security-proofs",
+      "default_branch": "main",
+      "visibility": "public",
+      "revision": "1e0acf1d60a894433e9ef902b215b383ce4d1ced",
+      "tree_sha": "033f8c2d037da7297686e9e0e9d086e4abe9422e",
+      "tree_entries": 302,
+      "truncated": false
+    },
+    {
+      "source_id": "repo-NINE65-Rust-Guide",
+      "repository_full_name": "Skyelabz210/NINE65-Rust-Guide",
+      "default_branch": "main",
+      "visibility": "public",
+      "revision": "ebe062ce33e196fb79f30138f38665186a0e774e",
+      "tree_sha": "95cfe680a9b6d781194b172a288e10130efce966",
+      "tree_entries": 52,
+      "truncated": false
+    }
+  ],
+  "read_source_ids": [
+    "github-MANA-definitive-crates_nine65_src_ops_gso_fhe_rs-1",
+    "github-MANA-definitive-crates_nine65_src_ops_gso_fhe_rs-221",
+    "github-MANA-pages-src_crates_nine65_src_ops_gso_fhe_rs-1",
+    "github-NINE65-v5-crates_exact_transcendentals_lean4_ExactTranscendentals_ExactRational_lean-1",
+    "github-NINE65-v5-proofstack-lean4_KElimination_KElimination_AHOP_Algebra_lean-1",
+    "github-qmnf-lean-coq-security-proofs-lean4_formalization_swarm_18_WASSAN_lean-1",
+    "github-NINE65-Rust-Guide-docs_gso_fhe_md-1",
+    "github-NINE65_v7-KElimination_Universal_Paper_md-1",
+    "github-k-elimination-lean4-KElimination_Basic_lean-1"
+  ],
+  "edges": [
+    {
+      "from": "repo-MANA-definitive",
+      "to": "repo-MANA-pages",
+      "relation": "IDENTICAL_GSO_SOURCE_BLOB",
+      "git_blob_sha": "7bffb6db282f314730b29be5502bd4f2a0326769",
+      "scope": "The gso_fhe.rs module only; does not assert whole-repository identity."
+    },
+    {
+      "from": "repo-NINE65-Rust-Guide",
+      "to": "repo-MANA-definitive",
+      "relation": "GSO_MECHANISM_COMPARISON",
+      "scope": "Guide explains noise tracking; source distinguishes changing tracking metadata from changing ciphertext."
+    },
+    {
+      "from": "repo-NINE65-v5-proofstack",
+      "to": "repo-NINE65_v7",
+      "relation": "CANDIDATE_AHOP_INVARIANT_REUSE",
+      "scope": "Polynomial reflection identities can be generalized to commutative rings; source compilation/integration is a separate gate."
+    },
+    {
+      "from": "repo-NINE65-v5",
+      "to": "repo-NINE65_v7",
+      "relation": "CANDIDATE_EXACT_RATIONAL_QUERY_REUSE",
+      "scope": "Numerator/denominator pair representation, quotient equivalence, explicit zero-denominator contract needed."
+    },
+    {
+      "from": "repo-qmnf-lean-coq-security-proofs",
+      "to": "repo-NINE65_v7",
+      "relation": "CANDIDATE_STRUCTURED_QUERY_REUSE",
+      "scope": "WASSAN direct-coordinate and sparse-state queries; no arbitrary-data compression or complexity proof inferred."
+    },
+    {
+      "from": "drive-nsproof",
+      "to": "drive-blueprint",
+      "relation": "LATER_EXPLICIT_SCOPE_NARROWING",
+      "scope": "April text claims continuum regularity; May blueprint explicitly marks arbitrary-data continuum regularity and named bridges OPEN."
+    }
+  ],
+  "mechanisms": [
+    {
+      "id": "corpus-ahop-commring",
+      "source_id": "github-NINE65-v5-proofstack-lean4_KElimination_KElimination_AHOP_Algebra_lean-1",
+      "finding": "Reflection k_i -> 2*sum(other k_j)-k_i is an involution and preserves Q=(sum k)^2-2*sum(k_j^2) over any commutative ring.",
+      "argument": "Write s=sum(other coordinates), a=k_i. Reflection a′=2s-a gives a′′=a and Q(a′)-Q(a)=0 by polynomial expansion. No inversion of 2 is used.",
+      "scope": "Written algebraic derivation, no fresh Lean build by corpus track; separate noncommutativity/hardness statements retain their own hypotheses."
+    },
+    {
+      "id": "corpus-gso-state-separation",
+      "source_id": "github-MANA-definitive-crates_nine65_src_ops_gso_fhe_rs-221",
+      "finding": "mul_public computes ciphertext result before the collapse branch; collapse updates swarm and noise metadata and does not replace that result.",
+      "scope": "Scoped wrapper observation only; symmetric mode and underlying multiplication require separate analysis. No public noise reset theorem follows."
+    },
+    {
+      "id": "corpus-wassan-query",
+      "source_id": "github-qmnf-lean-coq-security-proofs-lean4_formalization_swarm_18_WASSAN_lean-1",
+      "finding": "Amplitude state is a 144-coordinate function; direct retrieval is exact. The named constant-time theorem has conclusion True, not an operational cost bound.",
+      "scope": "Useful structured query representation; do not infer lossless arbitrary 144:1 compression or quantum hardware behavior."
+    },
+    {
+      "id": "corpus-rational-policy",
+      "source_id": "github-NINE65-v5-crates_exact_transcendentals_lean4_ExactTranscendentals_ExactRational_lean-1",
+      "finding": "Exact rational numerator/denominator pairs and cross-product equivalence are reusable; div′ returns zero on a zero divisor numerator.",
+      "scope": "A totalized convention must be explicit or replaced by certified nonzero input before reuse as ordinary field division."
+    },
+    {
+      "id": "corpus-energy-max-boundary",
+      "source_ids": [
+        "drive-nsproof",
+        "drive-blueprint"
+      ],
+      "finding": "An exact quadratic-energy certificate does not by itself prove a maximum-norm bound. Retain the energy identity and require an independent stability bridge.",
+      "counterexample": "R=[[3/5,-4/5],[4/5,3/5]], x=(1,1), R*x=(-1/5,7/5). Squared Euclidean norm remains 2 while maximum norm grows from 1 to 7/5.",
+      "scope": "Exact rational counterexample to the implication, not a rejection of all discrete CRAM mechanisms or a rerun of the unavailable NS solver."
+    },
+    {
+      "id": "corpus-synthesis-leads",
+      "source_ids": [
+        "drive-synthesis",
+        "drive-frontiers",
+        "drive-register"
+      ],
+      "finding": "Recovered leads: heterogeneous per-lane operators and exceptional-set coupling; clean-window/resonance claims; QEC and wavelet correspondences; exact skew advection; auxiliary-lane FPD error scope.",
+      "scope": "Leads only. A scalar rho=min(moduli) is not automatically a code distance, operator spectral radius, stability constant or cryptographic entropy bound; definitions and concrete maps must be supplied."
+    }
+  ],
+  "gaps": [
+    "Linked Codex thread content unavailable because read_thread is not exposed.",
+    "PDF text review is not page-by-page visual/OCR verification; rendered formulas that disagree with extraction remain unverified.",
+    "Only listed repository line ranges are freshly read; trees are not whole-repository acceptance.",
+    "Private Drive document bytes/images/equations were not downloaded or visually verified; hashes identify connector text snapshots.",
+    "Historical claims, proof labels, test totals and performance figures are not current executed results.",
+    "Current genealogy covers pinned sources and one proven identical blob, not a complete commit ancestry analysis."
+  ]
+}

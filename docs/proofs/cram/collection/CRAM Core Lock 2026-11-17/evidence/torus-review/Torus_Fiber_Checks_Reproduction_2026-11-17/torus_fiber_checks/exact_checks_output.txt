@@ -1,0 +1,24 @@
+=== C1. Tropical theta: is argmin_n (Q n^2 + 2 n z) = -K for z = g + Q K ?  (section 3.3)
+cases=48040: argmin == -K uniquely: 25516; tie containing -K: 2160; argmin is -K-1 (claim false): 20364
+value formula T=-2Kg-QK^2 correct in 27676 of 48040 cases
+closed form (argmin=-K if 2g<Q; tie if 2g=Q; -K-1 if 2g>Q) violated in 0 cases
+
+=== C2. Ramanujan: 'p(385m + 894) = 0 mod 385' (section 6.2)
+beta=369 (beta mod 5,7,11 = 4,5,6): mod 5: 103/103; mod 7: 103/103; mod 11: 103/103; mod 385: 103/103
+beta=894 (beta mod 5,7,11 = 4,5,3): mod 5: 102/102; mod 7: 102/102; mod 11: 16/102; mod 385: 16/102
+24^-1 mod 385 = 369 (the correct offset is the inverse of 24 mod 385)
+
+=== C3. F6: how special is 'irreducible remainder 23' for 11960 w.r.t. {2,3,5,7,13,37,73}?
+11960 = {2: 3, 5: 1, 13: 1, 23: 1} ; 11960 mod 378 = 242 = {2: 1, 11: 2}
+all 170544 7-subsets of the 22 primes <80: remainder exactly 23 in 3060; remainder 1 in 816
+remainder for alt sets: first-7-primes 23 ; S0 plus 23 -> 1
+null model N in [10000,14000] vs S0: not S0-smooth 3893/4001; remainder a single prime 2679/4001; remainder exactly 23: 30
+
+=== C4. F3: exact Ollivier-Ricci curvature (alpha=0, mu_x uniform on neighbours) on the lane graph
+basis [3] degree 2 kappa per lane: {3: '1/2'}
+basis [4] degree 2 kappa per lane: {4: '0'}
+basis [5] degree 2 kappa per lane: {5: '0'}
+basis [7] degree 2 kappa per lane: {7: '0'}
+basis [11] degree 2 kappa per lane: {11: '0'}
+basis [13] degree 2 kappa per lane: {13: '0'}
+basis [2, 3, 5, 7, 11, 13] degree 11 kappa per lane: {2: '0', 3: '1/11', 5: '0', 7: '0', 11: '0', 13: '0'}

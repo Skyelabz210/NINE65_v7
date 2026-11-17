@@ -1,0 +1,70 @@
+{
+  "repo": "Skyelabz210/NINE65_v7",
+  "commit": "88a7bdadbf0e1f8fbfdb2b37e9843101b8db3484",
+  "report_source_commit": "bbfa754f9db2e9a7b69fca6c468e0f601a2cf123",
+  "dirty_status": "",
+  "files": [
+    {
+      "path": "docs/PUBLIC_REFRESH_STATUS.md",
+      "sha256": "c04631ab1bb82d3f85b114c4bf8ad2db9fe8982d537128fe507151f83755be0b"
+    },
+    {
+      "path": "docs/execution/2026-10-22/TROPICAL_LIFT_K_ELIMINATION.md",
+      "sha256": "9ee2a02a448948e340f0490934d064d8b2f328836cf37dad15c9a290f7eb805e"
+    },
+    {
+      "path": "docs/execution/2026-10-23/ULTRADISCRETE_PUBLIC_REFRESH_ARCHITECTURE.md",
+      "sha256": "6023f9c82d4cf271e632fe198a3ca2dff7a54d9e3729784a0609f64bef419256"
+    },
+    {
+      "path": "docs/execution/2026-10-31/PUBLIC_REFRESH_LIFT_REFINEMENT.md",
+      "sha256": "554ae8a2b1362ad1cbd4320414568d7e935f02fda0fb08b053cdf14db1e54338"
+    },
+    {
+      "path": "scripts/phase1_tropical_k_elimination.py",
+      "sha256": "aafd16f16eb81ef53d97a3dd2973fc86594352c132d0c39a6d4b1e72cfa1a404"
+    },
+    {
+      "path": "scripts/public_refresh_lift_refinement.py",
+      "sha256": "2fbcb89c691b29726961b3fb3b66c8c191efb4d8928972b41c533adfb11481b0"
+    },
+    {
+      "path": "scripts/test_public_refresh_lift_refinement.py",
+      "sha256": "9ef061927b26694c7a5b0f148730f426760b94788e904f61640ea6a5dca8d7c9"
+    },
+    {
+      "path": "crates/nine65/tests/research/tropical_chart_transition.rs",
+      "sha256": "5b9f59ff0a18bab981a5bc862811bbe4fdb33f5b60f2d11f78fecaab540a56fe"
+    },
+    {
+      "path": "crates/nine65/src/ops/public_refresh_circuit.rs",
+      "sha256": "8894f47baf9b277a59fd7f1c722a7556688a4ace8f91f7f46cf470b62baed26f"
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/compare_bit.rs",
+      "sha256": "dc51794cf42bae294ff16caabd2eb630a7411e579876724b28c3b30ffd1aa482"
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/mq_relu.rs",
+      "sha256": "347aefd45fa050a6d4eefcb9339d8cd56afaa684a7c89eab015f93b71e83b551"
+    },
+    {
+      "path": "artifacts/execution/2026-10-22/tropical-chart-transition/checks.log",
+      "sha256": "e9b8beec3dd099d6710b826c1160a61b6d726247ed005f45cf81a27ab331a794"
+    },
+    {
+      "path": "artifacts/execution/2026-10-22/tropical-chart-transition/sequential-exploration.log",
+      "sha256": "d3bea15436253e0cefddfc7e51760578a49509d2b0786cb058cadfc80e2bca1d"
+    },
+    {
+      "path": "artifacts/execution/2026-10-22/tropical-chart-transition/result.json",
+      "sha256": "bf7817f41a1dc4475978f6d20014ed9f0670514176688b576d32e5de95215bb9"
+    }
+  ],
+  "fresh_commands": [
+    "python3 scripts/phase1_tropical_k_elimination.py",
+    "python3 -m unittest discover -s scripts -p test_public_refresh_lift_refinement.py -v",
+    "python3 /workspace/k-elimination-audit/experiments/tropical_paper_code/check_chart_scope.py"
+  ],
+  "fresh_encrypted_execution": false
+}

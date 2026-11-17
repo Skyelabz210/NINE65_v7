@@ -1,0 +1,23 @@
+'KElimination.FutureQuotient.future_refl' does not depend on any axioms
+'KElimination.FutureQuotient.future_symm' does not depend on any axioms
+'KElimination.FutureQuotient.future_trans' does not depend on any axioms
+'KElimination.FutureQuotient.future_determines_outputs' does not depend on any axioms
+'KElimination.FutureQuotient.future_preserved' does not depend on any axioms
+'KElimination.FutureQuotient.future_is_coarsest' does not depend on any axioms
+'KElimination.FutureQuotient.quotient_query_correct' does not depend on any axioms
+'KElimination.FutureQuotient.quotient_step_correct' depends on axioms: [Quot.sound]
+'KElimination.FutureQuotient.quotient_equal_iff_future' depends on axioms: [propext, Quot.sound]
+'KElimination.FutureQuotient.refined_monotone' does not depend on any axioms
+'KElimination.FutureQuotient.refined_determines_outputs' does not depend on any axioms
+'KElimination.FutureQuotient.future_refines_every_round' does not depend on any axioms
+'KElimination.FutureQuotient.refined_iff_bounded_future' depends on axioms: [propext, Quot.sound]
+'KElimination.FutureQuotient.fixed_point_is_future_equivalence' does not depend on any axioms
+'KElimination.FutureQuotient.additive_run_zero' depends on axioms: [propext]
+'KElimination.FutureQuotient.additive_run_add' does not depend on any axioms
+'KElimination.FutureQuotient.additive_run_sub' depends on axioms: [propext]
+'KElimination.FutureQuotient.invisible_zero' depends on axioms: [propext]
+'KElimination.FutureQuotient.invisible_add' does not depend on any axioms
+'KElimination.FutureQuotient.invisible_sub' depends on axioms: [propext]
+'KElimination.FutureQuotient.invisible_preserved' does not depend on any axioms
+'KElimination.FutureQuotient.invisible_is_largest' does not depend on any axioms
+'KElimination.FutureQuotient.future_eq_iff_invisible_difference' depends on axioms: [propext]

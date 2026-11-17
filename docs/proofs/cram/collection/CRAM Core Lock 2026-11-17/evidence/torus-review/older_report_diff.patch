@@ -1,0 +1,21 @@
+--- zip4-report
++++ zip10-report
+@@ -40,6 +40,18 @@
+ ### Composite-modulus performance trial
+ 
+ I created a separate Rust copy of `kbench.rs`; I did not edit the supplied file. The copied harness builds 130 actual moduli as products of disjoint factors near 2³¹, asserts `gcd(m_i,m_j)=1` for every pair, uses extended Euclid for inverses, and retains the benchmark’s correctness checks against an independent redundant modulus and between full reconstructions. The actual lane/check moduli are composite; the factor-generation routine is only a convenient way to create them. All benchmark sizes (`k=2…128`) reported `PASS` in all three runs.
++
++### Exact source changes in the Rust composite harness
++
++The original file remains unchanged. The separate `reproduction/kbench_coprime.rs` was generated from it by `reproduction/adapt_coprime_bench.py`. The changes are confined to modular inversion, modulus generation/selection, validation, and one descriptive output line:
++
++1. **Replace Fermat inversion with extended Euclid.** Original `kbench.rs` line 8 defines `inv(a,p)` as `powmod(a % p, p - 2, p)`. That is Fermat’s inverse formula and requires a prime modulus (and a nonzero residue). The adapted `inv(a,m)` tracks signed Euclidean coefficients in `i128`, runs the extended-Euclidean recurrence, asserts the final gcd is exactly 1, and returns the normalized Bézout coefficient with `rem_euclid(m)`. Thus the inverse exists exactly when the requested operands are coprime, including for composite `m`. The new `gcd` helper uses Euclid’s algorithm for positive integer gcd checks.
++2. **Generate composite moduli, not prime lane moduli.** The old setup selected 132 probable-prime values just below `2^62` and used `primes[..k]`, `primes[k]`, and `primes[k+1]` as the base, redundant, and witness moduli. The adapted setup selects 260 convenient factors below `2^31`, pairs them into 130 products `factors[2*i] * factors[2*i+1]`, and uses that `moduli` vector for all three roles. Each resulting modulus is a composite product and remains about 62 bits wide.
++3. **Enforce the actual requirement on the full generated set.** Before benchmarking, nested loops assert `gcd(moduli[i], moduli[j]) == 1` for every distinct pair among all 130 moduli. This covers each chosen base lane and both extra moduli. The harness also keeps `assert!(q2 > k)`, so the witness residue uniquely identifies `α` in its known range `0…k−1`; coprimality with `M` makes `M⁻¹ mod q2` available through the new inverse routine.
++4. **Route all setup inverses through the general routine.** Because the existing setup call sites already use `inv`, the replacement applies to Garner’s pairwise inverse table `c[i][j]`, each CRT coefficient inverse `minv[i]`, and the inverses of `M` modulo the redundant moduli (`minv_r` and `minv_q`). Their inputs are units because the pairwise-gcd assertion passed.
++5. **Keep the timed arithmetic unchanged.** The Garner digit conversion, `sk_alpha`, full-limb accumulation/subtraction, test-vector checks, pseudo-random source, loop counts, and timers were not rewritten. The modulus/inverse setup remains outside the timed loops, as it was in the original. The measured composite run therefore exercises the same arithmetic routines with composite pairwise-coprime moduli; it does not charge extended-Euclid setup to per-operation latency.
++
++One distinction is intentional: the adapted harness still calls its Miller–Rabin `is_prime` helper to find convenient factors for constructing the composites. It does **not** test or require primality of the actual lane/check moduli; those products are composite, and their pairwise gcds are checked directly. Prime factors are merely a convenient way to make disjoint-factor products whose coprimality is easy to guarantee and verify. The exhaustive Python probe separately uses only composite lane and witness moduli with general modular inverses.
+ 
+ ## 3. Benchmark evidence
+ 

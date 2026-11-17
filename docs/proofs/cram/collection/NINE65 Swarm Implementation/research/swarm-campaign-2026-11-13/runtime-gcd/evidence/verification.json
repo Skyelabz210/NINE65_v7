@@ -1,0 +1,278 @@
+{
+  "status": "PASS",
+  "source_base_commit": "d883d24e6a1462c78564e554f42b3dd54044da59",
+  "implementation_branch": "campaign/encrypted-gcd",
+  "rust_toolchain": "1.89.0",
+  "features": "nine65 default features; debug/unit-test execution, no allow_insecure override",
+  "scope": "New actual encrypted GCD with two public strategies, bounded clear rational reference, separate existing application test",
+  "source_sha256": {
+    "crates/nine65/src/ops/cram_main_division.rs": "922379ec84dca6eec76718c10d9f9aef6847ea45810f57b24785727d40a12480",
+    "crates/nine65/src/ops/cram_main_gcd_tests.rs": "04c9f6676e2403b85926e4f4adae272d1bf0081e4fb61d6beba8bdcbecf49d06",
+    "crates/nine65/src/ops/cram_public.rs": "d92544ffd6423d189097d2ed18b9f45c609d69f50cb201321ccf312f9c5d5514",
+    "crates/nine65/src/ops/integer_division_circuit.rs": "032dc4e275e3138e96dc7c43caf4b2218243e35cb3b8e6b97eedc506df62dbd2"
+  },
+  "artifact_source_sha256": {
+    "circuit_costs.rs": "38881e7cf186bd90c49bd468b1411f4b3be5073dea1045d3e240e5aeff0d598e",
+    "rational_pair_reference.py": "61040b64ad27dce2d42d7ec5e2d2c1bf3693b4f221d1f6762da960911fc829c3",
+    "README.md": "c566b228375aa806576c3756e9c9d1335ce487152b818c3ee885b7826e86cd46"
+  },
+  "commands": [
+    {
+      "name": "gcd_final",
+      "command": "cargo test -p nine65 --lib division::gcd_tests:: --no-fail-fast -- --nocapture",
+      "log": "evidence/gcd-strategies-final.log",
+      "result": "PASS",
+      "passed_tests": 7,
+      "failed_tests": 0,
+      "reported_test_seconds": 55.48,
+      "log_sha256": "88ae504c7ff2c0c588790490cea06be6bae6be126d9dee419e55be6dd51ae322"
+    },
+    {
+      "name": "circuit_final",
+      "command": "rustc --edition=2021 -O --test research/swarm-campaign-2026-11-13/runtime-gcd/circuit_costs.rs -o /workspace/.tooling/gcd-circuit-tests; /workspace/.tooling/gcd-circuit-tests --nocapture",
+      "log": "evidence/circuit-tests-final.log",
+      "result": "PASS",
+      "passed_tests": 5,
+      "failed_tests": 0,
+      "reported_test_seconds": 0.02,
+      "log_sha256": "31811b405c2b75e28d51f244f2ddae0812d99e994bfcb1b0a0015812df0a6d7b"
+    },
+    {
+      "name": "private_feedback",
+      "command": "cargo test -p private-feedback-nine65 public_adapter_encrypts_and_aggregates_live_dual_rns_slots --no-fail-fast -- --nocapture",
+      "log": "evidence/private-feedback.log",
+      "result": "PASS",
+      "passed_tests": 1,
+      "failed_tests": 0,
+      "reported_test_seconds": 2.2,
+      "log_sha256": "281d17d65118d59c094d370cecf3daa78468f8a29ff9529585230425217ba26a"
+    }
+  ],
+  "fixed_round_semantic_cases": 87380,
+  "clear_gcd_small_width_pairs_per_strategy": 900,
+  "clear_eight_bit_boundary_seeded_pairs": 72,
+  "rational_reference": {
+    "status": "PASS",
+    "normalization_cases": 1953,
+    "multiplication_cases": 11025,
+    "refusal_controls": 5,
+    "cross_cancellation_capacity_example": "200/3 * 3/200 = 1 within 8 bits",
+    "scope": "clear reference, not residue-native or encrypted implementation"
+  },
+  "actual_ciphertext_runs": [
+    {
+      "mode": "small-ring research BFV",
+      "n": 8,
+      "t": 3,
+      "eta": 5,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        595591169
+      ],
+      "strategy": "FixedEuclid",
+      "widths_executed": [
+        1,
+        2
+      ],
+      "two_bit_cases": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          3,
+          3
+        ],
+        [
+          3,
+          0,
+          3
+        ],
+        [
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          1
+        ]
+      ],
+      "admitted_output_millibits": {
+        "1": 136000,
+        "2": 72000
+      },
+      "widths_refused_by_noise": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    },
+    {
+      "mode": "small-ring research BFV",
+      "n": 8,
+      "t": 3,
+      "strategy": "SmallTruthTable",
+      "widths_executed": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "selected_cases_per_width": 4,
+      "admitted_output_millibits": {
+        "1": 150000,
+        "2": 140000,
+        "3": 131000,
+        "4": 128000
+      },
+      "eta": 5,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        595591169
+      ],
+      "one_bit_exhaustive_cases_additional": 4
+    },
+    {
+      "mode": "native-size BFV arithmetic, t-modified secure_128 tuple",
+      "n": 8192,
+      "t": 3,
+      "eta": 3,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049
+      ],
+      "strategy": "FixedEuclid",
+      "width": 1,
+      "cases": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          1
+        ]
+      ],
+      "output_coefficient_checks": 16384,
+      "width2": "typed Noise refusal at gate40"
+    },
+    {
+      "mode": "native-size BFV arithmetic, same t-modified secure_128 tuple",
+      "n": 8192,
+      "t": 3,
+      "eta": 3,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049
+      ],
+      "strategy": "SmallTruthTable",
+      "width": 2,
+      "cases": [
+        [
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          2
+        ]
+      ],
+      "products": 23,
+      "product_depth": 2,
+      "output_budget_millibits": 41000,
+      "output_coefficient_checks": 49152
+    }
+  ],
+  "native_gcd_output_coefficient_checks_total": 65536,
+  "fixed_large_ring_research_width2_refusal": {
+    "n": 8192,
+    "t": 3,
+    "eta": 5,
+    "source_modulus_chain": "secure_256",
+    "gate": 58
+  },
+  "history_check": {
+    "strategy": "FixedEuclid",
+    "n": 8,
+    "width": 1,
+    "successful_repeated_calls": 7,
+    "terminal_outcome": "typed Noise refusal; original input decrypts unchanged"
+  },
+  "public_strategy_selection": {
+    "widths_1_to_4": "SmallTruthTable",
+    "widths_5_to_8": "FixedEuclid",
+    "over_8": "GcdWidth refusal",
+    "forced_table_over_4": "GcdTableWidth refusal"
+  },
+  "preserved_explorations": [
+    {
+      "log": "evidence/full-division-regression.log",
+      "result": "stopped after failed native-width2 admission assumption; not a full pass"
+    },
+    {
+      "log": "evidence/full-division-regression-final.log",
+      "result": "16 passed, 1 failed; larger research tuple also refused fixed-Euclid width2",
+      "duration_seconds": 459.18,
+      "legacy_division_tests_passed": 6,
+      "legacy_native_division_coefficient_checks": 147456,
+      "scope_note": "Run preceded direct-table constructor; exact exploratory dirty-source hashes were not captured. Failed assumptions are now explicit refusal tests."
+    }
+  ],
+  "private_feedback": {
+    "mode": "existing live DualRNS public adapter",
+    "n": 8192,
+    "t": 65537,
+    "expected_slots": [
+      141,
+      4,
+      7,
+      6,
+      34,
+      4,
+      0,
+      950
+    ],
+    "actual_result": "Each of 8 actual decrypted slots asserted equal by the existing test.",
+    "protected_phase_or_anchor_producer": false
+  },
+  "limitations": [
+    "Arithmetic correctness does not establish confidentiality or a new security admission.",
+    "Default API supports at most 8 bits; actual noise admission is profile/history-dependent.",
+    "Direct tables have exponential size with width and are capped at 4 bits.",
+    "Rational pairs are a clear executable reference, not an encrypted or residue-native runtime API.",
+    "No new Lean theorem claims for Rust refinement."
+  ]
+}

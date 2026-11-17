@@ -1,0 +1,47 @@
+{
+  "scope": "clear integer boundary baseline versus bounded residue query runtime; no speedup claim",
+  "states": 1332,
+  "queries_per_state": 3,
+  "setup_ns": 50,
+  "ingress_ns": 47811,
+  "planning_ns": 118685,
+  "runs": [
+    {
+      "run": 0,
+      "steady_query_ns": 2132542,
+      "integer_boundary_baseline_ns": 11838,
+      "ingress_plan_query_ns": 2135346,
+      "checksum": 47727
+    },
+    {
+      "run": 1,
+      "steady_query_ns": 2094416,
+      "integer_boundary_baseline_ns": 11757,
+      "ingress_plan_query_ns": 2161325,
+      "checksum": 47727
+    },
+    {
+      "run": 2,
+      "steady_query_ns": 2083229,
+      "integer_boundary_baseline_ns": 11868,
+      "ingress_plan_query_ns": 2166402,
+      "checksum": 47727
+    }
+  ],
+  "counted_modular_additions": 149850,
+  "counted_modular_subtractions": 445548,
+  "counted_modular_multiplications": 3996,
+  "counted_winding_readouts": 151176,
+  "counted_comparisons": 156408,
+  "counted_loop_iterations": 147186,
+  "command": [
+    "/workspace/.tooling/cargo/bin/cargo",
+    "run",
+    "-p",
+    "cram-core",
+    "--locked",
+    "--example",
+    "query_runtime_cost",
+    "--release"
+  ]
+}

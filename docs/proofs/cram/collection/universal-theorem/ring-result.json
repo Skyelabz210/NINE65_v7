@@ -1,0 +1,104 @@
+{
+  "source": "RingReadout.lean",
+  "sha256": "033dc2f2903b7fcffcb7576fcbdfba70dff2cf247b9a9f0d8ce2dd5495d1e67b",
+  "toolchain": "leanprover/lean4:v4.27.0-rc1",
+  "import": [
+    "Std"
+  ],
+  "compiler_exit_code": 0,
+  "theorem_count": 16,
+  "custom_axioms": [],
+  "admitted_proofs": 0,
+  "axiom_audit": [
+    {
+      "theorem": "KElimination.RingReadout.Observation.map_zero",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "theorem": "KElimination.RingReadout.Observation.map_sub",
+      "axioms": []
+    },
+    {
+      "theorem": "KElimination.RingReadout.Observation.map_neg",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "theorem": "KElimination.RingReadout.left_mul_sub",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "KElimination.RingReadout.phase_defect",
+      "axioms": []
+    },
+    {
+      "theorem": "KElimination.RingReadout.unit_readout",
+      "axioms": []
+    },
+    {
+      "theorem": "KElimination.RingReadout.right_unit_readout",
+      "axioms": []
+    },
+    {
+      "theorem": "KElimination.RingReadout.solution_fiber",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "KElimination.RingReadout.injective_on_iff_lift_null_separates",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "KElimination.RingReadout.unit_lift_null_iff",
+      "axioms": []
+    },
+    {
+      "theorem": "KElimination.RingReadout.lift_null_zero",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "theorem": "KElimination.RingReadout.lift_null_add",
+      "axioms": []
+    },
+    {
+      "theorem": "KElimination.RingReadout.lift_null_neg",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "KElimination.RingReadout.lift_null_mul_right",
+      "axioms": []
+    },
+    {
+      "theorem": "KElimination.RingReadout.lift_null_mul_left",
+      "axioms": []
+    },
+    {
+      "theorem": "KElimination.RingReadout.target_projection",
+      "axioms": []
+    }
+  ],
+  "query_expression": "inverse * (sourceReading - baseReading)",
+  "query_ring_operation_count": {
+    "subtraction": 1,
+    "multiplication": 1
+  },
+  "query_count_scope": "Inputs and inverse supplied; no bit-cost, observation-acquisition, or encrypted-evaluation complexity claimed.",
+  "compiled_scope": "Arbitrary rings, possibly noncommutative; additive/multiplicative observation; sided inverse; exact compatible fibers and admitted-domain injectivity.",
+  "command": "ELAN_HOME=/workspace/k-elimination-audit/proof-check/elan /workspace/k-elimination-audit/proof-check/elan/bin/lean +leanprover/lean4:v4.27.0-rc1 -o RingReadout.olean RingReadout.lean"
+}

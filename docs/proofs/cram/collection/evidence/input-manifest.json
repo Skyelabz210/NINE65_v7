@@ -1,0 +1,127 @@
+[
+  {
+    "name": "1-The-Universal-Decomposition-Principle-and-Its-Boundaries_-Where-Factorization-Fails-Across-Mathematics-and-Science.pdf",
+    "sha256": "75846764cec92dcfcf7930ccd4e2c96b23ff99ebb8978d3800a084beaf88c61e",
+    "bytes": 116243,
+    "extracted": "/workspace/k-elimination-audit/extracted/1-The-Universal-Decomposition-Principle-and-Its-Boundaries_-Where-Factorization-Fails-Across-Mathematics-and-Science.txt"
+  },
+  {
+    "name": "2-CRAM-K-Elimination-Lifts-and-Exact-Reconstruction.md",
+    "sha256": "65ab7643528fdd36d304ffa353d8171b31e14110160137dbf44a219a90b2620c",
+    "bytes": 48895,
+    "extracted": "/workspace/k-elimination-audit/extracted/2-CRAM-K-Elimination-Lifts-and-Exact-Reconstruction.txt"
+  },
+  {
+    "name": "3-K-ELIMINATION-PAPER.pdf",
+    "sha256": "035707ec30cdbd020ff0887e9bb6b04bdfdbd0295fd59780e22a09d725258c36",
+    "bytes": 173362,
+    "extracted": "/workspace/k-elimination-audit/extracted/3-K-ELIMINATION-PAPER.txt"
+  },
+  {
+    "name": "4-K_ELIMINATION_SUBSTRATE_INVARIANT.md",
+    "sha256": "6efcb8b9d1826820015353ececde4351794a414ab9fbece89ed86ae87f2e491f",
+    "bytes": 6485,
+    "extracted": "/workspace/k-elimination-audit/extracted/4-K_ELIMINATION_SUBSTRATE_INVARIANT.txt"
+  },
+  {
+    "name": "5-kelim_encoder_demo.rs",
+    "sha256": "d9fd33c0cc6e97738cd73aa4d6512cb18579c3a7e3965fcbf284be4cfd05c0d6",
+    "bytes": 1729,
+    "extracted": "/workspace/k-elimination-audit/extracted/5-kelim_encoder_demo.txt"
+  },
+  {
+    "name": "6-KELIM_LUMINANCE_DECODE_REPORT.md",
+    "sha256": "091a1065f690406c66de408fda766bfae85213484b07286bc12be1737c4ee011",
+    "bytes": 15218,
+    "extracted": "/workspace/k-elimination-audit/extracted/6-KELIM_LUMINANCE_DECODE_REPORT.txt"
+  },
+  {
+    "name": "7-Unit_Anchor_K_Elimination_WhitePaper.docx",
+    "sha256": "8db7bda74d628a348253a7e4e8ee85d36ff1482d6b1a990ab1a21ed5395700c0",
+    "bytes": 35734,
+    "extracted": "/workspace/k-elimination-audit/extracted/7-Unit_Anchor_K_Elimination_WhitePaper.txt"
+  },
+  {
+    "name": "8-K_Elimination_Bootstrap_WhitePaper-2.md",
+    "sha256": "64c2d913234a8c23cd722fdacde9ea37f1f8977922aee2566420015694c0ca88",
+    "bytes": 43444,
+    "extracted": "/workspace/k-elimination-audit/extracted/8-K_Elimination_Bootstrap_WhitePaper-2.txt"
+  },
+  {
+    "name": "9-K_ELIMINATION_PAPER.md",
+    "sha256": "7de7678b8a968b65251662c70c4888d98370e604a7dd05f1e1587aeed934dc8d",
+    "bytes": 30459,
+    "extracted": "/workspace/k-elimination-audit/extracted/9-K_ELIMINATION_PAPER.txt"
+  },
+  {
+    "name": "10-CRAM-Lift-K-Elimination-and-Reconstruction-Inventory.md",
+    "sha256": "938fd8e7a97713aa8c6dc09ca6fa7ab76f40f28c1157073b243b9775dfe98782",
+    "bytes": 9962,
+    "extracted": "/workspace/k-elimination-audit/extracted/10-CRAM-Lift-K-Elimination-and-Reconstruction-Inventory.txt"
+  },
+  {
+    "name": "11-PAPER_1_COPRIME_LATTICE_STRATIFICATION-2.docx",
+    "sha256": "7ebf119e69fa11fa34db53c77468eddca02ca9ecdde69eef522a6559fb5b6b2c",
+    "bytes": 22613,
+    "extracted": "/workspace/k-elimination-audit/extracted/11-PAPER_1_COPRIME_LATTICE_STRATIFICATION-2.txt"
+  },
+  {
+    "name": "12-K_Elimination_Technical_Paper.pdf",
+    "sha256": "9e9f80e70912a03e701a5ee3f92d3b9205575a44cc6c009796d35be2a83bd8b0",
+    "bytes": 264610,
+    "extracted": "/workspace/k-elimination-audit/extracted/12-K_Elimination_Technical_Paper.txt"
+  },
+  {
+    "name": "13-k_elim_bootstrap_corrected.py",
+    "sha256": "4ad2efaf6ac717738303556f1e7e9dcb0ad652bf4b608e3fff18421192c1c9f6",
+    "bytes": 16592,
+    "extracted": "/workspace/k-elimination-audit/extracted/13-k_elim_bootstrap_corrected.txt"
+  },
+  {
+    "name": "14-U256_KELIM_FIX_SUMMARY.md",
+    "sha256": "a2d89a2caea1b8a942a299dc1604e8be729ad9013244b532a37538e2cac84b11",
+    "bytes": 2468,
+    "extracted": "/workspace/k-elimination-audit/extracted/14-U256_KELIM_FIX_SUMMARY.txt"
+  },
+  {
+    "name": "15-NINE65_Formal_Proofs-3.pdf",
+    "sha256": "e2149c11a33a343aa203b269175e41c7a9d4334096af93772cd4fb7c7bf2ef58",
+    "bytes": 165404,
+    "extracted": "/workspace/k-elimination-audit/extracted/15-NINE65_Formal_Proofs-3.txt"
+  },
+  {
+    "name": "16-acts.md",
+    "sha256": "0aa316ecdd5336e1614d578795c90dc90b4d252d39fec0b772bdbf2cad0a2900",
+    "bytes": 11281,
+    "extracted": "/workspace/k-elimination-audit/extracted/16-acts.txt"
+  },
+  {
+    "name": "17-k_elim_edge_cases.py",
+    "sha256": "14ca5e6460727dfeb2781e2dd6c81d4fc9e77d27585622ad244b91a636959341",
+    "bytes": 17852,
+    "extracted": "/workspace/k-elimination-audit/extracted/17-k_elim_edge_cases.txt"
+  },
+  {
+    "name": "18-kelim_crate.tar.gz",
+    "sha256": "5e2bfc4593f67a4df9e2a527671a1ff9e497c969f6609265bf8c0657ba83a4ba",
+    "bytes": 6947,
+    "extracted": null
+  },
+  {
+    "name": "19-PROOFS.pdf",
+    "sha256": "3ec3c73b212a0d152f070f8995437fc08f9a92eb4676498eb2f9852dbdb79c2a",
+    "bytes": 250338,
+    "extracted": "/workspace/k-elimination-audit/extracted/19-PROOFS.txt"
+  },
+  {
+    "name": "20-Untitled.docx",
+    "title": "CRAM, NINE65 and Tropical FHE",
+    "document_date": "2026-10-25",
+    "received": "2026-11-12",
+    "sha256": "cea69c53745d79b21cda86841ffa63bb3552ce5e0f70d4c7d0d60919a7acba11",
+    "bytes": 10531,
+    "original_path": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/FA672DFF-C893-4FB1-82FA-D1DFC6697AD7/1-Untitled.docx",
+    "extracted": "/workspace/k-elimination-audit/extracted/20-Tropical_FHE_Untitled.txt",
+    "embedded_attachments": false
+  }
+]

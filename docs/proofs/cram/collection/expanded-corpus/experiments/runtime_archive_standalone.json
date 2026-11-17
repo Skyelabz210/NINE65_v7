@@ -1,0 +1,84 @@
+[
+  {
+    "name": "band_add",
+    "command": [
+      "/workspace/.tooling/cargo/bin/rustc",
+      "--edition=2021",
+      "--test",
+      "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/band_add.rs",
+      "-o",
+      "/workspace/k-elimination-audit/expanded-corpus/build-runtime/standalone/band_add"
+    ],
+    "compile_exit": 0,
+    "test_exit": 0,
+    "log": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_band_add.log"
+  },
+  {
+    "name": "fourth_attractor",
+    "command": [
+      "/workspace/.tooling/cargo/bin/rustc",
+      "--edition=2021",
+      "--test",
+      "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor.rs",
+      "-o",
+      "/workspace/k-elimination-audit/expanded-corpus/build-runtime/standalone/fourth_attractor"
+    ],
+    "compile_exit": 0,
+    "test_exit": 101,
+    "log": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_fourth_attractor.log"
+  },
+  {
+    "name": "fourth_attractor_fix",
+    "command": [
+      "/workspace/.tooling/cargo/bin/rustc",
+      "--edition=2021",
+      "--test",
+      "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor_fix.rs",
+      "-o",
+      "/workspace/k-elimination-audit/expanded-corpus/build-runtime/standalone/fourth_attractor_fix"
+    ],
+    "compile_exit": 0,
+    "test_exit": 101,
+    "log": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_fourth_attractor_fix.log"
+  },
+  {
+    "name": "spt_flat",
+    "command": [
+      "/workspace/.tooling/cargo/bin/rustc",
+      "--edition=2021",
+      "--test",
+      "/workspace/k-elimination-audit/expanded-corpus/build-runtime/standalone/spt_flat.rs",
+      "-o",
+      "/workspace/k-elimination-audit/expanded-corpus/build-runtime/standalone/spt_flat"
+    ],
+    "compile_exit": 0,
+    "test_exit": 0,
+    "log": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_spt_flat.log"
+  },
+  {
+    "name": "spt_nested",
+    "command": [
+      "/workspace/.tooling/cargo/bin/rustc",
+      "--edition=2021",
+      "--test",
+      "/workspace/k-elimination-audit/expanded-corpus/build-runtime/standalone/spt_nested.rs",
+      "-o",
+      "/workspace/k-elimination-audit/expanded-corpus/build-runtime/standalone/spt_nested"
+    ],
+    "compile_exit": 0,
+    "test_exit": 0,
+    "log": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_spt_nested.log"
+  },
+  {
+    "name": "band_boundary",
+    "command": [
+      "/workspace/.tooling/cargo/bin/rustc",
+      "--edition=2021",
+      "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_boundary.rs",
+      "-o",
+      "/workspace/k-elimination-audit/expanded-corpus/build-runtime/standalone/band_boundary"
+    ],
+    "compile_exit": 0,
+    "test_exit": 0
+  }
+]

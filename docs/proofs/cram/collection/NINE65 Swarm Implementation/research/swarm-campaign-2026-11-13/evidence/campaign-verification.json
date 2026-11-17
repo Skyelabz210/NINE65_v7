@@ -1,0 +1,52 @@
+{
+  "status": "PASS",
+  "executed_at_utc": "2026-11-13T02:33:43.192842+00:00",
+  "scope": "Coverage and evidence integrity plus explicitly selected exact model execution",
+  "sources": 181,
+  "source_type_counts": {
+    "uploaded_top_level": 42,
+    "extracted_artifact": 108,
+    "repository": 8,
+    "repository_source_excerpt": 9,
+    "private_drive_document": 5,
+    "indexed_primary_lead": 8,
+    "referenced_codex_thread": 1
+  },
+  "families": 22,
+  "unordered_pair_screens": 231,
+  "directional_screens": 462,
+  "selected_candidates": 12,
+  "standalone_theorem_declarations": 180,
+  "new_standalone_theorems": 36,
+  "model_commands": [
+    {
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "discovery/run_models.py"
+      ],
+      "exit_code": 0,
+      "log": "evidence/run_models-integrated.log"
+    },
+    {
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "reviews/independent_oracles.py"
+      ],
+      "exit_code": 0,
+      "log": "evidence/independent_oracles-integrated.log"
+    }
+  ],
+  "completion_checks": {
+    "integrated_lean_declarations": 223,
+    "new_total_declarations": 49,
+    "combined_runtime_tests": 43,
+    "independent_review": "ACCEPTED_WITH_DECLARED_RESEARCH_SCOPE",
+    "resolved_candidate_records": 12
+  },
+  "separate_evidence": {
+    "original_lean_repository": "proofs/original-repo-verification.json",
+    "rust_integration": "evidence/integrated-runtime.json",
+    "independent_review": "reviews/REVIEW.md",
+    "delivery": "evidence/drive-delivery.json"
+  }
+}

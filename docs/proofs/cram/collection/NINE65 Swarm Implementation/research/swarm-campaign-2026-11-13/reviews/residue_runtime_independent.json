@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "scope": "Actual dependency-free cram-core public API compiled with rustc; clear runtime not FHE",
+  "query_checks": 136020,
+  "other_controls": [
+    "same-residue/wrong-source plan rejection",
+    "same-value/wrong-epoch rejection",
+    "foreign-frame rejection",
+    "failed-public-bound update leaves state and plan unchanged",
+    "default and explicit public work-budget refusal",
+    "public upper bound, not actual source value, controls admission",
+    "adjacent and modulus-one routes admit zero step budgets"
+  ],
+  "source_sha256": {
+    "/workspace/NINE65-swarm-residue/crates/cram-core/src/lib.rs": "56a979a44447a57709f2f92b04a2de0a90dd375be452a2602219f7c6e2377914",
+    "/workspace/NINE65-swarm-residue/crates/cram-core/src/query_runtime.rs": "8de791bc08ebeb00baa17278280bf07b03a1942704732adf4d5b8dc0c908648b",
+    "residue_runtime_independent.rs": "737f8b7d240c329cfe44ec4dd8a9cb61825ef6ecf1e88f331936ff610592ca8d"
+  },
+  "commands": [
+    "rustc --edition=2021 --crate-type lib --crate-name cram_core -O crates/cram-core/src/lib.rs -o /workspace/.tooling/libcram_core_review.rlib",
+    "rustc --edition=2021 -O --extern cram_core=/workspace/.tooling/libcram_core_review.rlib residue_runtime_independent.rs -o /workspace/.tooling/residue-runtime-review",
+    "/workspace/.tooling/residue-runtime-review"
+  ]
+}

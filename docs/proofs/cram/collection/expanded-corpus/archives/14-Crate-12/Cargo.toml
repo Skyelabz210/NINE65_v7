@@ -1,0 +1,25 @@
+[package]
+name = "cram"
+version = "0.1.0"
+edition = "2021"
+
+# CRAM: Configurable Residue Arithmetic Machine
+# Implements the full QMNF / NINE65 v7 stack:
+#   - Recumbent CRT decomposition / Garner reconstruction
+#   - Shadow Entropy topological operator distortion
+#   - CRTBigInt exact integer arithmetic (i128 internal, BigInt-ready)
+#   - CRAM heterogeneous lane engine
+#   - K-Elimination FHE with NINE65 v7 dual Symmetric/Public bootstrapping
+#   - AHOP post-quantum geometric bridge
+
+[[bin]]
+name  = "cram_demo"
+path  = "src/main.rs"
+
+[lib]
+name = "cram"
+path = "src/lib.rs"
+
+[profile.release]
+opt-level = 3
+lto        = true

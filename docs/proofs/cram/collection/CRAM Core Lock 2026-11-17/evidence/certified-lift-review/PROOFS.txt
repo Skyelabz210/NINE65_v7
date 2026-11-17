@@ -1,0 +1,293 @@
+                             CRAM — Formal Proofs
+                                     Round I: Individual Proofs
+
+                            Configurable Residue Arithmetic Machine
+                                      A. Diaz (Acid) — HackFate.us
+
+                                                  2026
+
+
+Companion to the System Manifest. Tags (T1–T16) match the manifest catalogue and traceability
+table. Each proof closes with the executed test that witnesses it on concrete data. All arithmetic is
+exact (A1); every derivation stays in residue space (A2).
+
+
+1    Foundations
+                                                                                               Q
+Theorem 1 (T1: CRT
+               Q ring isomorphism). Let p1 , . . . , pk be pairwise coprime and M =                i pi . The
+map φ : Z/M Z → i Z/pi Z, x mod M 7→ (x mod pi )i , is an isomorphism of rings.
+Proof. Reduction Z → Z/pi Z is a ring homomorphism, and since pi | M it factors through Z/M Z;
+assembling the coordinates, φ is a ring homomorphism. For injectivity, suppose φ(x) = 0, i.e. pi | x
+                                                                            | x, so x ≡ 0 (mod M );
+for every i. Pairwise coprimality gives lcm(p1 , . . . , pk ) = M , hence M Q
+the kernel is trivial. Both sides are finite of the same cardinality M = i pi , so an injection is a
+bijection. A bijective ring homomorphism is an isomorphism.
+
+Witness. Every lanewise identity in the system is an instance; the comparison matrix ran 292,851 correct-
+ness checks with 0 breaks.
+
+Theorem 2 (T5: inverse discipline; the Fermat trap). For gcd(a, m) = 1 the extended Euclidean
+algorithm returns s with as ≡ 1 (mod m), correct for every modulus m. The Fermat expression
+a m−2 mod m equals a−1 only when m is prime; on composite m it is in general wrong.
+Proof. The algorithm produces integers s, t with as + mt = gcd(a, m) = 1; reducing mod m gives
+as ≡ 1. No primality of m is used. For the Fermat expression, a m−2 ≡ a−1 iff a m−1 ≡ 1 (mod m).
+By Fermat’s little theorem this holds for all units when m is prime, but for composite m the order
+of a divides the Carmichael function λ(m), which is typically far smaller than m − 1, so a m−1 ̸≡ 1
+in general.
+
+Witness. m = 15015 = 3 · 5 · 7 · 11 · 13, a = 2: ext-Euclid gives 2−1 = 7508 (indeed 2 · 7508 = 15016 ≡ 1),
+while 2 m−2 mod m = 8192 ̸= 7508; here λ(15015) = lcm(2, 4, 6, 10, 12) = 60 ≪ m − 1 = 15014. This is why
+every inverse in libcram is ext-Euclid, never Fermat.
+
+Theorem 3 (T2: K-Elimination). Let gcd(M, A) = 1 and X ∈ [0, M A), with vM = X mod M
+and vA = X mod A. Then
+                              j k
+                               X
+                                   = (vA − vM ) M −1 mod A,
+                                                    
+                        K := M
+
+where M −1 is the inverse of M modulo A (obtained by T5).
+
+                                                    1
+Proof. Write X = KM + r with r = vM and 0 ≤ r < M . Since 0 ≤ X < M A we have 0 ≤ K < A.
+Reducing the identity modulo A, vA ≡ X ≡ KM + vM (mod A), hence KM ≡ vA − vM (mod A).
+As gcd(M, A) = 1, M is a unit mod A; multiplying by M −1 gives K ≡ (vA − vM )M −1 (mod A).
+Because 0 ≤ K < A, K equals this residue exactly, not merely modulo A.
+
+Witness. t kelim exhaustive 3637 verifies K against ⌊X/M ⌋ for all X ∈ [0, 36 · 37).
+
+Corollary 4 (T2b: the (36, 37) anchor collapse). With M = 36, A = 37 we have 36 ≡ −1
+(mod 37), so M −1 ≡ −1 and K = (v37 − v36 )(−1) = v36 − v37 (mod 37); K-Elimination reduces to
+a single modular subtraction. Moreover 362 ≡ 1 (mod 37).
+
+Proof. (−1)(−1) = 1 so (−1)−1 = −1; substitute M −1 = −1 in T2. And 362 ≡ (−1)2 = 1.
+
+Theorem 5 (T3: Universal Projection identity). Let X have carried identity (r, K) with respect
+to M , i.e. X = r + KM . For every modulus a′ ≥ 1 (prime, composite, sharing factors with M , or
+a′ = M ),
+                    X mod a′ = (r mod a′ ) + (K mod a′ )(M mod a′ ) mod a′ .
+                                                                   
+
+No coprimality hypothesis and no modular inverse are required.
+
+Proof. The equation X = r+KM is an identity in Z. Reduction modulo a′ is a ring homomorphism,
+so it distributes over the sum and product: X ≡ r + KM ≡ (r mod a′ ) + (K mod a′ )(M mod a′ )
+(mod a′ ).
+
+Witness. t universal projection every ap: for all X ∈ [0, 36 · 37) and all a′ ≤ 129, the identity holds.
+This is the A2 “no exit” reader: a residue on any lane is obtained from (r, K) with two multiplications and
+an addition, without Garner and without forming a larger positional integer.
+
+Theorem 6 (T4: carried order is the integer order). For X, Y ≥ 0 with carried identities (rX , KX ), (rY , KY )
+modulo M ,
+                            X < Y ⇐⇒ (KX , rX ) <lex (KY , rY ).
+
+Proof. (⇐) If KX < KY then, using 0 ≤ rX < M , X = rX + KX M ≤ (M − 1) + KX M =
+(KX + 1)M − 1 < KY M ≤ Y . If KX = KY and rX < rY then X − Y = rX − rY < 0. (⇒) The
+lexicographic order is a total order and the two cases above are exhaustive and mutually exclusive,
+so X < Y forces one of them.
+
+Witness. t carried compare matches integer order on values straddling lap boundaries and beyond
+M . Comparison is two word-comparisons, independent of magnitude.
+
+
+2    Lane algebra and the swarm
+Theorem 7 (T6:     carry-free lanes and exact division). Let ⊕ ∈ {+, ×}. Then ρB (x ⊕ y) =
+ ρB (x) ⊕ ρB (y) computed coordinatewise. Moreover, if d | X and gcd(d, pi ) = 1 for all i, then
+ρB (X/d)i = (X mod pi ) (d−1 mod pi ) mod pi .
+
+Proof. The first claim is immediate from T1: φ is a ring homomorphism, so it carries + and ×
+to the coordinatewise operations of the product ring; consequently each output coordinate is a
+function of the corresponding input coordinates only. For division, set q = X/d ∈ Z; then X = qd,
+so X ≡ qd (mod pi ), and multiplying by the lane inverse d−1 (which exists as gcd(d, pi ) = 1) yields
+q ≡ Xd−1 (mod pi ).
+
+                                                    2
+Witness. t div exact lanewise and t schema space composite lanes (the full 85 schema space over a
+composite basis).
+                                                                             Q            Q
+Theorem 8 (T7: lane independence — the von Neumann bypass). Let F = i fi act on i Z/pi Z
+by (F (v))i = fi (vi ). Then applying the per-lane updates in any order yields the same result, and
+lane i’s output depends only on lane i’s input.
+Proof. By definition the i-th coordinate of F is fi (vi ), a function of vi alone. Updates to distinct
+coordinates act on disjoint state, so any two of them commute; by induction every scheduling of
+the k updates produces the same tuple. No coordinate ever reads another, so there is no cross-lane
+data dependence.
+
+Witness. m1 lane independence order invariant: scrambled update orders agree with the canonical
+order. This is the dependency-level statement of “compute in memory”: the residue layout is already the
+parallel program.
+
+Theorem 9 (T8: the lane oscillator has an exact, non-decaying period). On a prime lane p
+with gcd(a, p) = 1, the orbit xt+1 = a xt , x0 = 1, is purely periodic with period ordp (a), and
+ordp (a) | p − 1. The return xt = 1 occurs exactly when ordp (a) | t, for all t, with no drift.
+Proof. (Z/pZ)× is a finite group of order p − 1; xt = at lies in it. The order of a divides the group
+order by Lagrange, and at = 1 ⇐⇒ ordp (a) | t. All equalities are between integers modulo p, so
+periodicity is exact for every t (there is no accumulating error).
+
+Witness. m2 exact oscillator and time tick, verified to five full periods on several lanes; mana swarm.py
+logs 55,742 checks. A floating rotation by the same angle drifts 2.3 × 10−12 off the unit circle over 106 steps;
+the integer lane’s drift is identically 0.
+
+Corollary 10 (T8b: the time prime). On every odd prime lane, ordp (−1) = 2. On the lane p = 2,
+X mod 2 alternates 0, 1 as X increments, i.e. period 2 in X.
+Proof. (−1)2 = 1 and −1 ̸= 1 for p > 2, so the order is exactly 2. Parity of consecutive integers
+alternates.
+
+Theorem 11 (T9: Safe-Basis saturation — a faithful clock). TheQresidue map ρS restricted to
+[0, MS ) with S = {2, 3, 5, 7, 11, 13}, MS = 30030, is a bijection onto p∈S Z/pZ.
+Proof. By T1 the reduction map is injective on a set
+                                                  Q of representatives of Z/MS Z; the interval
+[0, MS ) is exactly such a set. The codomain has p∈S p = MS elements, so injectivity gives
+bijectivity.
+
+Witness.     m4 shared factor disambiguation bijection confirms the tuple is injective on all 30030
+values. Consequence: within a lap every moment has a unique residue signature, so Universal Projection
+(T3) can read arbitrary composite moduli exactly — “primality and coprimality paid once.”
+
+Theorem 12 (T10: shared-factor disambiguation). Let f | M . Distinct x, y ∈ [0, M ) with x ≡ y
+(mod f ) nonetheless satisfy ρB (x) ̸= ρB (y). The single-modulus reading x 7→ x mod f is (M/f )-
+to-one, whereas the full carried reading is a bijection.
+Proof. By T9/T1, ρB is injective on [0, M ), so x ̸= y forces distinct tuples regardless of any shared
+residue. For the fibre count: for each value c ∈ [0, f ) the set {x ∈ [0, M ) : x ≡ c (mod f )} has
+exactly M/f elements.
+
+Witness. m4 shared factor disambiguation: of the tested collisions modulo f = 12, all 327 are separated
+by the carried tuple.
+
+
+                                                       3
+3    Order-finding and folding
+                                                               Q
+Theorem 13 (T11: multiplicative order via lanes). Let N = j qj with the qj pairwise-coprime
+prime powers, and gcd(a, N ) = 1. Then ordN (a) = lcmj ordqj (a).
+
+Proof. By CRT, at ≡ 1 (mod N ) ⇐⇒ at ≡ 1 (mod qj ) for every j ⇐⇒ ordqj (a) | t for every
+j ⇐⇒ lcmj ordqj (a) | t. The least positive such t is the lcm.
+
+Witness. t shor order and factor checks ord via lanes against the direct order for N ∈ {15, 21, 35, 77, 143}.
+
+Corollary 14 (T11b: factor from order). If r = ordN (a) is even and s := ar/2 ̸≡ ±1 (mod N ),
+then gcd(s − 1, N ) is a nontrivial factor of N .
+
+Proof. s2 = ar ≡ 1, so N | (s − 1)(s + 1). Since s ̸≡ 1, N ∤ (s − 1); since s ̸≡ −1, N ∤ (s + 1). Hence
+gcd(s − 1, N ) is neither N nor (as N divides the product but not s + 1 alone) 1; it is a proper
+factor.
+
+Witness. N = 143, a = 2: r = 60, s = 230 ≡ 12, gcd(11, 143) = 11, cofactor 13.
+
+Theorem 15 (T12: affine folding is eigen-exponentiation). Let T (x) = ax + c (mod m). Then for
+all N ≥ 1,
+                                                       N
+                                                       a − 1 PN −1 i
+            N         N                                          = i=0 a , a ̸≡ 1,
+           T (x0 ) = a x0 + c SN (mod m),      SN =      a−1
+                                                        N,                    a ≡ 1.
+                                                      
+
+It is computable in O(log N ) operations via fast exponentiation of a.
+
+Proof. Induction on N . Base N = 1: T (x0 ) = ax0 + c = a1 x0 + cS1 with S1 = 1. Step: assume
+TPn (x ) = an x + cS . Then T n+1 (x ) = a(an x + cS ) + c = an+1 x + c (aS + 1), and aS + 1 =
+      0        0  Pnn i           Pn0 i         0      n                0       n             n
+a n−1i=0 ai +1 =
+                    i=1 a  + 1 =     i=0 a =  Sn+1 . When   a ̸ ≡ 1 the geometric closed form applies;
+aN is computed by repeated squaring in O(log N ) multiplications, and SN from it (using the lane
+inverse of a − 1 when it is a unit, else the sum directly).
+
+Witness. t time folding eigen exponentiation. For a = 5, c = 4, x0 = 3, m = 106 +3 and N = 103 , the
+closed form equals the iterated value (855912); the closed form evaluates N = 109 steps in a few hundred
+nanoseconds.
+
+
+4    The arrow and shadow entropy
+Theorem 16 (T13: the covering-space orientation arrow). Let r = X mod MS and K = ⌊X/MS ⌋.
+Then (K, r) orders Z≥0 in agreement with the natural order (T4); r is a coordinate on the torus
+Z/MS Z and K is the winding, an unbounded lift to the covering line. The deck transformation
+K 7→ K + 1 corresponds to X 7→ X + MS , which fixes r and advances the lap.
+
+Proof. The order-isomorphism is T4. For the deck map, (X +MS ) mod MS = X mod MS = r while
+⌊(X + MS )/MS ⌋ = K + 1; thus the phase is invariant and only the winding advances. Faithfulness
+of the phase (distinct moments in a lap have distinct r) is T9, which is what makes K a legitimate
+time coordinate rather than a lossy one.
+
+
+
+                                                     4
+Witness. arrow of time.py: 275,660 checks, 0 breaks — monotone winding, faithful phase, and the deck
+map verified.
+
+Theorem 17 (T14: shadow entropy and reversibility). For a step g on a finite state set with
+uniform input, Hshadow (g) = 0 iff g is injective. A clean carried step (advancing (r, K), or any
+lanewise bijection) is injective, hence reversible with Hshadow = 0. A synthetic step that discards the
+winding across L laps (equivalently, fuses lanes) is L-to-one, hence non-injective with Hshadow =
+log2 L > 0 and not invertible. Consequently irreversibility holds iff a synthetic (non-injective)
+operation is introduced.
+
+Proof. On a finite set, g injective ⇐⇒ every fibre g −1 (y) is a singleton ⇐⇒ the conditional
+entropy H(input | g(input)) = 0 under uniform input; this is the definition of Hshadow . A clean
+carried successor is a bijection (T9, T13), so Hshadow = 0 and it is invertible. The discard map
+X 7→ X mod MS on [0, L MS ) has every fibre of size exactly L (the L laps sharing a residue), giving
+H(input | output) = log2 L. Non-singleton fibres are precisely the collapse produced by breaking
+the homomorphism; absent such a step the map is injective and reversible.
+
+Witness. shadow arrow.py: 21,315 checks — the clean successor has maximum fibre size 1; the quotient-
+discard over L laps has every fibre size L and is non-invertible.
+
+
+5    A2 square root
+Theorem 18 (T15: modular square root for p ≡ 3 (mod 4)). Let p be prime with p ≡ 3 (mod 4)
+and let a be a nonzero quadratic residue mod p. Then r = a(p+1)/4 mod p satisfies r2 ≡ a. On F11
+       √                                           √ 4
+this is a = a3 , and the square-root map satisfies     = id on (Z/11Z)× .
+
+Proof. Since a is a quadratic residue, Euler’s criterion gives a(p−1)/2 ≡ 1. Then r2 = a(p+1)/2 =
+                                                               √
+a(p−1)/2 · a ≡ 1 · a = a (mod p). For p = 11, (p + 1)/4 = 3, so a = a3 ; iterating the cube map four
+times gives a81 = a80 · a = (a10 )8 · a ≡ a (mod 11) by Fermat, i.e. the map has order 4.
+
+Witness. t sqrt is lane power map on f11; √    the general branch reproduces√the 496/496 exhaustive audit
+across 26 primes and both residue classes. E.g. 2 mod 7 = 4 (42 = 16 ≡ 2), 2 mod 23 = 18.
+
+Theorem 19 (T15b: Cipolla for p ≡ 1 (mod 4)). Let p be an odd prime and a a quadratic residue.
+Choose t with ω 2 := t2 − a a non-residue, and work in Fp2 = Fp (ω). Then x := (t + ω)(p+1)/2 lies
+in Fp and x2 ≡ a.
+
+Proof. The Frobenius automorphism z 7→ z p fixes Fp and sends ω to −ω, because ω p = ω · ω p−1 =
+ω (ω 2 )(p−1)/2 = ω (non-residue)(p−1)/2 = −ω. Hence (t + ω)p = t + ω p = t − ω, so
+
+            (t + ω)p+1 = (t + ω)(t + ω)p = (t + ω)(t − ω) = t2 − ω 2 = t2 − (t2 − a) = a.
+                                2
+Therefore x2 = (t + ω)(p+1)/2 = (t + ω)p+1 = a. Finally, xp · x = (t − ω)(p+1)/2 (t + ω)(p+1)/2 =
+                (p+1)/2
+ (t − ω)(t + ω)          = a(p+1)/2 = a(p−1)/2 · a = a = x2 , so xp = x, i.e. x ∈ Fp .
+
+Witness. t cipolla path p1 mod4 over p ∈ {5, 13, 17, 29, 37, 41, 53, 61, 73, 89, 97, 101, 109, 113}: every
+quadratic residue’s returned root squares back exactly.
+
+
+
+
+                                                    5
+Theorem 20 (T16: A2-native transduction never exits residue space). Let X be carried as (r, K)
+modulo M . Adding a new prime lane pnew by X mod pnew = (r + KM ) mod pnew (the Universal
+Projection of T3) returns the true residue of X without ever forming X. Hence transduction, and
+square-root taken on the extended basis, are A2-clean: no Garner, no mixed-radix, no decode-to-
+integer.
+
+Proof. Immediate from T3 with a′ = pnew : the identity X = r + KM reduces modulo pnew to
+(r mod pnew ) + (K mod pnew )(M mod pnew ), all intermediates below p2new . The historical decode-
+based transduction instead forms the integer V = KM + r and then reduces — yielding the same
+residue but leaving residue space; the Universal Projection form computes the residue directly and
+stays inside.
+
+Witness. t a2 transduction matches direct no decode: for all X ∈ [0, 5MS ) and pnew ∈ {17, 19, 23, 37, 73},
+the lifted residue equals X mod pnew , with X never materialised.
+
+
+
+
+                                                   6
+

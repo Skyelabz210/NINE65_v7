@@ -1,0 +1,121 @@
+{
+  "status": "PASS: valid laws and expected counterexamples",
+  "counts": {
+    "generalized_quotient_congruence": 1183744,
+    "bounded_generalized_recovery": 217748,
+    "lcm_resolution_identity": 1728,
+    "coupled_observer_injectivity": 1728,
+    "coupled_observer_alias": 1728,
+    "lexicographic_threshold": 35107,
+    "basis_lane_division": 9606,
+    "bounded_auxiliary_exact_division": 820,
+    "attached_rounding_negative_control": 1,
+    "attached_range_negative_control": 1,
+    "attached_alias_negative_control": 1,
+    "attached_decryption_negative_control": 1
+  },
+  "counterexamples": {
+    "anchor_larger_than_M_is_not_a_range_bound": {
+      "M": 3,
+      "A": 5,
+      "X": 15,
+      "readout": 0,
+      "true_quotient": 5
+    },
+    "sign_formula_for_range_M": {
+      "M": 10,
+      "A": 11,
+      "X": 9,
+      "q": 0,
+      "q_lt_A_over_2": true,
+      "X_lt_M_over_2": false
+    },
+    "odd_anchor_midpoint_needs_remainder": {
+      "M": 4,
+      "A": 5,
+      "X": 11,
+      "q": 2,
+      "r": 3,
+      "q_lt_A_over_2": true,
+      "X_lt_MA_over_2": false
+    },
+    "inverse_is_not_floor_division": {
+      "X": 3,
+      "c": 2,
+      "modulus": 5,
+      "inverse_result": 4,
+      "floor_result": 1
+    },
+    "winding_after_division_not_whole_quotient": {
+      "X": 22,
+      "M": 5,
+      "c": 2,
+      "new_value": 11,
+      "new_r": 1,
+      "new_K": 2,
+      "survey_K_formula": 11
+    },
+    "double_gcd_wrong_total_range": {
+      "M": 6,
+      "A": 4,
+      "distinct_pairs": 12,
+      "lcm_M_A_div_gcd_M_A": 6
+    },
+    "new_anchor_cannot_recover_already_lost_information": {
+      "M": 6,
+      "old_anchor": 5,
+      "X": 0,
+      "Y": 30,
+      "same_old_pair": [
+        0,
+        0
+      ],
+      "X_mod_7": 0,
+      "Y_mod_7": 2
+    },
+    "luminance_not_pigment_injective": {
+      "RGB1": [
+        255,
+        0,
+        0
+      ],
+      "RGB2": [
+        0,
+        0,
+        255
+      ],
+      "both_floor_mean": 85,
+      "both_bin37": 2
+    },
+    "adjacent_not_necessary_for_subtraction_collapse": {
+      "M": 9,
+      "A": 5,
+      "M_mod_A": 4,
+      "inverse": 4
+    },
+    "odd_modulus_rounding_error": {
+      "q": 5,
+      "V": 2,
+      "script_result": 1,
+      "nearest_result": 0
+    },
+    "bootstrap_decryption_scale_missing": {
+      "q": 100,
+      "t": 5,
+      "m": 2,
+      "c0": 40,
+      "c1": 0,
+      "s": 0,
+      "script_result": 0,
+      "correct_noiseless_plaintext": 2
+    },
+    "finite_inv_not_for_every_prime_subset": {
+      "construction": "choose increasing primes p_i>2^(i+2); sum 1/p_i converges, so product(1-1/p_i)>0"
+    },
+    "tropicalization_discards_prefactor": {
+      "family1": "exp(-u/eps)",
+      "family2": "2*exp(-u/eps)",
+      "both_min_plus_limits": "u"
+    }
+  }
+}

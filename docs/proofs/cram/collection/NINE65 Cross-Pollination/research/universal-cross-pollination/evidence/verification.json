@@ -1,0 +1,94 @@
+{
+  "status": "PASS",
+  "executed_at_utc": "2026-11-12T19:31:09.056884+00:00",
+  "source_base_commit": "88a7bdadbf0e1f8fbfdb2b37e9843101b8db3484",
+  "checkout_head": "88a7bdadbf0e1f8fbfdb2b37e9843101b8db3484",
+  "scope": "Public-model research checks; no Rust or ciphertext execution",
+  "unit_tests": 15,
+  "local_document_links_checked": 108,
+  "lean_evidence": "lean/verification.json (fresh build performed separately)",
+  "commands": [
+    {
+      "name": "unit-tests",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "reference",
+        "-v"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "planner-examples",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "reference/query_planner.py"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "arithmetic-witness",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "reference/arithmetic_witness.py"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "domain-witness",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "reference/domain_witness.py"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "reviewer-oracles",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "evidence/reviewer_oracles.py"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "source_sha256": {
+    "ARITHMETIC_CRYPTO_CONNECTIONS.md": "8e0bb4cb2b77b8040ed147b8bc48be2aaee46883c1995d63ce08d2886dbb85ba",
+    "DISPARATE_DOMAIN_CONNECTIONS.md": "7a711bbebd3365d5efb92a3c6cbc1414d8d65430ee637e2078c1095f83dc47c0",
+    "INNOVATION_INVENTORY.md": "a2ee8d4a2cc6b8b47619deb71081a50fb1f31c80aca41607c379c1454d566e7f",
+    "PLANNER_PROOFS.md": "67aa711568e5fec098cc8432a3872214a360477f27f2d2bca21968cdb75c3a6d",
+    "README.md": "8977213653234d07ff6b505c0fbf0449ce1ed80a0ef51663e1cc82eee5c01bc8",
+    "REVIEW.md": "f81c9430455fa0b5cb80448f18a37d456a186f6ee6adfcc1bb9e269e8785ea81",
+    "SOURCES.md": "96433d25a66f66bca4f11ffdd235769d4893b51b8cbf09ac16f5d6c77c651f9b",
+    "evidence/reviewer_oracles.py": "57b47008ed7e9023df87ed8b8dc4e4d985bf8bc640026d10824c63b6af9e2329",
+    "lean/AllResearch.lean": "2849639703577815b9d8a016898adc4e60beb1c649fd91b6bac86e4f44867a7b",
+    "lean/ConsumerTransport.lean": "7f112491a2c01eef4508f7dffbd18afbe8718121e3cb50687171e056649219a7",
+    "lean/CostedReadout.lean": "2946863aa7d1252b8687f0feb9073f073b4ba769368567cc9ea9cc3987a534d7",
+    "lean/CoupledAnchors.lean": "4357100f2e4b0632d36c1e16cfcaa5da10fe2285a8029773aa1b2112a8b9e95d",
+    "lean/ExactObservation.lean": "3e4f0dc07d9ecb189b4b3a7e490d07fad3a0f828e4ad773fa251876263a3f195",
+    "lean/IntegerSpecialization.lean": "c7788921b59a7244e54d53cf1bda2013e3bacea98b9392b29c67b1fe91a3fa88",
+    "lean/README.md": "7fb2d9e2fabb6c8570c1f999a48d9929a19a6c1c9d89c42192fd4313229ba710",
+    "lean/ReferenceChange.lean": "ecd6296ba0e850d03a6cd7093947a0d1803b37f3502c1c77256c8f242711b0e1",
+    "lean/ResidueAlgorithms.lean": "852030cea0a3404654d2a77f677e35a147efc917be33d26ba85ceb6b6d5b7b67",
+    "lean/ResiduePrimitives.lean": "61ad481a6dd7e7c9831259416a883a90c8b82162ab326dbc293945425ef9de95",
+    "lean/RingReadout.lean": "033dc2f2903b7fcffcb7576fcbdfba70dff2cf247b9a9f0d8ce2dd5495d1e67b",
+    "lean/StarLift.lean": "90947ad64ef314f2e4f07af16a1586f2685ba9e453e74da097b5ea9b44cdde9c",
+    "lean/UniversalKElimination.lean": "0b1ea7311dc2ed7d1259668649e35e63d9ac71a5899f24345bdff4bc1bdbd458",
+    "lean/UniversalLift.lean": "00da716f76d10806dc86f3d5a4206c380ea8f6b5a99c6d4f788c4053efba2924",
+    "lean/check_negative_controls.py": "2bce4a1ad6d93965dee42eb74bcd36af2b3cdbef46ca9638738349be662338fd",
+    "lean/check_proofs.py": "ebc66973f65dabd085a38b4b49cf86b69b92bf9a9a977ca2433fcc7eab2c6eb5",
+    "reference/arithmetic_witness.py": "067a30e5718af72cdd09e916427e7be12bf61e3a82b5aba6148ccd8f045daeab",
+    "reference/domain_witness.py": "2b10c2e0396a5d8554310ab186504f678de269759214b748592160f57937e8b9",
+    "reference/future_query.py": "fa1756dee867966d19eddbbf87894402cd20841dd8597aa29a5b00eb0079afc8",
+    "reference/query_planner.py": "3a5fea21b6f3925aedcb30665701c80b46b9973c0ef90ac99f5a8eea81bf189b",
+    "reference/test_future_query.py": "51e3d25916775a24e3ced0bb524526425118fe74b4c6831f2a97eda73eca208e",
+    "reference/test_query_planner.py": "fc53fee6d1646bbb9188912a303599c655c650c2f9bb5fb2d44da29b328092b7",
+    "verify.py": "05cf91e5f5576ea8c7027a75b7665b100e94996b597707d3ed1617f4f9c66de7"
+  },
+  "missing_context": {
+    "thread_id": "6af548dd-c6d8-8191-90ed-c6d29cf470cb",
+    "status": "UNAVAILABLE: read_thread tool not exposed"
+  }
+}

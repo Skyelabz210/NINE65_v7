@@ -1,0 +1,9 @@
+composite modulus set: n=130, min_bits=60, max_bits=64, even_count=1, max_modulus=18446744030759878681, max_above_2^63=true
+   k garner_mm     sk_mm | ns/garnerMRC   ns/skAlpha ratio_x100 |  ns/full(garn)    ns/full(sk) ratio_x100 | ok
+   2         1         5 |           46          151        30 |            134            268        50 | PASS
+   4         6         9 |          214          250        85 |            321            419        76 | PASS
+   8        28        17 |         1016          438       231 |           1226            781       156 | PASS
+  16       120        33 |         4423          815       542 |           4951           1841       268 | PASS
+  32       496        65 |        18599         1569      1185 |          20208           4832       418 | PASS
+  64      2016       129 |        76281         3065      2488 |          81954          14973       547 | PASS
+ 128      8128       257 |       309473         6107      5067 |         330096          52259       631 | PASS

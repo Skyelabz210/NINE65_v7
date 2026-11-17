@@ -1,0 +1,147 @@
+{
+  "status": "PASS",
+  "toolchain": "leanprover/lean4:v4.27.0-rc1",
+  "file": "CoupledAnchors.lean",
+  "sha256": "4357100f2e4b0632d36c1e16cfcaa5da10fe2285a8029773aa1b2112a8b9e95d",
+  "theorem_count": 19,
+  "theorems": [
+    {
+      "name": "KElimination.CoupledAnchors.anchor_lcm_dvd_iff",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.anchor_lcm_pos",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.nat_reduced_kernel",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.int_reduced_kernel",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.anchor_lcm_int_dvd_iff",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.combined_kernel",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.resolution_pos",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.source_period",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.combined_kernel_two",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.combined_kernel_as_lcm_of_resolutions",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.resolution_eq_lcm_reduced",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.same_affine_readings_iff",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.signed_window_unique",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.target_period_iff",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.combined_target_iff",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.resolution_minimal",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.source_readings_iff",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.main_and_anchor_readings_iff",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.CoupledAnchors.dependent_anchor_resolution",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    }
+  ],
+  "scope": "finite positive-anchor exact kernel, minimal resolution, source period, signed window and exact target iff; no fusion algorithm"
+}

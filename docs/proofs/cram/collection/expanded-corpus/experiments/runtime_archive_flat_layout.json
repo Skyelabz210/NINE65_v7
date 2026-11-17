@@ -1,0 +1,11 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--manifest-path",
+    "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout/Cargo.toml",
+    "--no-fail-fast"
+  ],
+  "exit_code": 101,
+  "note": "Only copied flat archive files into manifest-required src and tests directories; no source byte changes."
+}

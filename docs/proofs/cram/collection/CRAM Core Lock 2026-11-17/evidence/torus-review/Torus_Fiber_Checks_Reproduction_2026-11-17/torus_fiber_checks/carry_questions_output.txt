@@ -1,0 +1,23 @@
+=== Q1. One cocycle?  c(a,b) = floor(a+b) on the circle [0,1)
+60060 cases. Hermite floor(2z/Q)-floor(z/Q)=K+b: violations=0; tropical minimiser=-(K+b): violations=0; T(z+Q)=T(z)-2z-Q: violations=0
+Theorem-5 carry == floor(r/M + s/M): 20539 cases, violations=0
+CRT overflow alpha == floor(sum xi_i/p_i) == iterated carries, and the fractional part is X_M/M: 9000 cases, violations=0
+
+=== Q2. Lane form: what does the anchor give?  K = alpha + c (mod A)
+K = alpha + c (mod A): 18000 cases, violations=0; candidate-set sizes seen [6, 7, 8]; true K inside candidate set 18000/18000
+
+=== Q3. What does exact alpha cost?  fixed-point truncation alpha~_t = floor( sum floor(xi_i 2^t / p_i) / 2^t )
+k=8 lanes, M has 128 bits
+   t  random fails /20000  fails outside X_M < k*M/2^t   adversarial fails /2000 (X_M<2000)
+   6                 1108                            0                                 2000
+   8                  262                            0                                 2000
+  10                   73                            0                                 2000
+  12                   18                            0                                 2000
+  16                    2                            0                                 2000
+  24                    0                            0                                 2000
+  32                    0                            0                                 2000
+  64                    0                            0                                 2000
+ 128                    0                            0                                    3
+ 136                    0                            0                                    0
+ 140                    0                            0                                    0
+smallest t in this list with zero adversarial failures: 136 ; M bits + bits(k) = 132

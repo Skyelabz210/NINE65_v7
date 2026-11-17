@@ -1,0 +1,21 @@
+{
+  "repo_commit": "88a7bdadbf0e1f8fbfdb2b37e9843101b8db3484",
+  "copied_without_changes": [
+    {
+      "source_path": "scripts/check_holte_reversibility.py",
+      "sha256": "bacbebd7b125898508ba749ca1e2bcbb7254ab84c6ca76b3a4eabcb5b6cb156d"
+    },
+    {
+      "source_path": "scripts/phase1_tropical_k_elimination.py",
+      "sha256": "aafd16f16eb81ef53d97a3dd2973fc86594352c132d0c39a6d4b1e72cfa1a404"
+    },
+    {
+      "source_path": "scripts/public_refresh_lift_refinement.py",
+      "sha256": "2fbcb89c691b29726961b3fb3b66c8c191efb4d8928972b41c533adfb11481b0"
+    },
+    {
+      "source_path": "scripts/test_public_refresh_lift_refinement.py",
+      "sha256": "9ef061927b26694c7a5b0f148730f426760b94788e904f61640ea6a5dca8d7c9"
+    }
+  ]
+}

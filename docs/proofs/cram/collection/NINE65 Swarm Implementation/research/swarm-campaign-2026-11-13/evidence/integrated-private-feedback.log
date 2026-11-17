@@ -1,0 +1,13 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65-cross-pollination/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65-cross-pollination/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/NINE65-cross-pollination/crates/nine65)
+   Compiling private-feedback-nine65 v0.1.0 (/workspace/NINE65-cross-pollination/crates/private-feedback-nine65)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.27s
+     Running unittests src/lib.rs (/workspace/.tooling/target-gcd-campaign/debug/deps/private_feedback_nine65-5fb2353f5b0cb0bd)
+
+running 1 test
+test tests::public_adapter_encrypts_and_aggregates_live_dual_rns_slots ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.32s
+

@@ -1,0 +1,90 @@
+{
+  "status": "PASS",
+  "timestamp_utc": "2026-11-13T02:20:06.830094+00:00",
+  "scope": "Independent mathematical finite witnesses; not Rust or ciphertext execution",
+  "script_sha256": "9143de7301ef6b84eb4ab8951483033743fa0b52e970af2cc7f02bc31a1f7342",
+  "results": {
+    "adjacent_window": {
+      "sources": 1332,
+      "target_projections": 133200
+    },
+    "bounded_operations": {
+      "operand_bound": 35,
+      "cases": 2592
+    },
+    "target_period_condition": {
+      "parameter_triples": 8000
+    },
+    "future_query_maximality": {
+      "models": 216,
+      "partition_checks": 1080
+    },
+    "fixed_schedule_euclid": {
+      "widths": [
+        1,
+        8
+      ],
+      "input_pairs": 87380
+    },
+    "negative_witnesses": [
+      {
+        "name": "capacity_alias",
+        "x": 0,
+        "y": 1332,
+        "observations": [
+          0,
+          0
+        ],
+        "quotients": [
+          0,
+          37
+        ]
+      },
+      {
+        "name": "mixed_source_valid_arithmetic",
+        "main_source": 0,
+        "anchor_source": 1,
+        "mixed_readings": [
+          0,
+          1
+        ],
+        "compatible_third_source": 1296,
+        "lesson": "Arithmetic validity alone cannot prove common-source origin."
+      },
+      {
+        "name": "overlap_not_product",
+        "moduli": [
+          4,
+          6,
+          6
+        ],
+        "actual_period": 12,
+        "false_product": 144
+      },
+      {
+        "name": "missing_prime_power",
+        "old_period": 12,
+        "demand": 18,
+        "failed_extra": 3,
+        "sufficient_extra": 9
+      },
+      {
+        "name": "halving_breaks_parity",
+        "x": 0,
+        "y": 2,
+        "same_parity": true,
+        "output_parities": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "sign_not_finite_period",
+        "period": 1332,
+        "x": -1,
+        "y": 1331,
+        "equal_residues": true
+      }
+    ]
+  }
+}

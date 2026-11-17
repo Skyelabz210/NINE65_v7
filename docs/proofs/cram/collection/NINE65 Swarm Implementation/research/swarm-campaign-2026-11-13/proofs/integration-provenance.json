@@ -1,0 +1,107 @@
+{
+  "status": "PASS",
+  "modules": [
+    {
+      "module": "UniversalLift",
+      "standalone_sha256": "00da716f76d10806dc86f3d5a4206c380ea8f6b5a99c6d4f788c4053efba2924",
+      "integrated_sha256": "91e820792c9ddefc8e3e2ae8f621313ccf5cf2e1567236debb844a21fd74a795",
+      "only_change": "project-qualified import paths"
+    },
+    {
+      "module": "ResiduePrimitives",
+      "standalone_sha256": "61ad481a6dd7e7c9831259416a883a90c8b82162ab326dbc293945425ef9de95",
+      "integrated_sha256": "ac45c3ac8b2355cb6f2227a723fb91ec3c68894e23b43bd1a1b04542ab5fa6eb",
+      "only_change": "project-qualified import paths"
+    },
+    {
+      "module": "StarLift",
+      "standalone_sha256": "90947ad64ef314f2e4f07af16a1586f2685ba9e453e74da097b5ea9b44cdde9c",
+      "integrated_sha256": "78970fafd07f6fe444e56c0c48a9821d759c4357945ea6ac105c06f26f501c38",
+      "only_change": "project-qualified import paths"
+    },
+    {
+      "module": "ReferenceChange",
+      "standalone_sha256": "ecd6296ba0e850d03a6cd7093947a0d1803b37f3502c1c77256c8f242711b0e1",
+      "integrated_sha256": "9fd0a04fad13090522e7af5d6d5e6952fc9cc3ecef09314cde410236f83e6b1c",
+      "only_change": "project-qualified import paths"
+    },
+    {
+      "module": "RingReadout",
+      "standalone_sha256": "033dc2f2903b7fcffcb7576fcbdfba70dff2cf247b9a9f0d8ce2dd5495d1e67b",
+      "integrated_sha256": "033dc2f2903b7fcffcb7576fcbdfba70dff2cf247b9a9f0d8ce2dd5495d1e67b",
+      "only_change": "project-qualified import paths"
+    },
+    {
+      "module": "IntegerSpecialization",
+      "standalone_sha256": "c7788921b59a7244e54d53cf1bda2013e3bacea98b9392b29c67b1fe91a3fa88",
+      "integrated_sha256": "c7788921b59a7244e54d53cf1bda2013e3bacea98b9392b29c67b1fe91a3fa88",
+      "only_change": "project-qualified import paths"
+    },
+    {
+      "module": "ConsumerTransport",
+      "standalone_sha256": "7f112491a2c01eef4508f7dffbd18afbe8718121e3cb50687171e056649219a7",
+      "integrated_sha256": "9a1149c959546ae444e4e81d29e0c33f04bcc3a3965dfdaee12e605ec2fe240c",
+      "only_change": "project-qualified import paths"
+    },
+    {
+      "module": "ExactObservation",
+      "standalone_sha256": "3e4f0dc07d9ecb189b4b3a7e490d07fad3a0f828e4ad773fa251876263a3f195",
+      "integrated_sha256": "3e4f0dc07d9ecb189b4b3a7e490d07fad3a0f828e4ad773fa251876263a3f195",
+      "only_change": "project-qualified import paths"
+    },
+    {
+      "module": "AnchorValuations",
+      "standalone_sha256": "2b1043256fa8e2d0b01457b86bf55ac6830f0406c613ff26e98d5c6603607260",
+      "integrated_sha256": "2b1043256fa8e2d0b01457b86bf55ac6830f0406c613ff26e98d5c6603607260",
+      "only_change": "project-qualified import paths"
+    },
+    {
+      "module": "ResidueAlgorithms",
+      "standalone_sha256": "852030cea0a3404654d2a77f677e35a147efc917be33d26ba85ceb6b6d5b7b67",
+      "integrated_sha256": "852030cea0a3404654d2a77f677e35a147efc917be33d26ba85ceb6b6d5b7b67",
+      "only_change": "project-qualified import paths"
+    },
+    {
+      "module": "AllCampaign",
+      "standalone_sha256": "f8175500cca46b67064ddbbf08dd41df388f031bf6248832471e2e9b12960f01",
+      "integrated_sha256": "50dba29bee99a895349e555d76c32678e28802c733bb6c7d2b345ffe3dfbf2ce",
+      "only_change": "project-qualified import paths"
+    },
+    {
+      "module": "FutureQuotient",
+      "standalone_sha256": "f5b470dfaf710b98cdeba27f4eb72a2b6e984464ef814a10adaf1bfd3fbfbd33",
+      "integrated_sha256": "1bbb6e46a43b0b5c6ed8458e2169cb657a70cb212b99b185fd53b284b6533741",
+      "only_change": "project-qualified import paths"
+    },
+    {
+      "module": "ReflectionInvariant",
+      "standalone_sha256": "6e1ca5ccbf9a9e973303edded9d710c8ab30870ff2d978d8e90ce941b7b2654e",
+      "integrated_sha256": "6e1ca5ccbf9a9e973303edded9d710c8ab30870ff2d978d8e90ce941b7b2654e",
+      "only_change": "project-qualified import paths"
+    },
+    {
+      "module": "CostedReadout",
+      "standalone_sha256": "2946863aa7d1252b8687f0feb9073f073b4ba769368567cc9ea9cc3987a534d7",
+      "integrated_sha256": "6289844ebb86160e6a686cf57bbe943e13ce5948629f0c7f3b8fb60e01ad1f93",
+      "only_change": "project-qualified import paths"
+    },
+    {
+      "module": "UniversalKElimination",
+      "standalone_sha256": "0b1ea7311dc2ed7d1259668649e35e63d9ac71a5899f24345bdff4bc1bdbd458",
+      "integrated_sha256": "b139c9038141208fc1b4cadbfa7e0fba07bdebf27dd20b8b9de6ae255597dec8",
+      "only_change": "project-qualified import paths"
+    },
+    {
+      "module": "CoupledAnchors",
+      "standalone_sha256": "4357100f2e4b0632d36c1e16cfcaa5da10fe2285a8029773aa1b2112a8b9e95d",
+      "integrated_sha256": "4357100f2e4b0632d36c1e16cfcaa5da10fe2285a8029773aa1b2112a8b9e95d",
+      "only_change": "project-qualified import paths"
+    },
+    {
+      "module": "AllResearch",
+      "standalone_sha256": "2849639703577815b9d8a016898adc4e60beb1c649fd91b6bac86e4f44867a7b",
+      "integrated_sha256": "9ddcd4ead3766c19681077fc4c4e716d41f5b17b6cb03c53e98fe873c824c872",
+      "only_change": "project-qualified import paths"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+   Compiling kelim v1.0.0 (/workspace/k-elimination-audit/experiments/kelim_build)
+    Finished `release` profile [optimized] target(s) in 0.69s
+     Running tests/audit_negative.rs (target/release/deps/audit_negative-60ecb1af87c8393d)
+
+running 3 tests
+test canonical_i128_inputs_can_overflow_intermediate_product ... ok
+test documented_comparison_window_is_necessary ... ok
+test supported_pair_cannot_detect_out_of_range_alias ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

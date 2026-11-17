@@ -1,0 +1,14 @@
+{
+  "created_at_utc": "2026-11-13T02:34:17.307916+00:00",
+  "nine65_base": "88a7bdadbf0e1f8fbfdb2b37e9843101b8db3484",
+  "nine65_implementation_commit": "b5c4e6eccfe8400fe3871dbf43edb580f1bcc677",
+  "lean_commit": "dd9c6cfb341ad3747f148c336a015e2b80664e87",
+  "scope": "Full generated campaign; changed NINE65 sources and baseline-to-implementation patch; complete tracked original Lean repository; original uploads and prior generated collection retained separately",
+  "excluded": [
+    "compiled caches",
+    "build targets",
+    "private Drive source bodies",
+    "Git credentials/configuration"
+  ],
+  "delivery_receipt": "Final remote upload/readback receipt is supplied separately from this immutable archive"
+}

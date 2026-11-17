@@ -1,0 +1,359 @@
+{
+  "status": "PASS",
+  "executed_at_utc": "2026-11-13T06:14:36.970050+00:00",
+  "source_commit": "40a76158970c41440ec7e4c10437fa1c2e271d03",
+  "source_execution_scope": "Arithmetic model checks; no fresh execution of DCCMS Rust or Lean.",
+  "code_sha256": {
+    "eclipse_phase.py": "a5e594d0eacf4129a658fc9821fb18f459c69aebb3620238739a357885843f45",
+    "check_claims.py": "41975d5e5a789d817b99c13f8159c7175b9d6241f38e76a8536a3d6945e35727"
+  },
+  "counts": {
+    "additional_anchor_candidates": 3000,
+    "complete_observation_states": 873080,
+    "frame_roundtrips": 873080,
+    "distinct_target_phases": 11960,
+    "large_signed_cases": 5,
+    "forward_refusals": 7,
+    "inverse_refusals": 4,
+    "calendar_quotient_window_cases": 18980
+  },
+  "target_resolution_cases": [
+    {
+      "source_period": 30030,
+      "target_period": 11960,
+      "ambiguity": 92,
+      "minimal_additional_raw_modulus": 184,
+      "saturation": [
+        92,
+        184
+      ],
+      "observation_zero_target_values": [
+        0,
+        130,
+        260,
+        390,
+        520,
+        650,
+        780,
+        910,
+        1040,
+        1170,
+        1300,
+        1430,
+        1560,
+        1690,
+        1820,
+        1950,
+        2080,
+        2210,
+        2340,
+        2470,
+        2600,
+        2730,
+        2860,
+        2990,
+        3120,
+        3250,
+        3380,
+        3510,
+        3640,
+        3770,
+        3900,
+        4030,
+        4160,
+        4290,
+        4420,
+        4550,
+        4680,
+        4810,
+        4940,
+        5070,
+        5200,
+        5330,
+        5460,
+        5590,
+        5720,
+        5850,
+        5980,
+        6110,
+        6240,
+        6370,
+        6500,
+        6630,
+        6760,
+        6890,
+        7020,
+        7150,
+        7280,
+        7410,
+        7540,
+        7670,
+        7800,
+        7930,
+        8060,
+        8190,
+        8320,
+        8450,
+        8580,
+        8710,
+        8840,
+        8970,
+        9100,
+        9230,
+        9360,
+        9490,
+        9620,
+        9750,
+        9880,
+        10010,
+        10140,
+        10270,
+        10400,
+        10530,
+        10660,
+        10790,
+        10920,
+        11050,
+        11180,
+        11310,
+        11440,
+        11570,
+        11700,
+        11830
+      ]
+    },
+    {
+      "source_period": 18980,
+      "target_period": 11960,
+      "ambiguity": 46,
+      "minimal_additional_raw_modulus": 184,
+      "saturation": [
+        46,
+        92,
+        184
+      ],
+      "observation_zero_target_values": [
+        0,
+        260,
+        520,
+        780,
+        1040,
+        1300,
+        1560,
+        1820,
+        2080,
+        2340,
+        2600,
+        2860,
+        3120,
+        3380,
+        3640,
+        3900,
+        4160,
+        4420,
+        4680,
+        4940,
+        5200,
+        5460,
+        5720,
+        5980,
+        6240,
+        6500,
+        6760,
+        7020,
+        7280,
+        7540,
+        7800,
+        8060,
+        8320,
+        8580,
+        8840,
+        9100,
+        9360,
+        9620,
+        9880,
+        10140,
+        10400,
+        10660,
+        10920,
+        11180,
+        11440,
+        11700
+      ]
+    },
+    {
+      "source_period": 37960,
+      "target_period": 11960,
+      "ambiguity": 23,
+      "minimal_additional_raw_modulus": 23,
+      "saturation": [
+        23
+      ],
+      "observation_zero_target_values": [
+        0,
+        520,
+        1040,
+        1560,
+        2080,
+        2600,
+        3120,
+        3640,
+        4160,
+        4680,
+        5200,
+        5720,
+        6240,
+        6760,
+        7280,
+        7800,
+        8320,
+        8840,
+        9360,
+        9880,
+        10400,
+        10920,
+        11440
+      ]
+    }
+  ],
+  "period_ladder": [
+    {
+      "name": "Tzolkin",
+      "modulus": 260,
+      "combined_period": 260,
+      "new_resolution_factor": 260
+    },
+    {
+      "name": "Haab",
+      "modulus": 365,
+      "combined_period": 18980,
+      "new_resolution_factor": 73
+    },
+    {
+      "name": "Venus model",
+      "modulus": 584,
+      "combined_period": 37960,
+      "new_resolution_factor": 2
+    },
+    {
+      "name": "Mars model",
+      "modulus": 780,
+      "combined_period": 113880,
+      "new_resolution_factor": 3
+    },
+    {
+      "name": "819-day",
+      "modulus": 819,
+      "combined_period": 2391480,
+      "new_resolution_factor": 21
+    }
+  ],
+  "factorizations": {
+    "260": {
+      "2": 2,
+      "5": 1,
+      "13": 1
+    },
+    "365": {
+      "5": 1,
+      "73": 1
+    },
+    "584": {
+      "2": 3,
+      "73": 1
+    },
+    "780": {
+      "2": 2,
+      "3": 1,
+      "5": 1,
+      "13": 1
+    },
+    "819": {
+      "3": 2,
+      "7": 1,
+      "13": 1
+    },
+    "11960": {
+      "2": 3,
+      "5": 1,
+      "13": 1,
+      "23": 1
+    },
+    "11959": {
+      "11959": 1
+    },
+    "30030": {
+      "2": 1,
+      "3": 1,
+      "5": 1,
+      "7": 1,
+      "11": 1,
+      "13": 1
+    },
+    "37960": {
+      "2": 3,
+      "5": 1,
+      "13": 1,
+      "73": 1
+    }
+  },
+  "long_count_examples": {
+    "1": [
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "20": [
+      0,
+      0,
+      0,
+      1,
+      0
+    ],
+    "18980": [
+      0,
+      2,
+      12,
+      13,
+      0
+    ],
+    "1872000": [
+      13,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "long_count_calendar_round_boundary": {
+    "days": 1872000,
+    "rounds": 98,
+    "remainder": 11960
+  },
+  "source36_37_collision": {
+    "inputs": [
+      0,
+      1332
+    ],
+    "same_reading": [
+      0,
+      0
+    ],
+    "calendar_outputs": [
+      [
+        0,
+        0
+      ],
+      [
+        32,
+        237
+      ]
+    ]
+  },
+  "authentic_readings": "Same integer source, origin, frame and epoch are premises. Range and overlap checks do not certify provenance.",
+  "physical_scope": "The computed quantity is X modulo the chosen integer period 11960; it is not an eclipse-occurrence prediction.",
+  "formal_scope": "No new Lean declarations; earlier checked universal and least-anchor theorems are referenced.",
+  "history_scope": "No historical opcode identification or cosmological conclusion follows from these computations."
+}

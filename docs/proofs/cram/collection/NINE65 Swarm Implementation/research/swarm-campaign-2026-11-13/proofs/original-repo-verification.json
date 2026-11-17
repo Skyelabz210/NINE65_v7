@@ -1,0 +1,101 @@
+{
+  "status": "PASS",
+  "repository": "https://github.com/Skyelabz210/k-elimination-lean4",
+  "worktree": "/workspace/k-elimination-swarm-proof",
+  "branch": "campaign/universal-proof",
+  "base_revision": "0400092096962e3da45a8e5cbb82185a3c2c38fe",
+  "local_commit": "dd9c6cfb341ad3747f148c336a015e2b80664e87",
+  "public_push": false,
+  "patch": "original-repository.patch",
+  "patch_sha256": "b44ced454cdda0b1813fec1fd5bf867572f2a44f21b728f436d48c7ff3ac7b41",
+  "lean_toolchain": "leanprover/lean4:v4.27.0-rc1",
+  "lean_version": "Lean (version 4.27.0-rc1, x86_64-unknown-linux-gnu, commit 2fcce7258eeb6e324366bc25f9058293b04b7547, Release)",
+  "mathlib_revision": "3bdc7047b97538f795b725dc0713c28c0f53ed10",
+  "cache_status": "Official cache CONNECT403; no bypass; pinned sources compiled at two threads",
+  "final_integrated_build_jobs": 1185,
+  "project_theorem_declarations": 223,
+  "inventory": {
+    "legacy_root": 27,
+    "legacy_basic_repaired": 3,
+    "preserved_universal_foundation": 144,
+    "new_standard_library": 36,
+    "new_nat_anchor_recurrence": 13,
+    "new_total": 49
+  },
+  "project_axiom_free_declarations": 58,
+  "allowed_foundational_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "custom_project_axioms": false,
+  "admissions": false,
+  "coq_revalidated": false,
+  "standalone_audit": {
+    "status": "PASS",
+    "theorems": 180,
+    "new": 36,
+    "fresh_project_build": true,
+    "report": "verification.json"
+  },
+  "negative_controls": {
+    "status": "PASS",
+    "scope": "standalone checker rejection tests; not encrypted execution or original-repository checker mutation tests",
+    "report": "negative-controls.json",
+    "controls": [
+      {
+        "control": "admitted_proof",
+        "status": "EXPECTED_REFUSAL",
+        "exit_code": 1,
+        "reason": "Admitted or unsafe declaration"
+      },
+      {
+        "control": "custom_axiom",
+        "status": "EXPECTED_REFUSAL",
+        "exit_code": 1,
+        "reason": "Custom assumed declaration"
+      },
+      {
+        "control": "unproved_positive_halving",
+        "status": "EXPECTED_REFUSAL",
+        "exit_code": 1,
+        "reason": "Lean failed or warned"
+      },
+      {
+        "control": "missing_axiom_audit",
+        "status": "EXPECTED_REFUSAL",
+        "exit_code": 1,
+        "reason": "Every theorem needs one axiom query"
+      }
+    ]
+  },
+  "checked_scopes": [
+    "Future observation equivalence; coarsest output-sufficient transition-preserved relation; actual quotient outputs and transitions",
+    "Bounded-word refinement semantics and equality of any refinement fixed point with full future equivalence",
+    "Largest additive invariant query-invisible subgroup",
+    "Prime-exponent least sufficient anchor and saturation convergence",
+    "Actual Nat recurrence a0=D/gcd(P,D), next=gcd(D,a*a); least anchor in divisibility order with D dividing lcm(P,a), for P,D positive",
+    "Conservative finite fuel D; any early fixed point yields the same least sufficient anchor",
+    "Reflection involution and Descartes invariant over all commutative rings"
+  ],
+  "explicit_gaps": [
+    "Python finite-quotient compiler source refinement, canonical class numbering and cardinality termination bound",
+    "Python/Rust anchor loop source refinement and machine-word overflow safety",
+    "Consumer encrypted-execution equivalence and cryptographic admission",
+    "Global O(1) bit-complexity or historical FHE performance claims"
+  ],
+  "evidence": {
+    "all_declarations_and_axioms": "original-repository/verification.json",
+    "axiom_log": "original-repository/axioms.log",
+    "final_build": "integrated-source-build-final.log",
+    "initial_mathlib_source_build": "original-source-build.log",
+    "cache_failure": "cache-attempt.json",
+    "integration_import_provenance": "integration-provenance.json",
+    "initial_failed_draft_build": "integrated-source-build.log"
+  },
+  "independent_review": {
+    "agent": "campaign_review",
+    "scope": "All36 new Std and all13 Nat statements and proof bodies",
+    "finding": "No issue found; implementation refinement obligations remain separate"
+  }
+}

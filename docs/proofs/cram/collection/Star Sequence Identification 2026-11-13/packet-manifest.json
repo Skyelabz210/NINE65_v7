@@ -1,0 +1,22 @@
+{
+  "research_commit": "d05609b3f2b603cb4bf9cdc0f6f8c294b6a72f04",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 8741,
+      "sha256": "5178c1af15d6bfb99c1d477d625431ebe4a325df4d77b76baac834796181819b"
+    },
+    {
+      "path": "check_candidates.py",
+      "bytes": 4363,
+      "sha256": "3873ff57c25c3e2960754674f164123f1605f4f660369ddf920701da1db00fee"
+    },
+    {
+      "path": "verification.json",
+      "bytes": 4709,
+      "sha256": "9101f867c3af8925cdc3e768cdb7fa3a393d0d2458ba244c9b10766295c1e89c"
+    }
+  ],
+  "run": "python3 check_candidates.py",
+  "dependency": "sympy==1.14.0"
+}

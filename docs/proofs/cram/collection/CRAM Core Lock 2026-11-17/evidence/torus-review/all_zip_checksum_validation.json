@@ -1,0 +1,17 @@
+{
+  "4-Torus_Fiber_Checks_Reproduction_2026-11-17-2.zip": {
+    "hashes_valid": true,
+    "hash_count": 27,
+    "report_sha256": "8d439ecad1e4a09b07ae45a2cf20258ebcf9543b81c8a02889bb2db1e2fefa7d"
+  },
+  "9-Torus_Fiber_Checks_Reproduction_2026-11-17-3.zip": {
+    "hashes_valid": true,
+    "hash_count": 38,
+    "report_sha256": "c601980470ec6f8a429fa3110952c3f9de7ac0be68863247a1ee6797de13fda8"
+  },
+  "10-Torus_Fiber_Checks_Reproduction_2026-11-17.zip": {
+    "hashes_valid": true,
+    "hash_count": 27,
+    "report_sha256": "08c6d2d045351cb3cdde8229aad9146d1df0d086c8fb88ca2dedd7445a6673d2"
+  }
+}

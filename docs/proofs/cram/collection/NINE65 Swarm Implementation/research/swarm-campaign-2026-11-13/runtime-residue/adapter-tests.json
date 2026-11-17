@@ -1,0 +1,70 @@
+{
+  "status": "PASS",
+  "base_commit": "13ac524c967ab907ce5a0bd5995fbf7b2bd82d48",
+  "runs": [
+    {
+      "name": "adapter-serial",
+      "command": [
+        "/workspace/.tooling/cargo/bin/cargo",
+        "test",
+        "-p",
+        "nine65",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "residue-query",
+        "--test",
+        "residue_query_adapter",
+        "--no-fail-fast"
+      ],
+      "exit_code": 0,
+      "passed_tests": 3,
+      "expected_tests": 3,
+      "elapsed_seconds": 18.21939181399648
+    },
+    {
+      "name": "adapter-accelerated",
+      "command": [
+        "/workspace/.tooling/cargo/bin/cargo",
+        "test",
+        "-p",
+        "nine65",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "residue-query,accelerated",
+        "--test",
+        "residue_query_adapter",
+        "--no-fail-fast"
+      ],
+      "exit_code": 0,
+      "passed_tests": 3,
+      "expected_tests": 3,
+      "elapsed_seconds": 10.301630472000397
+    },
+    {
+      "name": "core-square",
+      "command": [
+        "/workspace/.tooling/cargo/bin/cargo",
+        "test",
+        "-p",
+        "cram-core",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "exit_code": 0,
+      "passed_tests": 29,
+      "expected_tests": 29,
+      "elapsed_seconds": 2.0855804379971232
+    }
+  ],
+  "encrypted_execution": false,
+  "source_sha256": {
+    "crates/cram-core/src/query_runtime.rs": "8de791bc08ebeb00baa17278280bf07b03a1942704732adf4d5b8dc0c908648b",
+    "crates/cram-core/tests/query_runtime.rs": "5ee561c09698638b07ea9703051a0c34435f38d1da6df29e7d7c0c43f7d93859",
+    "crates/nine65/Cargo.toml": "bbaae1f8626935ca8fa1effad12feb4ccc5666e5205b3174d9ed4feb17249884",
+    "crates/nine65/src/compiler.rs": "03b16b97d2bb126805664ae65fd75088ce1503b04c9f8dc8527b73cacfb82d77",
+    "crates/nine65/src/compiler/residue_query.rs": "0edf74fdf0307a7f0a48b5508a674143401724e5fcff68a18acc36f43f4abf94",
+    "crates/nine65/tests/residue_query_adapter.rs": "203147e3a78b106ecb54c6af8d2cf3d6aff5809870e5dc5c35d49f9135475d25"
+  }
+}

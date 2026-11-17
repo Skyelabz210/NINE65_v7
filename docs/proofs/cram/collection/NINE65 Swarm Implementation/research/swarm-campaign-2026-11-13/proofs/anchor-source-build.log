@@ -1,0 +1,62 @@
+✔ [761/777] Built Mathlib.Algebra.BigOperators.Group.Finset.Lemmas (1.7s)
+✔ [773/777] Built Mathlib.Data.Finset.Lattice.Prod (1.8s)
+✔ [774/777] Built Mathlib.Algebra.GroupWithZero.Pi (885ms)
+✔ [775/793] Built Mathlib.Algebra.Group.Action.Pi (1.4s)
+✔ [787/795] Built Mathlib.Algebra.Order.Group.Finset (2.0s)
+✔ [790/817] Built Mathlib.Algebra.BigOperators.Group.Finset.Pi (1.5s)
+✔ [811/817] Built Mathlib.Data.Multiset.Sections (1.4s)
+✔ [813/818] Built Mathlib.Algebra.Ring.Pi (2.2s)
+✔ [814/821] Built Mathlib.Data.Multiset.Antidiagonal (1.3s)
+✔ [816/840] Built Mathlib.Algebra.BigOperators.Ring.Multiset (1.4s)
+✔ [835/850] Built Mathlib.Algebra.BigOperators.Pi (2.5s)
+✔ [843/852] Built Mathlib.Algebra.BigOperators.Ring.Finset (2.6s)
+✔ [844/852] Built Mathlib.Data.Finsupp.Defs (2.9s)
+✔ [845/852] Built Mathlib.Algebra.BigOperators.Group.Finset.Preimage (1.3s)
+✔ [846/893] Built Mathlib.Algebra.Group.Indicator (1.8s)
+✔ [883/895] Built Mathlib.Data.Finsupp.Single (2.6s)
+✔ [886/895] Built Mathlib.Data.Rat.BigOperators (1.4s)
+✔ [887/895] Built Mathlib.Data.Finsupp.Indicator (1.1s)
+✔ [889/907] Built Mathlib.Order.Preorder.Finsupp (1.4s)
+✔ [900/910] Built Mathlib.Algebra.Group.Finsupp (3.2s)
+✔ [902/913] Built Mathlib.Algebra.Group.Hom.End (1.3s)
+✔ [906/915] Built Mathlib.Data.Finsupp.Ext (1.2s)
+✔ [907/915] Built Mathlib.Algebra.Order.Group.Basic (1.4s)
+✔ [908/915] Built Mathlib.Algebra.Module.End (1.3s)
+✔ [910/917] Built Mathlib.Algebra.NoZeroSMulDivisors.Basic (1.3s)
+✔ [911/923] Built Mathlib.Algebra.Order.GroupWithZero.Action.Synonym (1.2s)
+✔ [916/925] Built Mathlib.Algebra.Notation.Lemmas (896ms)
+✔ [917/925] Built Mathlib.Algebra.BigOperators.Finsupp.Basic (5.5s)
+✔ [919/925] Built Mathlib.Algebra.Order.Pi (1.6s)
+✔ [920/925] Built Mathlib.Data.Finsupp.SMulWithZero (1.3s)
+✔ [921/951] Built Mathlib.Algebra.Order.Module.Defs (6.9s)
+✔ [959/965] Built Mathlib.RingTheory.Multiplicity (4.0s)
+✔ [960/965] Built Mathlib.Data.Finsupp.Basic (8.6s)
+✔ [961/971] Built Mathlib.NumberTheory.Padics.PadicVal.Defs (1.2s)
+✔ [963/973] Built Mathlib.Data.Finsupp.Multiset (2.1s)
+✔ [964/973] Built Mathlib.Data.Finsupp.Order (2.5s)
+ℹ [970/973] Built KElimination.UniversalResearch.AnchorValuations (847ms)
+info: KElimination/UniversalResearch/AnchorValuations.lean:92:0: 'KElimination.AnchorValuations.exponent_feasible' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/AnchorValuations.lean:93:0: 'KElimination.AnchorValuations.exponent_minimal' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/AnchorValuations.lean:94:0: 'KElimination.AnchorValuations.missing_exponent_zero_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/AnchorValuations.lean:95:0: 'KElimination.AnchorValuations.saturation_zero' depends on axioms: [propext]
+info: KElimination/UniversalResearch/AnchorValuations.lean:96:0: 'KElimination.AnchorValuations.saturation_bounded' depends on axioms: [propext]
+info: KElimination/UniversalResearch/AnchorValuations.lean:97:0: 'KElimination.AnchorValuations.saturation_monotone' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/AnchorValuations.lean:98:0: 'KElimination.AnchorValuations.saturation_lower_bound' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/AnchorValuations.lean:99:0: 'KElimination.AnchorValuations.positive_saturation_reaches_cap' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/AnchorValuations.lean:100:0: 'KElimination.AnchorValuations.missing_saturation_is_required' depends on axioms: [propext, Quot.sound]
+info: KElimination/UniversalResearch/AnchorValuations.lean:101:0: 'KElimination.AnchorValuations.saturation_fixed' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/UniversalResearch/AnchorValuations.lean:102:0: 'KElimination.AnchorValuations.vector_minimal_sufficient' depends on axioms: [propext, Quot.sound]
+✔ [971/973] Built Mathlib.Data.Nat.Factorization.Defs (1.8s)
+✔ [972/973] Built Mathlib.Data.Nat.Factorization.Basic (2.5s)
+ℹ [973/973] Built KElimination.AnchorSaturation (3.0s)
+info: KElimination/AnchorSaturation.lean:122:0: 'KElimination.AnchorSaturation.seed_positive' depends on axioms: [propext, Quot.sound]
+info: KElimination/AnchorSaturation.lean:123:0: 'KElimination.AnchorSaturation.iterate_positive' depends on axioms: [propext, Quot.sound]
+info: KElimination/AnchorSaturation.lean:124:0: 'KElimination.AnchorSaturation.seed_factorization' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/AnchorSaturation.lean:125:0: 'KElimination.AnchorSaturation.step_factorization' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/AnchorSaturation.lean:126:0: 'KElimination.AnchorSaturation.iterate_factorization' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/AnchorSaturation.lean:127:0: 'KElimination.AnchorSaturation.saturation_after_bound' depends on axioms: [propext, Quot.sound]
+info: KElimination/AnchorSaturation.lean:128:0: 'KElimination.AnchorSaturation.anchor_factorization' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/AnchorSaturation.lean:129:0: 'KElimination.AnchorSaturation.iterate_is_least_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/AnchorSaturation.lean:130:0: 'KElimination.AnchorSaturation.demand_fuel_is_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: KElimination/AnchorSaturation.lean:131:0: 'KElimination.AnchorSaturation.demand_fuel_is_fixed' depends on axioms: [propext, Classical.choice, Quot.sound]
+Build completed successfully (973 jobs).

@@ -1,0 +1,35 @@
+{
+  "scope": "finite exact arithmetic and source circuit schedule; no fresh encrypted run",
+  "single_increment_cases": 39,
+  "two_increment_cases": 117,
+  "continuous_theta_wall": "13/2, not integer launch endpoint 6",
+  "third_increment_polynomial_obstruction": {
+    "inputs": [
+      -9,
+      8
+    ],
+    "same_mod17": 8,
+    "desired_carries": [
+      -1,
+      1
+    ]
+  },
+  "one_increment_ciphertext_product_schedule": {
+    "multiplications": 12,
+    "depth": 4
+  },
+  "batched_two_increment_ciphertext_product_schedule": {
+    "multiplications": 14,
+    "depth": 4
+  },
+  "two_sequential_product_schedule": {
+    "multiplications": 24,
+    "depth": 8
+  },
+  "cost_exclusions": [
+    "coefficient/slot transforms",
+    "scalar products",
+    "key setup",
+    "noise and decryption analysis"
+  ]
+}

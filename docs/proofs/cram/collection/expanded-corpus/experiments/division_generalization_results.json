@@ -1,0 +1,187 @@
+{
+  "status": "PASS",
+  "counts": {
+    "noncoprime_floor_quotient_cases": 474060,
+    "linear_congruences_exhausted": 13950,
+    "relative_lift_target_residues": 1287900,
+    "relative_lift_nonunit_anchor_inputs": 21465,
+    "relative_lift_negative_correction_inputs": 6290,
+    "general_one_wave_modular_digit_cases": 423125,
+    "star_family_parameter_pairs": 6320,
+    "exact_rational_resonance_vectors": 3255
+  },
+  "negative_controls": {
+    "canonical_K_with_unnormalized_CRT": {
+      "base": [
+        2,
+        3
+      ],
+      "X": 1,
+      "M": 6,
+      "K_canonical": 0,
+      "idempotents": [
+        3,
+        4
+      ],
+      "CRT_sum": 7,
+      "target": 5,
+      "incorrect_output": 2,
+      "correct_output": 1
+    },
+    "gpai_worked_transduction_example": {
+      "base": [
+        2,
+        3,
+        5,
+        7
+      ],
+      "residues": [
+        1,
+        2,
+        4,
+        6
+      ],
+      "X": 209,
+      "raw_sum": 1469,
+      "raw_relative_K": -6,
+      "normalized_sum": 419,
+      "normalized_relative_K": -1,
+      "target": 11,
+      "incorrect_output": 6,
+      "correct_output": 0
+    },
+    "Nat_subtraction_in_adjacency": {
+      "P": 2,
+      "A": 3,
+      "gamma": 0,
+      "K": 1,
+      "X": 2,
+      "X_mod_A": 2,
+      "Nat_gamma_sub_K_mod_A": 0
+    },
+    "star_transparency_missing_t_gt_1": {
+      "t": 1,
+      "c": 1,
+      "q": 2,
+      "q_mod_t": 0
+    },
+    "star_inverse_missing_q_gt_1": {
+      "t": 1,
+      "c": 0,
+      "q": 1,
+      "lhs": 0,
+      "claimed_rhs": 1
+    },
+    "skew_Euler_omitted_quadratic_term": {
+      "omega": [
+        1,
+        0
+      ],
+      "Aomega": [
+        0,
+        1
+      ],
+      "dt": 1,
+      "inner_product": 0,
+      "energy_before": 1,
+      "energy_after": 2,
+      "omitted_dt_squared_norm": 1
+    },
+    "volume_preserving_padic_isometric_shear": {
+      "F": "F(x,y)=(x+y,y)",
+      "determinant": 1,
+      "iterate_from_0_1": "F^n(0,1)=(n,1)",
+      "norm_squared": "n^2+1"
+    },
+    "shadow_K_not_universally_in_designated_orbit": {
+      "M": 2,
+      "A": 11,
+      "X": 4,
+      "K": 2,
+      "allowed": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        9
+      ]
+    }
+  },
+  "safe_shell_recomputed": {
+    "unit_signatures": 5760,
+    "last_filling_prime": 464561,
+    "last_filling_signature": [
+      1,
+      2,
+      1,
+      6,
+      9,
+      6
+    ],
+    "coverage": {
+      "50000": 4046,
+      "100000": 5211,
+      "150000": 5583,
+      "200000": 5691,
+      "300000": 5756,
+      "464561": 5760,
+      "500000": 5760
+    }
+  },
+  "constants_recomputed": {
+    "M_S6": 30030,
+    "M_S8": 9699690,
+    "phi_S6": 5760,
+    "phi_S8": 1658880,
+    "transport_S6": [
+      3,
+      7,
+      11,
+      13
+    ],
+    "parking_S6": [
+      2,
+      5
+    ],
+    "SD11_anchor": 7438784639,
+    "SD11_anchor_bit_length": 33,
+    "SD11_orbit": [
+      1,
+      4,
+      5,
+      9,
+      3
+    ],
+    "calendar_pair_count": 18980,
+    "three_tier_smaller_witness": 130,
+    "periods_divisible_by_17": []
+  },
+  "finite_resonance_recomputed": [
+    {
+      "basis": [
+        3,
+        7,
+        11,
+        13
+      ],
+      "minimum_nonzero_resonant_l1": 3
+    },
+    {
+      "basis": [
+        2,
+        3,
+        5
+      ],
+      "minimum_nonzero_resonant_l1": 2
+    },
+    {
+      "basis": [
+        4,
+        9,
+        25
+      ],
+      "minimum_nonzero_resonant_l1": 4
+    }
+  ]
+}

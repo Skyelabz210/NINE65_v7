@@ -1,0 +1,134 @@
+{
+  "retrieved_at_utc": "2026-11-13",
+  "search_accounting": {
+    "search_calls": 5,
+    "requested_result_slots": 25,
+    "unique_result_urls": 25,
+    "distinct_fetched_documents": 5,
+    "fetch_calls": 6,
+    "interpretation": "Distinct URLs include mirrors; only the stated bounded source regions were read. No exhaustive literature or priority verdict."
+  },
+  "sources": [
+    {
+      "id": "D01",
+      "authors": [
+        "Jonathan Richard Shewchuk"
+      ],
+      "title": "Adaptive Precision Floating-Point Arithmetic and Fast Robust Geometric Predicates",
+      "year": 1997,
+      "venue": "Discrete & Computational Geometry 18(3), 305–363",
+      "url": "https://people.eecs.berkeley.edu/~jrs/papers/robustr.pdf",
+      "source_kind": "author-hosted primary research paper",
+      "retrieval": "Exa fetch; 18,000-character cap",
+      "verified_scope": "Introduction and predicate definitions: orientation/incircle sign as determinant predicates, exactness and adaptive precision motivation. Not the full paper or performance evaluation.",
+      "used_for": [
+        "C03",
+        "U02"
+      ],
+      "supports": "Predicate-directed exact arithmetic as the imported design principle.",
+      "not_transferred": "Floating-point implementation, speedups, or original experimental results."
+    },
+    {
+      "id": "D02",
+      "authors": [
+        "Ravindran Kannan",
+        "Achim Bachem"
+      ],
+      "title": "Polynomial Algorithms for Computing the Smith and Hermite Normal Forms of an Integer Matrix",
+      "year": 1979,
+      "venue": "SIAM Journal on Computing 8(4), 499–507",
+      "doi": "10.1137/0208040",
+      "url": "https://doi.org/10.1137/0208040",
+      "source_kind": "original research publisher abstract and bibliographic record",
+      "retrieval": "Exa fetch; 6,500-character cap",
+      "verified_scope": "Title, authors, venue, publication and abstract-level claim that integer normal forms and multipliers admit polynomial algorithms. Full algorithm/proof not retrieved.",
+      "used_for": [
+        "C02",
+        "U01"
+      ],
+      "supports": "Existing integer normal-form certificate machinery; independent derivation in REPORT.md proves the query criterion.",
+      "not_transferred": "Claim that this campaign implements or audits their polynomial-time algorithm."
+    },
+    {
+      "id": "D03",
+      "authors": [
+        "Keith Conrad"
+      ],
+      "title": "Hensel's Lemma",
+      "year": null,
+      "venue": "Author-hosted graduate number theory exposition",
+      "url": "https://kconrad.math.uconn.edu/blurbs/gradnumthy/hensel.pdf",
+      "source_kind": "author mathematical exposition; not the original historical paper",
+      "retrieval": "Exa fetch; 18,000-character cap",
+      "verified_scope": "Theorem 2.1, its simple-root inductive proof, and multiple-root caveats.",
+      "used_for": [
+        "C06",
+        "C08"
+      ],
+      "supports": "Simple-root correction at prime-power precision and failure of unrestricted uniqueness for nonunit derivative.",
+      "not_transferred": "Any encrypted producer, FHE correctness, or security theorem."
+    },
+    {
+      "id": "D04",
+      "authors": [
+        "David A. Croydon",
+        "Makiko Sasada"
+      ],
+      "title": "Discrete integrable systems and Pitman's transformation",
+      "year": 2020,
+      "venue": "arXiv:2007.06206",
+      "url": "https://ar5iv.labs.arxiv.org/html/2007.06206",
+      "source_kind": "author research exposition surveying their integrable-systems work",
+      "retrieval": "Exa fetch; 18,000-character cap",
+      "verified_scope": "Sections 1–3 defining path/Pitman transformations and BBS carrier evolution (equation 4), with real-valued ultradiscrete KdV context (equation 5). Full scaling/infinite-path arguments not reviewed.",
+      "used_for": [
+        "C05",
+        "U04"
+      ],
+      "supports": "Actual BBS carrier/path representation; the finite nearest-neighbor interpolation theorem is independently proved in REPORT.md.",
+      "not_transferred": "Continuum PDE limits, arbitrary-path invertibility, infinite stochastic construction, or a historical-priority claim."
+    },
+    {
+      "id": "D05",
+      "authors": [
+        "Swastik Kopparty"
+      ],
+      "title": "List-Decoding Multiplicity Codes",
+      "year": 2015,
+      "venue": "Theory of Computing 11(5), 149–182",
+      "doi": "10.4086/toc.2015.v011a005",
+      "url": "https://theoryofcomputing.org/articles/v011a005/v011a005.pdf",
+      "source_kind": "primary research article",
+      "retrieval": "Two Exa fetches, 12,500 then 30,000-character caps",
+      "verified_scope": "Definition 2.1 of Hasse derivatives as Taylor coefficients and Definition 2.2 of multiplicity, plus introductory multiplicity-code context.",
+      "used_for": [
+        "C08",
+        "U03"
+      ],
+      "supports": "Characteristic-independent jet definition used by the quotient observation constructor.",
+      "not_transferred": "List-decoding algorithm complexity, code performance, or full-paper verification."
+    }
+  ],
+  "private_lineage": [
+    {
+      "id": "drive-nsproof",
+      "registry_owner": "../corpus/",
+      "title": "NS_REGULARITY_PROOF_COMPLETE",
+      "file_id": "1qy8BoYD9wBeNEezA7qOg2iwMIIsMRKRP",
+      "modified": "2026-04-09",
+      "verified_by": "campaign_corpus",
+      "read_scope": "lines 14–100; relevant claim lines 46–50",
+      "use": "Derived counterexample to inference from skew-energy neutrality to nonincrease of maximum norm. Private document not copied."
+    },
+    {
+      "id": "drive-blueprint",
+      "registry_owner": "../corpus/",
+      "title": "3D_NS_BUILD_BLUEPRINT",
+      "file_id": "1ItakoJNb4InkkRoRl4oEsg7NcoGQXQlyNo5xR_nByf0",
+      "modified": "2026-05-06",
+      "verified_by": "campaign_corpus",
+      "read_scope": "lines 103–187",
+      "use": "Later blueprint limits result to discrete structural realization and leaves arbitrary-data continuum regularity, C_stretch and Biot–Savart correspondence open. Private document not copied."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+[package]
+name = "kelim"
+version = "1.0.0"
+edition = "2021"
+description = "K-Elimination: universal coprimality invariant for residue arithmetic. A1 (zero floats), A2 (exact integers only)."
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "encoder_demo"
+path = "src/encoder_demo.rs"
+
+[profile.release]
+opt-level = 3

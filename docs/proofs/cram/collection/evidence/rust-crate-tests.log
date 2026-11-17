@@ -1,0 +1,36 @@
+   Compiling kelim v1.0.0 (/workspace/k-elimination-audit/experiments/kelim_build)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.55s
+     Running unittests src/lib.rs (target/debug/deps/kelim-6b98ecc043458973)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/encoder_demo.rs (target/debug/deps/encoder_demo-dd7fc6a07a01c8cb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/exhaustive.rs (target/debug/deps/exhaustive-592d35a842c66683)
+
+running 10 tests
+test exact_division_when_m_divides_x ... ok
+test k_elim_dual_exhaustive ... ok
+test k_elim_exhaustive_coprime_pairs ... ok
+test k_elim_adjacent_matches_general ... ok
+test tower_digit_levels ... ok
+test selector_dispatch_correct ... ok
+test winding_residues_are_independent_coordinates ... ok
+test resolution_gradient_exhaustive ... ok
+test signed_comparison_exhaustive ... ok
+test winding_residue_in_residue_space ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.66s
+
+   Doc-tests kelim
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

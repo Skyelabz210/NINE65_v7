@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "families": 22,
+  "unordered_pairs": 231,
+  "directional_screens": 462,
+  "structural_matches_not_proofs": 45,
+  "deep_candidates": 12,
+  "candidate_categories": {
+    "practical_return": 4,
+    "frontier_generalization": 4,
+    "internal_composition": 4
+  },
+  "usable_imports": 4,
+  "fetched_source_documents": 5,
+  "model_hashes_verified": 2,
+  "registry_regeneration": "byte-identical",
+  "limits": "Checks registry integrity and evidence hash binding; run_models and unittest execute behavior."
+}

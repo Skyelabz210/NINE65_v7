@@ -1,0 +1,18 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `release` profile [optimized] target(s) in 0.08s
+     Running unittests src/lib.rs (/workspace/k-elimination-audit/expanded-corpus/build-runtime/nine65/release/deps/nine65-3eee27a58f4ed6fe)
+
+running 8 tests
+test arithmetic::rank_residue_divider::tests::modular_products_above_signed_u128_boundary_do_not_overflow ... ok
+test arithmetic::rank_residue_divider::tests::malformed_inputs_and_aliasing_are_refused ... ok
+test arithmetic::rank_residue_divider::tests::fractional_rank_resolves_points_next_to_integer_boundaries ... ok
+test arithmetic::rank_residue_divider::tests::repeated_shared_factor_divisions_preserve_quotient_anchors ... ok
+test arithmetic::rank_residue_divider::tests::shifted_signed_intervals_determine_the_lift ... ok
+test arithmetic::rank_residue_divider::tests::full_width_targets_and_signed_extrema_match_integer_oracle ... ok
+test arithmetic::rank_residue_divider::tests::shared_factor_divisors_keep_every_quotient_lane ... ok
+test arithmetic::rank_residue_divider::tests::ten_thousand_signed_inputs_match_independent_integer_division ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 1394 filtered out; finished in 0.02s
+

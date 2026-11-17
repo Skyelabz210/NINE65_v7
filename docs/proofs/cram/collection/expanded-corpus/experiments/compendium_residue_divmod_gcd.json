@@ -1,0 +1,49 @@
+{
+  "status": "PASS",
+  "scope": "independent bounded reference model",
+  "exhaustive_frames": [
+    [
+      2,
+      3
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      5,
+      7
+    ],
+    [
+      6,
+      7
+    ],
+    [
+      12,
+      13
+    ]
+  ],
+  "sampled_frame": [
+    36,
+    37
+  ],
+  "sample_seed": 20261112,
+  "random_pairs": 10000,
+  "boundary_pairs": 196,
+  "comparisons": 37701,
+  "gcd_pairs": 37701,
+  "divmod_pairs": 37428,
+  "divmod_shared_main_factor": 24201,
+  "divmod_inexact_integer_inputs": 35919,
+  "zero_refusals": 273,
+  "ingress_refusals": 3,
+  "negative_controls": {
+    "outside_window_alias_breaks_order": true,
+    "reversed_anchor_subtraction_breaks_order": true
+  },
+  "runtime_state_fields": [
+    "main",
+    "anchor"
+  ],
+  "performance_claim": "none; repeated subtraction, data-dependent branches"
+}

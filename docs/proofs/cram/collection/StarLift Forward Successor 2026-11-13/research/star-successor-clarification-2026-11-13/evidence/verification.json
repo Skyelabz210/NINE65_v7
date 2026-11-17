@@ -1,0 +1,301 @@
+{
+  "status": "PASS",
+  "executed_at_utc": "2026-11-13T04:32:01.562Z",
+  "source_repository": "https://github.com/Skyelabz210/astrology_remastered",
+  "source_commit": "ad0c8380f02b1d0c4f05a3e00726be3bc9680058",
+  "core_sha256": {
+    "anchor.js": "8f3b728b1f658991fc11cc790cf0e9d14d417072f93c3c07590264c97e8e7202",
+    "arrow.js": "67d3ab697f7bdf6c9e3b24905fcf7b1be63c94b6626800e9989f77bb55816f0c",
+    "basis.js": "6e3df6d9341fe192492350afa6cf0981d831af0056514d33aa78a1bc9f5fa4cb",
+    "carry.js": "b418767f2253fb03b59bec310f63e964fbeb806d4b889623aaf8979f1d18ccc2",
+    "cram.js": "dc9d71cd6a255aebb5e8a0f1bbd201efc5e16ae5ca56aa930e71a2c8fe703db6",
+    "div-chimera.js": "68e266e3125b091ae69f05f0efe65a6c073110d15fd933593ad6afa68656f757",
+    "fixture.js": "c30315f16ad8d37a6b32d1df31e6a8b73314eec72658a3bcd23dbee03f848f5e",
+    "gear-class.js": "e1c951b10dbe2ab2002e516f2f613674723e983e51bc53db2475e8366dac1445",
+    "hcrm-core.js": "8df805e021edf9c05c39213a4859106c2dba1ce838ef3acbf742e2fcf5be3546",
+    "identity.js": "d85c74830d194ccfde9a149fd26e5b79dcf3a621897300e764a8a3c77dfa65ff",
+    "operators.js": "46d2815e7d7ac9708099f72a1d859b77736e089311c3d850e7d54d5716f252d4",
+    "residues.js": "a7ccceac2066fd9348a7f6b2a0d69b3bba3c46c40a1b82efea82431698a36a61",
+    "rho.js": "59949b258f24091f377f5fb55ea1803958e8305c1f5023677dba021b563f11de",
+    "ring.js": "c5433e1dd6fcbc37a7c6e614af77a7435e96034085697fdaee84657484f50115",
+    "safe-basis.js": "a25d5343acf4925f92e5835552e51a22b9a8dfa96cb08716644031660f51bf9c",
+    "shadow-spine.js": "30cc59aee4a9af410ba7d1cbef0081665c787ec6e660460b84ad571eae849adc",
+    "shell-kelim.js": "beb288fad509a65cd97ba6eae145136d8890c5921906348137ae855b2f48c355",
+    "tower-recover.js": "2a703f1c575fe6bed1e1a1b22f56b6b36c91da05f744bcce4662d2fba41028e3",
+    "tray.js": "63f4aedc43d354e10d9a9c1219264653cab134bcb5f63173aefcc6f4d7827fd1",
+    "validators.js": "68ecec280ec292beed5c1453b1fb81fccbf3ee4d5c92eb25e8c8f1f6011d0f96",
+    "variants.js": "7cf7fbdc6bfa7c19b72cefc7d805b157fb5a46ecf5c9d4c34481e51fc19cd9ee"
+  },
+  "experiment_sha256": {
+    "verify.mjs": "95adce8c7e4896768e8764c4f175473e1cc4838f21236a00e2615adb8799528b",
+    "star_transport.mjs": "a470a178ed82ef4bcde6e76d3d9b3ab2e9e5cdb3bc9acf97fa5a24994beef021"
+  },
+  "counts": {
+    "conjugacy_states": 91518,
+    "forward_steps": 5328,
+    "existing_step_inverse_checks": 144,
+    "star_growth_cases": 1000,
+    "internal_star_bases": 11,
+    "composite_anchor_cases": 14520,
+    "anchor_admission_cases": 5000,
+    "next_star_full_period_cases": 194472,
+    "complete_frame_roundtrips": 194472,
+    "distinct_constructor_input_pairs": 5256,
+    "large_signed_target_cases": 5,
+    "constructor_refusals": 5,
+    "inverse_refusals": 5,
+    "prime_moduli": 168,
+    "index_residue_classes": 76127
+  },
+  "trace": [
+    {
+      "tick": 0,
+      "r": "0",
+      "s": "0",
+      "kClass": "0",
+      "negativeKClass": "0",
+      "oracleK": "0"
+    },
+    {
+      "tick": 1,
+      "r": "1",
+      "s": "1",
+      "kClass": "0",
+      "negativeKClass": "0",
+      "oracleK": "0"
+    },
+    {
+      "tick": 35,
+      "r": "35",
+      "s": "35",
+      "kClass": "0",
+      "negativeKClass": "0",
+      "oracleK": "0"
+    },
+    {
+      "tick": 36,
+      "r": "0",
+      "s": "36",
+      "kClass": "1",
+      "negativeKClass": "36",
+      "oracleK": "1"
+    },
+    {
+      "tick": 37,
+      "r": "1",
+      "s": "0",
+      "kClass": "1",
+      "negativeKClass": "36",
+      "oracleK": "1"
+    },
+    {
+      "tick": 71,
+      "r": "35",
+      "s": "34",
+      "kClass": "1",
+      "negativeKClass": "36",
+      "oracleK": "1"
+    },
+    {
+      "tick": 72,
+      "r": "0",
+      "s": "35",
+      "kClass": "2",
+      "negativeKClass": "35",
+      "oracleK": "2"
+    },
+    {
+      "tick": 1295,
+      "r": "35",
+      "s": "0",
+      "kClass": "35",
+      "negativeKClass": "2",
+      "oracleK": "35"
+    },
+    {
+      "tick": 1296,
+      "r": "0",
+      "s": "1",
+      "kClass": "36",
+      "negativeKClass": "1",
+      "oracleK": "36"
+    },
+    {
+      "tick": 1331,
+      "r": "35",
+      "s": "36",
+      "kClass": "36",
+      "negativeKClass": "1",
+      "oracleK": "36"
+    },
+    {
+      "tick": 1332,
+      "r": "0",
+      "s": "0",
+      "kClass": "0",
+      "negativeKClass": "0",
+      "oracleK": "37"
+    },
+    {
+      "tick": 1333,
+      "r": "1",
+      "s": "1",
+      "kClass": "0",
+      "negativeKClass": "0",
+      "oracleK": "37"
+    }
+  ],
+  "starRows": [
+    {
+      "n": "1",
+      "star": "1",
+      "shell": "0",
+      "nextGap": "12"
+    },
+    {
+      "n": "2",
+      "star": "13",
+      "shell": "12",
+      "nextGap": "24"
+    },
+    {
+      "n": "3",
+      "star": "37",
+      "shell": "36",
+      "nextGap": "36"
+    },
+    {
+      "n": "4",
+      "star": "73",
+      "shell": "72",
+      "nextGap": "48"
+    },
+    {
+      "n": "5",
+      "star": "121",
+      "shell": "120",
+      "nextGap": "60"
+    },
+    {
+      "n": "6",
+      "star": "181",
+      "shell": "180",
+      "nextGap": "72"
+    },
+    {
+      "n": "7",
+      "star": "253",
+      "shell": "252",
+      "nextGap": "84"
+    },
+    {
+      "n": "8",
+      "star": "337",
+      "shell": "336",
+      "nextGap": "96"
+    },
+    {
+      "n": "9",
+      "star": "433",
+      "shell": "432",
+      "nextGap": "108"
+    },
+    {
+      "n": "10",
+      "star": "541",
+      "shell": "540",
+      "nextGap": "120"
+    },
+    {
+      "n": "11",
+      "star": "661",
+      "shell": "660",
+      "nextGap": "132"
+    },
+    {
+      "n": "12",
+      "star": "793",
+      "shell": "792",
+      "nextGap": "144"
+    }
+  ],
+  "gapMatches": [
+    "3"
+  ],
+  "star3Basis": [
+    "4",
+    "9",
+    "37"
+  ],
+  "next_star": {
+    "source_period": "1332",
+    "target_period": "5256",
+    "saturation": [
+      "146",
+      "292",
+      "584"
+    ],
+    "least_extra_anchor": "584",
+    "jointPeriod": "194472",
+    "insufficient": [
+      {
+        "anchor": "1",
+        "x": "1332",
+        "source36": "0",
+        "source37": "0",
+        "extra": "0",
+        "target72": "36",
+        "target73": "18"
+      },
+      {
+        "anchor": "146",
+        "x": "97236",
+        "source36": "0",
+        "source37": "0",
+        "extra": "0",
+        "target72": "36",
+        "target73": "0"
+      },
+      {
+        "anchor": "292",
+        "x": "97236",
+        "source36": "0",
+        "source37": "0",
+        "extra": "0",
+        "target72": "36",
+        "target73": "0"
+      }
+    ]
+  },
+  "rootExamples": {
+    "5": [],
+    "7": [],
+    "11": [
+      5,
+      7
+    ],
+    "13": [
+      2,
+      12
+    ],
+    "23": [
+      7,
+      17
+    ],
+    "37": [
+      3,
+      35
+    ]
+  },
+  "existing_arrow_report": {
+    "kind": "ARROW_V1",
+    "saturated": true,
+    "star_shell": "36",
+    "star_anchor": "37",
+    "adjacent": true,
+    "star_number": true,
+    "depth_unbounded": true,
+    "instantiated": true
+  },
+  "scope": "Clear arithmetic/model verification. No new Lean declarations, physical experiment, primality breakthrough, historical identification, or encrypted execution."
+}

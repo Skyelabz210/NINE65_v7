@@ -1,0 +1,66 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+   Compiling proc-macro2 v1.0.103
+   Compiling quote v1.0.42
+   Compiling unicode-ident v1.0.22
+   Compiling syn v2.0.111
+   Compiling serde_core v1.0.228
+   Compiling crossbeam-utils v0.8.21
+   Compiling zerocopy v0.8.31
+   Compiling crossbeam-epoch v0.9.21
+   Compiling zerocopy-derive v0.8.31
+   Compiling autocfg v1.5.0
+   Compiling serde v1.0.228
+   Compiling num-traits v0.2.19
+   Compiling serde_derive v1.0.228
+   Compiling either v1.15.0
+   Compiling libc v0.2.178
+   Compiling serde_json v1.0.147
+   Compiling cfg-if v1.0.4
+   Compiling rayon-core v1.13.0
+   Compiling half v2.7.1
+   Compiling crossbeam-deque v0.8.6
+   Compiling itoa v1.0.16
+   Compiling ciborium-io v0.2.2
+   Compiling memchr v2.7.6
+   Compiling anstyle v1.0.13
+   Compiling plotters-backend v0.3.7
+   Compiling regex-syntax v0.8.8
+   Compiling clap_lex v0.7.6
+   Compiling zmij v0.1.7
+   Compiling clap_builder v4.5.53
+   Compiling regex-automata v0.4.13
+   Compiling plotters-svg v0.3.7
+   Compiling ciborium-ll v0.2.2
+   Compiling itertools v0.10.5
+   Compiling same-file v1.0.6
+   Compiling cast v0.3.0
+   Compiling criterion-plot v0.5.0
+   Compiling walkdir v2.5.0
+   Compiling is-terminal v0.4.17
+   Compiling rayon v1.11.0
+   Compiling plotters v0.3.7
+   Compiling ciborium v0.2.2
+   Compiling regex v1.12.2
+   Compiling clap v4.5.53
+   Compiling tinytemplate v1.2.1
+   Compiling oorandom v11.1.5
+   Compiling anes v0.1.6
+   Compiling once_cell v1.21.3
+   Compiling criterion v0.5.1
+   Compiling exact_transcendentals v1.0.0 (/workspace/NINE65_v7/crates/exact_transcendentals)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 35.95s
+     Running tests/tropical_theta_k_lift.rs (/workspace/k-elimination-audit/experiments/tropical/target/debug/deps/tropical_theta_k_lift-9b5321bb21370e14)
+
+running 7 tests
+test even_period_theta_wall_needs_a_tie_convention ... ok
+test missing_corridor_and_missing_lift_information_have_explicit_aliases ... ok
+test lifted_theta_cocycle_composes_without_enumerating_source_assignments ... ok
+test theta_difference_exposes_the_two_eleven_phase_relation_at_cell_walls ... ok
+test composite_sister_differences_lift_every_native_sheet ... ok
+test k_elimination_selects_the_exact_tropical_theta_sheet ... ok
+test native_q_and_one_safe_root_resolve_the_full_bounded_sheet_corridor ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+

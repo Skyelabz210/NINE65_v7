@@ -1,0 +1,108 @@
+{
+  "checks": {
+    "signed_resolution_gradient": 619920,
+    "coupled_injectivity": 92354,
+    "coupled_capacity_and_alias": 3600,
+    "unit_anchor_characterization": 5888,
+    "bounded_fpd_squarefree": 7216,
+    "carry_subgroup_separation": 1040,
+    "tree_coordinate_bijection": 2310
+  },
+  "total_checks": 732328,
+  "counterexamples": {
+    "natural_subtraction_core": {
+      "M": 3,
+      "A": 5,
+      "X": 5,
+      "true_quotient": 1,
+      "truncated_formula": 0
+    },
+    "noncoprime_zero_resolution_table": {
+      "M": 4,
+      "A": 8,
+      "gcd": 4,
+      "resolution": 2
+    },
+    "adjacency_not_necessary": {
+      "M": 11,
+      "A": 4,
+      "inverse": 3,
+      "formula": "k=(r_M-r_A) mod 4"
+    },
+    "tower_range_inference": {
+      "moduli": [
+        2,
+        3,
+        5
+      ],
+      "X": 6,
+      "product": 30,
+      "first_pair_product": 6
+    },
+    "finite_anchor_alias": {
+      "M": 6,
+      "anchors": [
+        4,
+        9
+      ],
+      "R_K": 6,
+      "R_X": 36,
+      "X_alias_pair": [
+        0,
+        36
+      ]
+    },
+    "gcd_error_not_absolute_bound": {
+      "M": 6,
+      "A": 9,
+      "gcd": 3,
+      "same_residue_X_pair": [
+        0,
+        180
+      ],
+      "K_pair": [
+        0,
+        30
+      ]
+    },
+    "nonexact_inverse": {
+      "X": 1,
+      "b": 2,
+      "modulus": 5,
+      "modular_division": 3,
+      "floor_division": 0
+    },
+    "unwitnessed_prime_power_fpd": {
+      "basis": [
+        2,
+        3,
+        5
+      ],
+      "aux": [
+        7
+      ],
+      "X": 2,
+      "b": 4,
+      "P": 105,
+      "candidate_q": -52,
+      "B": 52,
+      "bad_lane_mod2_check": true,
+      "exact_division": false,
+      "current_wrapper": "rejects because 4 does not divide 30"
+    },
+    "threshold_is_polynomial": {
+      "p": 3,
+      "f": "2*x^2+x mod 3",
+      "values": [
+        0,
+        0,
+        1
+      ]
+    },
+    "finite_inv_fixed_divisor": {
+      "b": 2,
+      "all_odd_primes_allow_inverse": true
+    }
+  },
+  "scope": "Independent Python mathematical model; no Rust/Lean execution."
+}

@@ -1,0 +1,66 @@
+{
+  "date": "2026-11-17",
+  "scope": "User-provided Torus-Fiber and certified_lift intake; originals preserved",
+  "files": [
+    {
+      "name": "1-Torus-Fiber-Checks-Reproduction-Coprimality-Audit-and-Benchmark-Results.md",
+      "bytes": 24858,
+      "sha256": "c601980470ec6f8a429fa3110952c3f9de7ac0be68863247a1ee6797de13fda8",
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/E9300214-38F9-414C-8CD0-FD100D8D0982/1-Torus-Fiber-Checks-Reproduction-Coprimality-Audit-and-Benchmark-Results.md"
+    },
+    {
+      "name": "10-Torus_Fiber_Checks_Reproduction_2026-11-17.zip",
+      "bytes": 49442,
+      "sha256": "7df56010e286baf8f7c18bc856e54f62bcc60f34fa404bd1f15edcd415d9aedf",
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/E9300214-38F9-414C-8CD0-FD100D8D0982/10-Torus_Fiber_Checks_Reproduction_2026-11-17.zip"
+    },
+    {
+      "name": "2-kbench_arbitrary_composite.rs",
+      "bytes": 16666,
+      "sha256": "3bdc6d868c2381aec951931d21938d5fb49bd792822e79f579d4ddc16ef1654d",
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/E9300214-38F9-414C-8CD0-FD100D8D0982/2-kbench_arbitrary_composite.rs"
+    },
+    {
+      "name": "3-TORUS_FIBER_CHECKS_REPRO_REPORT_2026-11-17.md",
+      "bytes": 16422,
+      "sha256": "08c6d2d045351cb3cdde8229aad9146d1df0d086c8fb88ca2dedd7445a6673d2",
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/E9300214-38F9-414C-8CD0-FD100D8D0982/3-TORUS_FIBER_CHECKS_REPRO_REPORT_2026-11-17.md"
+    },
+    {
+      "name": "4-Torus_Fiber_Checks_Reproduction_2026-11-17-2.zip",
+      "bytes": 48257,
+      "sha256": "798184126dc9e94f1905201d5ef650bdf5001ed3a2ac9fb5a27b746b11ec64a8",
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/E9300214-38F9-414C-8CD0-FD100D8D0982/4-Torus_Fiber_Checks_Reproduction_2026-11-17-2.zip"
+    },
+    {
+      "name": "5-certified_lift-2.tar.gz",
+      "bytes": 13782,
+      "sha256": "42530547da553ee30ca6bb1403ae59ca49c96eb617399dddcd71e7ff0fb169dc",
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/E9300214-38F9-414C-8CD0-FD100D8D0982/5-certified_lift-2.tar.gz"
+    },
+    {
+      "name": "6-TORUS_FIBER_CHECKS_REPRO_REPORT_2026-11-17.pdf",
+      "bytes": 197780,
+      "sha256": "16532f21af112b53ae5abd1b7b25817ef4e909e47ef938fb90ae907580a4bc27",
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/E9300214-38F9-414C-8CD0-FD100D8D0982/6-TORUS_FIBER_CHECKS_REPRO_REPORT_2026-11-17.pdf"
+    },
+    {
+      "name": "7-PROOFS.pdf",
+      "bytes": 250338,
+      "sha256": "3ec3c73b212a0d152f070f8995437fc08f9a92eb4676498eb2f9852dbdb79c2a",
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/E9300214-38F9-414C-8CD0-FD100D8D0982/7-PROOFS.pdf"
+    },
+    {
+      "name": "8-kbench_coprime.rs",
+      "bytes": 10017,
+      "sha256": "95f04e33c1b4656db7565003accdf244795f6ac6bc1ce843e53e220388aee5d1",
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/E9300214-38F9-414C-8CD0-FD100D8D0982/8-kbench_coprime.rs"
+    },
+    {
+      "name": "9-Torus_Fiber_Checks_Reproduction_2026-11-17-3.zip",
+      "bytes": 72063,
+      "sha256": "cd178f865faedf545eec035c5b194a0d696b4663261b4427679db61675ff6dcd",
+      "source": "/tmp/codex-remote-attachments/6af5c3b0-2710-8191-9704-01ce7a1da0d5/E9300214-38F9-414C-8CD0-FD100D8D0982/9-Torus_Fiber_Checks_Reproduction_2026-11-17-3.zip"
+    }
+  ]
+}

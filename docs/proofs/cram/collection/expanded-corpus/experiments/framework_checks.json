@@ -1,0 +1,127 @@
+{
+  "scope": "finite mathematical models and literal document counterexamples",
+  "counts": {
+    "query_factorization_domains_0_through_5": 1365,
+    "transfer_edges": 369,
+    "transfer_round_trips": 369,
+    "transfer_compositions": 1107,
+    "heterogeneous_operator_polynomial_pairs": 225,
+    "adjacency_all_values": 91518,
+    "reversed_sign_disagreements": 88416,
+    "rescale_correct_guard_cases": 180235,
+    "missing_guard_aliases": 35525,
+    "prime_only_completion_compatible_torsion_prefixes": 5
+  },
+  "counterexamples": {
+    "transfer_needs_source_domain_certificate": {
+      "x": -20,
+      "y": 35,
+      "source": [
+        5,
+        11
+      ],
+      "same_observation": [
+        0,
+        2
+      ],
+      "distinct_target_observations": [
+        [
+          1,
+          6
+        ],
+        [
+          0,
+          9
+        ]
+      ]
+    },
+    "chimera_value_space_expansion": {
+      "product_ring_size": 15,
+      "image_of_Z_mod_15": 15,
+      "actual_size_ratio": 1,
+      "claimed_M_power_k_minus_1": 15
+    },
+    "one_wave_sign": {
+      "P": 2,
+      "A": 3,
+      "X": 2,
+      "published": 2,
+      "correct": 1
+    },
+    "unified_rescale_missing_range": {
+      "t": 3,
+      "delta": 2,
+      "Q": 6,
+      "A": 7,
+      "x": 5,
+      "Y": 16,
+      "published_K": 1,
+      "actual_K": 8
+    },
+    "frozen_total_error": {
+      "truth": "11/10",
+      "stored": "1",
+      "initial_error": "1/10",
+      "after_exact_times_10_error": "1"
+    },
+    "all_natural_denominators_11_smooth": {
+      "exact_rational": "1/13",
+      "grid_spacing": "1/13",
+      "prime_factor_outside_basis": 13
+    },
+    "prime_only_ladder_not_full_profinite_Z": [
+      [
+        3,
+        1
+      ],
+      [
+        15,
+        10
+      ],
+      [
+        105,
+        70
+      ],
+      [
+        1155,
+        385
+      ],
+      [
+        15015,
+        5005
+      ]
+    ],
+    "degree_2_map_not_reversible": {
+      "modulus": 3,
+      "map": "x^2",
+      "distinct_inputs": [
+        1,
+        2
+      ],
+      "same_output": 1,
+      "output_counts_uniform_inputs": {
+        "0": 1,
+        "1": 2
+      }
+    },
+    "safe_S8_refinement_cycle_30": {
+      "orders_of_4_odd_S8": {
+        "3": 1,
+        "5": 2,
+        "7": 3,
+        "11": 5,
+        "13": 6,
+        "17": 4,
+        "19": 9
+      },
+      "joint_period": 180,
+      "prime_2": "4 is not a unit"
+    }
+  },
+  "positive_scope_notes": [
+    "No persistent winding is used by the paired-view transfer model.",
+    "The transfer checks concern authenticated views over x in [-20,20].",
+    "Heterogeneous operators can be distinct operational semantics while using the same residue value set.",
+    "No new arithmetic-roundoff error and no growth of initial-data error are different claims."
+  ]
+}

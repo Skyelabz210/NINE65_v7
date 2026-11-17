@@ -1,0 +1,267 @@
+{
+  "status": "PASS",
+  "executed_at_utc": "2026-11-13T04:40:16.049197+00:00",
+  "sympy_version": "1.14.0",
+  "script_sha256": "3873ff57c25c3e2960754674f164123f1605f4f660369ddf920701da1db00fee",
+  "superstar_candidates": [
+    {
+      "value": 661,
+      "star_index": 11,
+      "prime_rank": 121,
+      "prime_rank_star_index": 5,
+      "left_twin": true,
+      "right_twin": false
+    },
+    {
+      "value": 1750255921,
+      "star_index": 17080,
+      "prime_rank": 86526037,
+      "prime_rank_star_index": 3798,
+      "left_twin": true,
+      "right_twin": false
+    }
+  ],
+  "first_two_order_status": "Secondary page lists these as first two; membership checked here, absence of intermediate qualifying terms not checked.",
+  "ordinary_star_numbers": [
+    1,
+    13,
+    37,
+    73,
+    121,
+    181,
+    253,
+    337,
+    433,
+    541,
+    661,
+    793,
+    937,
+    1093,
+    1261
+  ],
+  "ordinary_star_primes": [
+    13,
+    37,
+    73,
+    181,
+    337,
+    433,
+    541,
+    661,
+    937,
+    1093
+  ],
+  "star_prime_anchors": [
+    37,
+    73,
+    181,
+    337,
+    433
+  ],
+  "quotient_capacities": [
+    37,
+    2701,
+    488881,
+    164752897,
+    71338004401
+  ],
+  "fixed_36_source_capacities": [
+    1332,
+    97236,
+    17599716,
+    5931104292,
+    2568168158436
+  ],
+  "primorials": [
+    2,
+    6,
+    30,
+    210,
+    2310,
+    30030,
+    510510,
+    9699690
+  ],
+  "twin_neighbor_examples": [
+    {
+      "center": 12,
+      "sides": [
+        {
+          "n": 11,
+          "factors": {
+            "11": 1
+          },
+          "prime": true
+        },
+        {
+          "n": 13,
+          "factors": {
+            "13": 1
+          },
+          "prime": true
+        }
+      ]
+    },
+    {
+      "center": 36,
+      "sides": [
+        {
+          "n": 35,
+          "factors": {
+            "5": 1,
+            "7": 1
+          },
+          "prime": false
+        },
+        {
+          "n": 37,
+          "factors": {
+            "37": 1
+          },
+          "prime": true
+        }
+      ]
+    },
+    {
+      "center": 72,
+      "sides": [
+        {
+          "n": 71,
+          "factors": {
+            "71": 1
+          },
+          "prime": true
+        },
+        {
+          "n": 73,
+          "factors": {
+            "73": 1
+          },
+          "prime": true
+        }
+      ]
+    },
+    {
+      "center": 120,
+      "sides": [
+        {
+          "n": 119,
+          "factors": {
+            "7": 1,
+            "17": 1
+          },
+          "prime": false
+        },
+        {
+          "n": 121,
+          "factors": {
+            "11": 2
+          },
+          "prime": false
+        }
+      ]
+    },
+    {
+      "center": 180,
+      "sides": [
+        {
+          "n": 179,
+          "factors": {
+            "179": 1
+          },
+          "prime": true
+        },
+        {
+          "n": 181,
+          "factors": {
+            "181": 1
+          },
+          "prime": true
+        }
+      ]
+    },
+    {
+      "center": 210,
+      "sides": [
+        {
+          "n": 209,
+          "factors": {
+            "11": 1,
+            "19": 1
+          },
+          "prime": false
+        },
+        {
+          "n": 211,
+          "factors": {
+            "211": 1
+          },
+          "prime": true
+        }
+      ]
+    },
+    {
+      "center": 2310,
+      "sides": [
+        {
+          "n": 2309,
+          "factors": {
+            "2309": 1
+          },
+          "prime": true
+        },
+        {
+          "n": 2311,
+          "factors": {
+            "2311": 1
+          },
+          "prime": true
+        }
+      ]
+    },
+    {
+      "center": 30030,
+      "sides": [
+        {
+          "n": 30029,
+          "factors": {
+            "30029": 1
+          },
+          "prime": true
+        },
+        {
+          "n": 30031,
+          "factors": {
+            "59": 1,
+            "509": 1
+          },
+          "prime": false
+        }
+      ]
+    }
+  ],
+  "four_heads": {
+    "periods": [
+      260,
+      365,
+      18980,
+      144000
+    ],
+    "full_phase_joint_period": 136656000,
+    "successive_resolution_factors": [
+      260,
+      73,
+      1,
+      7200
+    ],
+    "packed_bit_capacity": 16777216,
+    "repository_commit": "40a76158970c41440ec7e4c10437fa1c2e271d03",
+    "heads_rs_sha256": "dbca933a40533b33e5284d7a21dba575c7c862352abb2ba33e3613f26fac367a",
+    "scope": "Source inspection and exact period arithmetic; no fresh Rust execution. Full phase readings differ from compressed carry_bits."
+  },
+  "limits": [
+    "Remembered sequence not confirmed by user.",
+    "No universal twin-prime assertion established for the superstar subset.",
+    "No historical Maya/Chinese transmission or physical influence inferred."
+  ]
+}

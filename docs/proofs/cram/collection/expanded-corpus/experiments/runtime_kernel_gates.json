@@ -1,0 +1,74 @@
+[
+  {
+    "kernel": "rank_residue_divider",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "nine65",
+      "--lib",
+      "--release",
+      "--no-fail-fast",
+      "arithmetic::rank_residue_divider::",
+      "--",
+      "--nocapture"
+    ],
+    "exit_code": 0,
+    "log": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_rank_residue_divider.log"
+  },
+  {
+    "kernel": "recumbent",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "nine65",
+      "--lib",
+      "--release",
+      "--no-fail-fast",
+      "arithmetic::recumbent::",
+      "--",
+      "--nocapture"
+    ],
+    "exit_code": 0,
+    "log": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_recumbent.log"
+  },
+  {
+    "kernel": "exact_scale_round",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "nine65",
+      "--lib",
+      "--release",
+      "--no-fail-fast",
+      "arithmetic::exact_scale_round::",
+      "--",
+      "--nocapture"
+    ],
+    "exit_code": 0,
+    "log": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_exact_scale_round.log"
+  },
+  {
+    "kernel": "compare_bit",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "nine65",
+      "--lib",
+      "--release",
+      "--no-fail-fast",
+      "arithmetic::compare_bit::",
+      "--",
+      "--nocapture"
+    ],
+    "exit_code": 0,
+    "log": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_compare_bit.log"
+  }
+]

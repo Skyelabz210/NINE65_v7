@@ -1,0 +1,33 @@
+v2 arbitrary-composite benchmark provenance (final source with caller-supplied modulus input)
+captured_at_utc_default_runs=2026-11-17T12:52:00Z..2026-11-17T12:52:06Z
+captured_at_local_default_runs=2026-11-17 06:52:00..06:52:06 -06:00
+captured_at_utc_shared_factor_fixture=2026-11-17T12:51:54Z
+input_archive=/home/ubuntu/upload/torus_fiber_checks(2).zip
+input_archive_sha256=125112c0de435fa729d65df27cce5f10476b1f6194030020fca434bd37e9fea0
+source_basis=untouched archive source torus_fiber_checks/kbench.rs
+host=Linux d895d8305aa0 6.18.38+ #1 SMP Thu Oct 1 17:24:34 UTC 2026 aarch64 aarch64 aarch64 GNU/Linux
+architecture=aarch64
+cpu_model=ARM Neoverse-N1
+logical_cpus=6
+available_cpus=0-5
+process_affinity=0-5 (not explicitly pinned to one CPU)
+rustc=rustc 1.89.0 (29483883e 2025-08-04)
+compile_command=rustc +1.89.0 -D warnings -O reproduction/kbench_arbitrary_composite.rs -o /tmp/kbench-arbitrary
+run_command_default=/tmp/kbench-arbitrary
+run_command_custom=/tmp/kbench-arbitrary reproduction/arbitrary_shared_checks.txt
+runs_default=3 sequential single-process invocations; each completed all k=2,4,8,16,32,64,128 correctness checks before timing
+run_outputs=kbench_arbitrary_composite_run_1.txt,kbench_arbitrary_composite_run_2.txt,kbench_arbitrary_composite_run_3.txt
+custom_modulus_fixture=9 25 49 121 8 4; all values composite; at k=4, lanes 9,25,49,121 are pairwise coprime, A=8 and q2=4 share gcd 4, and q2=k
+custom_run_output=arbitrary_shared_checks_output.txt; PASS for k=2 and k=4
+corpus_default=130 composite moduli; every default pairwise gcd checked; min bit length 60, max bit length 64; exactly one even; includes an even modulus and two odd check moduli above 2^63
+input_validation=for each k, lane moduli pairwise coprime; each check modulus individually coprime to every lane; A and q2 need not be coprime to each other; q2>=k
+benchmark_flags=rustc -O, with -D warnings; no explicit target-cpu/native flag; setup and inverse-table construction excluded from timing
+outputs_consumed=all limbs through a fixed-width checksum in both timed full-reconstruction paths
+correctness_vectors=24 preflight vectors per k, including x=0, constructed alpha=k-1, lane boundary cases and deterministic pseudo-random normalized residues
+python_probe=python3 reproduction/arbitrary_composite_probe.py (standard library only)
+python_probe_result=PASS; exact output in arbitrary_composite_probe_output.txt
+source_archive_sha256=3bdc6d868c2381aec951931d21938d5fb49bd792822e79f579d4ddc16ef1654d
+probe_sha256=1f122f52acfb3775073b00caed0224bcc0ee323bfdf1974d299e2633c1a8bf3a
+custom_fixture_sha256=fd7601e33e5654556f75c780d5e128e68cf213245be51a2120577af9d8a8ebfd
+original_source_modified=no
+NINE65_production_integration=no

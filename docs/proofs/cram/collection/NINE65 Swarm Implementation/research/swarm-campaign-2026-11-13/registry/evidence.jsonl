@@ -1,0 +1,12 @@
+{"path": "registry/corpus_validation.json", "bytes": 1413, "sha256": "55541ae3b8b3d19b86bcae13b5f7e6bc58e884cbcede2dcec246ea50115a9128"}
+{"path": "proofs/verification.json", "bytes": 32818, "sha256": "4e9ad868c552fed0965f9b7d9bbf8a4de28cc38def2bdf12674131ced158fb25"}
+{"path": "proofs/original-repo-verification.json", "bytes": 4145, "sha256": "8238773ea3363295328395cb2a08e756897591295d80ff28949e7d3906b65f84"}
+{"path": "discovery/execution-evidence.json", "bytes": 4757, "sha256": "d324fd96491c410a63079f515b3bc4a8f08d693389076c0d98556217e1afe07a"}
+{"path": "discovery/model-evidence.json", "bytes": 1111, "sha256": "e45556dad6c4dcd2503fbf92f7eff293e4ed7dd95732ac1f4fe206c8933d62b2"}
+{"path": "runtime-residue/adapter-tests.json", "bytes": 2102, "sha256": "2413b2d2861304c32dd2340811cfd6152f4d6f5c547c807ba8952061bdc8c06a"}
+{"path": "runtime-residue/matched-cost.json", "bytes": 1154, "sha256": "f982179d3ea613280f9a7092e0dcd1f3203cf0a2e4655f44cd4a5796f874be9d"}
+{"path": "runtime-gcd/evidence/verification.json", "bytes": 7744, "sha256": "14c4c6d51314ff0a4f7023f52978ab2130d11501c95c2e7f7c632b703b46c9d6"}
+{"path": "runtime-gcd/evidence/rational-pair.json", "bytes": 266, "sha256": "e393661907226fce3b11743fec426b0d91d6dd7efa7d09cc6bcd27f953a5c6c4"}
+{"path": "reviews/reviewer_scope.json", "bytes": 11403, "sha256": "f8bb4688f84ac50fafecd3230edcb9ec2f3f1bc89d586c3e6da758f530b4f6af"}
+{"path": "reviews/REVIEW.md", "bytes": 14773, "sha256": "365e8f5fde8d569b239bfa4bb222cce8e958d1d403bd7ffb50628e65511e563b"}
+{"path": "evidence/integrated-runtime.json", "bytes": 4455, "sha256": "a3d93ad45b09cc68239b9449ef06918edcda7022417ef9310480fd7f5eed903c"}

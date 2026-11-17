@@ -1,0 +1,7 @@
+name = "k_elimination_universal"
+version = "0.1.0"
+defaultTargets = ["UniversalKElimination"]
+
+[[lean_lib]]
+name = "UniversalKElimination"
+roots = ["ExactObservation", "UniversalLift", "RingReadout", "IntegerSpecialization", "CostedReadout", "ReferenceChange", "CoupledAnchors", "ResidueAlgorithms", "ResiduePrimitives", "StarLift", "UniversalKElimination"]

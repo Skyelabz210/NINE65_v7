@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "scope": "Independent exact arithmetic, not the missing original Rust source; not FHE",
+  "domain": "odd Q=3..61, integer g=-(Q-1)/2..(Q-1)/2, K=-40..40",
+  "counts": {
+    "theta_cases": 77760,
+    "theta_difference_cases": 77760,
+    "signed_anchor_recovery_cases": 77760
+  },
+  "negative_controls": {
+    "Q6_real_wall_z3_minimizers": [
+      -1,
+      0
+    ],
+    "noncentered_Q3_g3_K0": {
+      "actual_minimizers": [
+        -1
+      ],
+      "actual_value": -3
+    },
+    "Q3_anchor131_sheet_alias": [
+      0,
+      131
+    ]
+  }
+}

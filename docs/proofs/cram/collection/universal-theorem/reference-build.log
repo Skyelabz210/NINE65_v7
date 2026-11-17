@@ -1,0 +1,3 @@
+'KElimination.ReferenceChange.shifted_decomposition' depends on axioms: [propext]
+'KElimination.ReferenceChange.shifted_defect' depends on axioms: [propext]
+'KElimination.ReferenceChange.target_invariant_under_reference_change' depends on axioms: [propext]

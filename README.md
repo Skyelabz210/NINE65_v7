@@ -76,6 +76,12 @@ states what was checked and what could not be rerun.
 
 ## Written proofs
 
+The [CRAM proof collection](docs/proofs/cram/README.md) contains the engine
+specification, universal transport and residue-arithmetic proofs, Torus-Fiber
+reproduction evidence, and the standalone 235-declaration Lean package in
+`lean4/CRAMUniversal`. The collection preserves historical evidence and lists
+the implementation obligations still required for the CRAM engine.
+
 The [proof coverage map](docs/proofs/README.md) links the existing library
 theorems and step-by-step written derivations for interpolation, encoding,
 carry restoration, key return and error bounds. New arguments state their

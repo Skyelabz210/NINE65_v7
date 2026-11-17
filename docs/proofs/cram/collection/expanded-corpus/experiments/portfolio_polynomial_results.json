@@ -1,0 +1,80 @@
+{
+  "model": "Independent finite-field polynomial audit",
+  "fields": [
+    2,
+    3,
+    5
+  ],
+  "monic_anchor_degrees": [
+    1,
+    2
+  ],
+  "counts": {
+    "coprime_anchor_pairs": 834,
+    "bounded_quotient_recoveries": 343600,
+    "arbitrary_target_projections": 343600,
+    "out_of_window_aliases": 343600,
+    "noncoprime_anchor_rejections": 246
+  },
+  "relative_phase_checks": {
+    "modulus_pairs": 576,
+    "observations": 64664
+  },
+  "negative_controls": {
+    "quotient_ring_degree_alias": {
+      "p": 2,
+      "f": [
+        1,
+        0,
+        1
+      ],
+      "x0": [
+        1
+      ],
+      "x1": [
+        0,
+        0,
+        1
+      ],
+      "degree_quotients": [
+        0,
+        1
+      ]
+    },
+    "historical_lane_division": {
+      "x": 8,
+      "d": 2,
+      "lanes": [
+        7,
+        11
+      ],
+      "anchor": 13,
+      "observed": [
+        0,
+        4
+      ],
+      "expected": [
+        4,
+        4
+      ]
+    },
+    "open_path_angular_integral": {
+      "x": 1,
+      "M": 2,
+      "integral_over_2pi": "1/2",
+      "floor_quotient": 0
+    },
+    "noncoprime_relative_phase_alias": {
+      "M": 6,
+      "A": 10,
+      "values": [
+        0,
+        15
+      ],
+      "pair_period": 30,
+      "relative_phase_period": 15
+    },
+    "carmichael_561_unit_inverses": 320
+  },
+  "status": "PASS"
+}

@@ -1,0 +1,116 @@
+warning: unused import: `garner_reconstruct`
+   --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/subproduct_tree.rs:409:42
+    |
+409 |     use crate::garner::{GarnerConstants, garner_reconstruct, decompose as garner_decompose};
+    |                                          ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` on by default
+
+warning: function `mod_add` is never used
+  --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/arith.rs:58:8
+   |
+58 | pub fn mod_add(a: i128, b: i128, m: i128) -> i128 {
+   |        ^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: function `mod_sub` is never used
+  --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/arith.rs:64:8
+   |
+64 | pub fn mod_sub(a: i128, b: i128, m: i128) -> i128 {
+   |        ^^^^^^^
+
+warning: function `mod_neg` is never used
+  --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/arith.rs:70:8
+   |
+70 | pub fn mod_neg(x: i128, m: i128) -> i128 {
+   |        ^^^^^^^
+
+warning: field `modulus` is never read
+  --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/garner.rs:32:9
+   |
+28 | pub struct GarnerResult {
+   |            ------------ field in this struct
+...
+32 |     pub modulus: i128,
+   |         ^^^^^^^
+   |
+   = note: `GarnerResult` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `modulus` is never read
+  --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/subproduct_tree.rs:76:9
+   |
+72 | pub struct SptResult {
+   |            --------- field in this struct
+...
+76 |     pub modulus: i128,
+   |         ^^^^^^^
+   |
+   = note: `SptResult` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: method `print_tree` is never used
+   --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/subproduct_tree.rs:341:12
+    |
+122 | impl SptConstants {
+    | ----------------- method in this implementation
+...
+341 |     pub fn print_tree(&self) {
+    |            ^^^^^^^^^^
+
+warning: function `spt_reconstruct` is never used
+   --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/subproduct_tree.rs:367:8
+    |
+367 | pub fn spt_reconstruct(residues: &[i128], primes: &[i128]) -> i128 {
+    |        ^^^^^^^^^^^^^^^
+
+warning: function `spt_decompose` is never used
+   --> /workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/subproduct_tree.rs:373:8
+    |
+373 | pub fn spt_decompose(x: i128, primes: &[i128]) -> Vec<i128> {
+    |        ^^^^^^^^^^^^^
+
+warning: 9 warnings emitted
+
+
+running 38 tests
+test arith::tests::test_canonical_negative ... ok
+test arith::tests::test_mod_inverse_exceptional ... ok
+test arith::tests::test_extended_gcd_basic ... ok
+test arith::tests::test_mod_inverse_known ... ok
+test arith::tests::test_mod_square ... ok
+test arith::tests::test_pairwise_coprime_rejects_composites ... ok
+test arith::tests::test_pairwise_coprime_s4 ... ok
+test arith::tests::test_pairwise_coprime_s6 ... ok
+test garner::tests::decompose_17_s4 ... ok
+test garner::tests::decompose_23_s4 ... ok
+test garner::tests::garner_s4_exactly_6_multiplications ... ok
+test garner::tests::garner_s6_exactly_15_multiplications ... ok
+test garner::tests::paper_trace_diagnostic_confirmation ... ok
+test garner::tests::paper_trace_reconstruct_165 ... ok
+test subproduct_tree::tests::crt_inv_correctness_invariant ... ok
+test subproduct_tree::tests::decompose_17_s4 ... ok
+test subproduct_tree::tests::decompose_23_s4 ... ok
+test subproduct_tree::tests::garner_reduction_s4 ... ok
+test subproduct_tree::tests::garner_reduction_s6 ... ok
+test garner::tests::roundtrip_s4_all_residues ... ok
+test subproduct_tree::tests::paper_trace_merge_count_is_k_minus_1 ... ok
+test subproduct_tree::tests::paper_trace_reconstruct_165 ... ok
+test subproduct_tree::tests::reconstruct_n_minus_1 ... ok
+test subproduct_tree::tests::reconstruct_zero ... ok
+test subproduct_tree::tests::roundtrip_s3_odd_k_all_residues ... ok
+test subproduct_tree::tests::roundtrip_s4_all_residues ... ok
+test garner::tests::roundtrip_s6_spot_check ... ok
+test subproduct_tree::tests::s3_odd_k_merge_count ... ok
+test subproduct_tree::tests::s3_tree_levels_odd_carry ... ok
+test subproduct_tree::tests::s4_crt_inv_correct ... ok
+test subproduct_tree::tests::decompose_matches_garner_decompose ... ok
+test subproduct_tree::tests::s4_tree_levels_correct ... ok
+test subproduct_tree::tests::s6_merge_count_is_k_minus_1 ... ok
+test subproduct_tree::tests::larger_topology_k8_round_trip ... ok
+test subproduct_tree::tests::s6_tree_levels_correct ... ok
+test subproduct_tree::tests::spt_matches_garner_full_z210 ... ok
+test subproduct_tree::tests::roundtrip_s6_sampled ... ok
+test subproduct_tree::tests::spt_matches_garner_s6_sampled ... ok
+
+test result: ok. 38 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

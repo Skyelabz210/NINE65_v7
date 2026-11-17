@@ -1,0 +1,13 @@
+{
+  "status": "ARCHIVE_BUILD_SNAPSHOT_FINAL_RECEIPT_SUPPLIED_SEPARATELY",
+  "selected_account": "hackfate.ai@gmail.com",
+  "remote_folder_id": "1CbC-CoHlIsT-5XNn8O5qHVDBnRW2uYql",
+  "remote_folder_url": "https://drive.google.com/drive/folders/1CbC-CoHlIsT-5XNn8O5qHVDBnRW2uYql",
+  "campaign_folder_id": "1aux9NWx5SNRuHt2j7QssMt09PPSx2JOG",
+  "baseline_file_id": "18EO9e97BWd3-A823O_BdjjQhnin7o7js",
+  "baseline_status": "UPLOADED_READBACK_SHA256_VERIFIED",
+  "original_uploads_included": 42,
+  "integrated_lean_declarations": 223,
+  "new_lean_declarations": 49,
+  "note": "Final upload receipt and archive SHA256 are external to the immutable archive. Historical pending-account statuses are preserved only as dated snapshots."
+}

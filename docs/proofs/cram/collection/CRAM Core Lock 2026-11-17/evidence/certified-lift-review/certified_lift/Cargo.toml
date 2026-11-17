@@ -1,0 +1,9 @@
+[package]
+name = "certified_lift"
+version = "0.1.0"
+edition = "2021"
+description = "Residue lanes + a magnitude certificate. K is derived on demand; X is never assembled. Exact integers only."
+
+[dependencies]
+num-bigint = "0.4"
+num-traits = "0.2"

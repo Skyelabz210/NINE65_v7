@@ -1,0 +1,14 @@
+[
+  {"strategy":"fixed_euclid","width":1,"rounds":2,"nodes":10,"products":4,"product_depth":3},
+  {"strategy":"small_truth_table","width":1,"rounds":0,"nodes":10,"products":3,"product_depth":1},
+  {"strategy":"fixed_euclid","width":2,"rounds":4,"nodes":92,"products":54,"product_depth":11},
+  {"strategy":"small_truth_table","width":2,"rounds":0,"nodes":48,"products":23,"product_depth":2},
+  {"strategy":"fixed_euclid","width":3,"rounds":6,"nodes":636,"products":345,"product_depth":23},
+  {"strategy":"small_truth_table","width":3,"rounds":0,"nodes":177,"products":87,"product_depth":3},
+  {"strategy":"fixed_euclid","width":4,"rounds":8,"nodes":3962,"products":1750,"product_depth":31},
+  {"strategy":"small_truth_table","width":4,"rounds":0,"nodes":652,"products":303,"product_depth":3},
+  {"strategy":"fixed_euclid","width":5,"rounds":10,"nodes":1790,"products":1134,"product_depth":319},
+  {"strategy":"fixed_euclid","width":6,"rounds":12,"nodes":3144,"products":1991,"product_depth":532},
+  {"strategy":"fixed_euclid","width":7,"rounds":14,"nodes":5054,"products":3198,"product_depth":823},
+  {"strategy":"fixed_euclid","width":8,"rounds":16,"nodes":7616,"products":4815,"product_depth":1204}
+]

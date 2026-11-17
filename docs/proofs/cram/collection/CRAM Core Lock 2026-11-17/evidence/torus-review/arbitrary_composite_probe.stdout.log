@@ -1,0 +1,8 @@
+A exhaustive mixed-shape CRT cases=1,801,800; lanes=[8, 9, 25, 1001]; A=289, q2=361; alpha values=[0, 1, 2, 3]; failures=0
+B exhaustive square-anchor pairs=217,800; lanes=[8, 9, 25]; A=121, q2=169; failures=0
+C q2 boundary cases=516; k=q2=4 and q2=169>k; A=8; alpha values=[0, 1, 2, 3]; failures=0
+D q2<k ambiguity: k=5, q2=4; alpha/readout pairs=[(0, 0), (4, 0)]; non-uniqueness confirmed
+E canonical/shifted residue: x mod q2 returns alpha; (x+K*M) mod q2 returns alpha-K mod q2
+F >2^63 composite lane/check cases pass; high_even=18446743988964486098; high_odd_checks=[18446744030759878681, 18446743927680663841]
+G single-lane boundary k=1: all 8 canonical residues pass
+H non-unit inverse requests rejected: 3/3

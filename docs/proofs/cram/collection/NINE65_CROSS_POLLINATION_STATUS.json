@@ -1,0 +1,8 @@
+{
+  "snapshot_files": 126,
+  "archive": "/workspace/CRAM-NINE65-Cross-Pollination.zip",
+  "archive_bytes": 710876,
+  "archive_sha256": "cf98888a410203bf2c7bba3d2ad3802f13651a80abf1a6cccf7fac8a6811bd33",
+  "extracted_snapshot_checks": "PASS",
+  "patch_applies_to_source_base": "PASS"
+}

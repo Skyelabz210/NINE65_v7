@@ -1,0 +1,157 @@
+{
+  "status": "pass",
+  "scope": "exact finite clear-arithmetic models; original Rust programs not supplied",
+  "counts": {
+    "holte_stationary_cases": 184,
+    "holte_reversibility_cases": 184,
+    "holte_brute_matrix_cases": 15,
+    "carry_hinge_states": 2000999,
+    "valuation_product_cases": 99846,
+    "valuation_sum_cases": 99846,
+    "valuation_distinct_cases": 34000,
+    "finite_lane_dc_interpolation": 3752,
+    "finite_lane_run_profile": 8,
+    "quantizer_fiber_cases": 3239,
+    "quantizer_uniform_iff_divisible": 3239,
+    "quantizer_contiguous_fibers": 88559,
+    "bbs_local_recurrence_states": 27651,
+    "bbs_flushed_words": 2046
+  },
+  "piece_counts": {
+    "11": {
+      "add1": 2,
+      "add3": 3,
+      "times3": 5,
+      "times_floor_half": 9,
+      "square": 10,
+      "inverse_zero_extended": 10
+    },
+    "13": {
+      "add1": 2,
+      "add3": 3,
+      "times3": 5,
+      "times_floor_half": 11,
+      "square": 12,
+      "inverse_zero_extended": 12
+    },
+    "17": {
+      "add1": 2,
+      "add3": 3,
+      "times3": 5,
+      "times_floor_half": 15,
+      "square": 16,
+      "inverse_zero_extended": 16
+    },
+    "19": {
+      "add1": 2,
+      "add3": 3,
+      "times3": 5,
+      "times_floor_half": 17,
+      "square": 18,
+      "inverse_zero_extended": 18
+    },
+    "31": {
+      "add1": 2,
+      "add3": 3,
+      "times3": 5,
+      "times_floor_half": 29,
+      "square": 30,
+      "inverse_zero_extended": 30
+    },
+    "61": {
+      "add1": 2,
+      "add3": 3,
+      "times3": 5,
+      "times_floor_half": 59,
+      "square": 60,
+      "inverse_zero_extended": 60
+    },
+    "127": {
+      "add1": 2,
+      "add3": 3,
+      "times3": 5,
+      "times_floor_half": 125,
+      "square": 126,
+      "inverse_zero_extended": 126
+    },
+    "257": {
+      "add1": 2,
+      "add3": 3,
+      "times3": 5,
+      "times_floor_half": 255,
+      "square": 256,
+      "inverse_zero_extended": 256
+    }
+  },
+  "counterexamples": {
+    "valuation_not_additive_min": {
+      "p": 3,
+      "x": 1,
+      "y": 2,
+      "valuations": [
+        0,
+        0,
+        1
+      ]
+    },
+    "mod_p_loses_valuation": {
+      "p": 3,
+      "x": 3,
+      "y": 9,
+      "same_mod_p": 0,
+      "valuations": [
+        1,
+        2
+      ]
+    },
+    "mod_p_power_loses_higher_valuation": {
+      "p": 3,
+      "precision": 2,
+      "x": 9,
+      "y": 27,
+      "same_mod_9": 0,
+      "valuations": [
+        2,
+        3
+      ]
+    },
+    "addition_run_count_needs_shift": {
+      "p": 11,
+      "b": 3,
+      "values": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        0,
+        1,
+        2
+      ],
+      "runs": 3
+    },
+    "unequal_quantizer_fibers": {
+      "Q": 5,
+      "t": 2,
+      "sizes": [
+        3,
+        2
+      ],
+      "H_C_given_Y": "(3*log2(3)+2*log2(2))/5"
+    },
+    "same_arities_do_not_imply_iid_carries": {
+      "n": 2,
+      "M": 36,
+      "stationary_prob_0": "1/2",
+      "P_00": "37/72"
+    },
+    "wall_not_last_integral_chart_point": {
+      "Q": 5,
+      "last_integral_chart_point": 2,
+      "analytic_wall": "5/2"
+    }
+  }
+}

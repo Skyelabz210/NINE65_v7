@@ -1,0 +1,36 @@
+warning: associated functions `new` and `zero` are never used
+   --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/band_add.rs:89:12
+    |
+86  | impl BandInteger {
+    | ---------------- associated functions in this implementation
+...
+89  |     pub fn new(bands: [u64; NUM_BANDS]) -> Self {
+    |            ^^^
+...
+102 |     pub fn zero() -> Self {
+    |            ^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: function `band_add_assert` is never used
+   --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/band_add.rs:203:8
+    |
+203 | pub fn band_add_assert(a: &BandInteger, b: &BandInteger) -> BandInteger {
+    |        ^^^^^^^^^^^^^^^
+
+warning: function `band_add_extended` is never used
+   --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/band_add.rs:236:8
+    |
+236 | pub fn band_add_extended(a: &BandInteger, b: &BandInteger) -> ([u64; NUM_BANDS + 1], bool) {
+    |        ^^^^^^^^^^^^^^^^^
+
+warning: function `band_integer_to_u128_small` is never used
+   --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/band_add.rs:274:8
+    |
+274 | pub fn band_integer_to_u128_small(x: &BandInteger) -> u128 {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: 4 warnings emitted
+
+source=Crate-12/band_add.rs, a=9223372036854775782, b=1, band=1, got=173, expected=172
+Confirmed: a positional carry corrupts the documented independent-residue encoding.

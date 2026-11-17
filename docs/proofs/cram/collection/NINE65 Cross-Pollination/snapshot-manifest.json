@@ -1,0 +1,632 @@
+{
+  "source_base_commit": "88a7bdadbf0e1f8fbfdb2b37e9843101b8db3484",
+  "branch": "research/universal-cross-pollination",
+  "published": false,
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "bytes": 1407,
+      "sha256": "b8b5357973b25f86ce0dacb6db9c5bb6a3ae4b21bfccf46c11ea43428b479da5"
+    },
+    {
+      "path": "CLAUDE.md",
+      "bytes": 3957,
+      "sha256": "02a4b52966b7407d7c91bfa2594cd141de811dbb83394ef8db4adcc547caa0da"
+    },
+    {
+      "path": "SNAPSHOT_SCOPE.md",
+      "bytes": 793,
+      "sha256": "ae74a75b7fc17846783816663e1decaa740ed83d60415af70a1f0579491533d4"
+    },
+    {
+      "path": "crates/clockwork-core/src/bound_tracker.rs",
+      "bytes": 6563,
+      "sha256": "31f5f426c5fd7fb2209a1b98cff48ae0014a4aea2c2c22d20a3d0d71b5bff262"
+    },
+    {
+      "path": "crates/clockwork-core/src/gearstack.rs",
+      "bytes": 16420,
+      "sha256": "fed39e0faf7695b76ff434d2ff7e79949bef19d51a9d25a0814fbcfae76556b0"
+    },
+    {
+      "path": "crates/clockwork-core/src/gro.rs",
+      "bytes": 15086,
+      "sha256": "2f3923e1d81a6215b18da27f8497a40915c4debc8cc6ffbc7a00a813b598d7da"
+    },
+    {
+      "path": "crates/clockwork-core/src/integrity.rs",
+      "bytes": 13353,
+      "sha256": "211548dde09441a62d4d6543eb134262f3d12a0fb393f91ad7cf3deed5401982"
+    },
+    {
+      "path": "crates/cram-core/src/anchor.rs",
+      "bytes": 5150,
+      "sha256": "ca10bd5c4a277e27e60e63ad3cf025c34e0465140dafa2ca9e6f9c9b1a4925ab"
+    },
+    {
+      "path": "crates/cram-core/src/lib.rs",
+      "bytes": 13613,
+      "sha256": "f30a5d7e4fb19a74272e1f10ea9dd0cd79dde4cd88481d41fed238457ce124b8"
+    },
+    {
+      "path": "crates/cram-core/src/phase_lock.rs",
+      "bytes": 13017,
+      "sha256": "3b48b83d1521729b6cecd829b44554e118e4d00a48f5537bb74f1241d5acdb7a"
+    },
+    {
+      "path": "crates/exact_transcendentals/src/arrow_step.rs",
+      "bytes": 21782,
+      "sha256": "d8d56550952bf46d86d82554bc358a5a6390c40803b482d411ecbc9d90b25e66"
+    },
+    {
+      "path": "crates/exact_transcendentals/src/cram_anchor.rs",
+      "bytes": 43126,
+      "sha256": "61e623fc91edace7df63bcf03462523bb59b02296f1d91360ad991a4c076f0b4"
+    },
+    {
+      "path": "crates/exact_transcendentals/src/cram_carry.rs",
+      "bytes": 14179,
+      "sha256": "6e8e92e0e6196d5f4d3243e470a03eeafff97d591d061e588098f55eb837b851"
+    },
+    {
+      "path": "crates/exact_transcendentals/src/cram_machine.rs",
+      "bytes": 64816,
+      "sha256": "2bf0eff1aefc09655aa69b72952dce37c1fe705cd0cac969a713f3ed4c7d011c"
+    },
+    {
+      "path": "crates/exact_transcendentals/src/cram_ops.rs",
+      "bytes": 24618,
+      "sha256": "f6046ed8088a3637a3fe83fe4c55ba5d43f134ac4b28779089b5c01e08fd2b04"
+    },
+    {
+      "path": "crates/exact_transcendentals/src/cram_pde.rs",
+      "bytes": 29077,
+      "sha256": "1b87d3f77a6c329f996a48ed71647b85217dfcf12c04b702a90e1039ad0715e2"
+    },
+    {
+      "path": "crates/exact_transcendentals/src/crt_rational.rs",
+      "bytes": 8539,
+      "sha256": "4830c83fb2cfea03f144921c44785659fa3b2d9e4e85947f0338b25870b6d142"
+    },
+    {
+      "path": "crates/exact_transcendentals/src/crt_torus.rs",
+      "bytes": 7730,
+      "sha256": "e8442709afebd713bcbca3a0d4d452c14cbb704cccfa4a639bffd03b00114307"
+    },
+    {
+      "path": "crates/exact_transcendentals/src/dyn_crt.rs",
+      "bytes": 34892,
+      "sha256": "3dcd7e18d441e08063930e65b092e18c009b71309813cb0e3c5033176f6529dd"
+    },
+    {
+      "path": "crates/exact_transcendentals/src/lib.rs",
+      "bytes": 54514,
+      "sha256": "8dfeef69096a35e0c6576959f898e971ac209b29236e326efbd987c2f84f35b2"
+    },
+    {
+      "path": "crates/exact_transcendentals/src/lifted_transduction.rs",
+      "bytes": 27225,
+      "sha256": "f56a32f84455996e250ede366ff3b13352915f9df55357d39a25d9551f013f75"
+    },
+    {
+      "path": "crates/exact_transcendentals/src/transduction.rs",
+      "bytes": 40575,
+      "sha256": "38d462863903787d1e1ecbaf785f5bf10d10fd00147e9f9dfbe94256c74ee3b0"
+    },
+    {
+      "path": "crates/exact_transcendentals/src/triad.rs",
+      "bytes": 17358,
+      "sha256": "7bd7e9b5df4b085141cbfdf75d40529337e96d30501fc3ba7fc5063c072db5b0"
+    },
+    {
+      "path": "crates/exact_transcendentals/tests/holte_reversibility.rs",
+      "bytes": 10087,
+      "sha256": "aeb82d99a55da0efd04d62d2fd2cfba4c3b28f9c516079411229015a16366705"
+    },
+    {
+      "path": "crates/exact_transcendentals/tests/tropical_theta_k_lift.rs",
+      "bytes": 8913,
+      "sha256": "2e7c7ff7ce8a1d26d18700323de4e726a0602577425024d96da0e1867e63f75b"
+    },
+    {
+      "path": "crates/mana/src/executor.rs",
+      "bytes": 7009,
+      "sha256": "71978c7586f9462966c1a1cd835cacfc17b2fde00e9b883e1f5e71d9e230bb8c"
+    },
+    {
+      "path": "crates/mana/src/gso.rs",
+      "bytes": 13028,
+      "sha256": "3f075e9d488d63b65ae25dd126c8ede06245ba390a53cbe0b5ebf21c855641db"
+    },
+    {
+      "path": "crates/mana/src/lane.rs",
+      "bytes": 20827,
+      "sha256": "3b2aac029344b76df4aaf3e9c1b02fbcb8960e975a5e3aeac2734b10f0aa7dd5"
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/barrett.rs",
+      "bytes": 16820,
+      "sha256": "2738fa19e9ec599845c6f40ae5667283e4c99e7fa2bf55c009676156463627a3"
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/cyclotomic_phase.rs",
+      "bytes": 6821,
+      "sha256": "5409064f7be3aae60db90812460744c26b5f0f889e469473b5659815b1198f61"
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/integer_softmax.rs",
+      "bytes": 12151,
+      "sha256": "6995d679a641b39f4c6b48cbd425b22b81c590703c5c2971a44bdbd8f3662f28"
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/mobius_int.rs",
+      "bytes": 22426,
+      "sha256": "a6318c3eaf58bd0e6e6bc5d2d2a23dbfc4f1b31cecd95a65f8c2dfb67b98415d"
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/mq_relu.rs",
+      "bytes": 8003,
+      "sha256": "347aefd45fa050a6d4eefcb9339d8cd56afaa684a7c89eab015f93b71e83b551"
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/ntt.rs",
+      "bytes": 39214,
+      "sha256": "159952195ac045229f7794ea29dfac147b6c215e232281df422226837908cd2c"
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/pade_engine.rs",
+      "bytes": 6192,
+      "sha256": "608dbf9e913056b0215f03b5e234036b38d7a0810cede360e6878070d90cbdb9"
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/persistent_montgomery.rs",
+      "bytes": 10841,
+      "sha256": "fb2db0815211c4cb691ee075f7fb432d2320777dc0ac3f4ace971d2f07af2b2d"
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/rank_residue_divider.rs",
+      "bytes": 19030,
+      "sha256": "30d7b05fb285d94a53717ceb0d8677d36939b368eddfcc06146d2e923bd88603"
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/rational_bridge.rs",
+      "bytes": 7015,
+      "sha256": "89d3678e6f226cea629c9b45f2121d473a4a6745674f276bcb833d6bb93aa06f"
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/recumbent.rs",
+      "bytes": 35121,
+      "sha256": "f5ef292ff438157dcc6668691f968d6fa96db45f7a8b4b448a126edd0dd31078"
+    },
+    {
+      "path": "crates/nine65/src/arithmetic/transcendental_backend.rs",
+      "bytes": 4554,
+      "sha256": "f26305719db9ceaa19e1d5453b327be60bcd69c8935e5d39369300ea75b16bb0"
+    },
+    {
+      "path": "crates/nine65/src/compiler.rs",
+      "bytes": 20928,
+      "sha256": "a10899e226298a4f3fc5f8aa2a249ae6b8ddd479355c81bcf053f3796268d6d4"
+    },
+    {
+      "path": "crates/nine65/src/cram_ct_wrap.rs",
+      "bytes": 19393,
+      "sha256": "0066ecb9eec7999b6780587d8afbfadcdbb07284b156cfe14970e9ac69239975"
+    },
+    {
+      "path": "crates/nine65/src/entropy/secure.rs",
+      "bytes": 15964,
+      "sha256": "9d8594da22e2df906eef969772cc1919879f2a1058a30d6219e145a6634eeaee"
+    },
+    {
+      "path": "crates/nine65/src/entropy/shadow.rs",
+      "bytes": 8939,
+      "sha256": "b3a26292232cb33ea844a918545f7eb9715c8e8c5b8b73b10a2566e4540ffc88"
+    },
+    {
+      "path": "crates/nine65/src/kiosk/mod.rs",
+      "bytes": 1612,
+      "sha256": "11cc6474a81fd263f5887856556095f6cfe16c71d80fa279ed9630f28a4d88b5"
+    },
+    {
+      "path": "crates/nine65/src/ops/bounded_digit_circuit.rs",
+      "bytes": 35316,
+      "sha256": "92fe09431f13b1f165d8586f706127eff1d533323df6130f01aeaae4ab251c76"
+    },
+    {
+      "path": "crates/nine65/src/ops/cram_main_division.rs",
+      "bytes": 10308,
+      "sha256": "ebd8b2a307b2c7c5193510295e0fcb8fce6e0dea0ba0cf5effeed41b4ba3a7e7"
+    },
+    {
+      "path": "crates/nine65/src/ops/gso_fhe.rs",
+      "bytes": 65494,
+      "sha256": "14e9f223198e25b5816b9742bebe363992976e9aa257cb1c10f83642ad8bd6c6"
+    },
+    {
+      "path": "crates/nine65/src/ops/integer_division_circuit.rs",
+      "bytes": 11984,
+      "sha256": "cad679ede21e85689d6a1febcfab2ae5aff7c08988261d07e59a96a1f5625bd9"
+    },
+    {
+      "path": "crates/nine65/src/ops/neural.rs",
+      "bytes": 18111,
+      "sha256": "f5fc65a3d283fd504123d89faa73c27cd61e0b86d2668067bf242329c4a0af25"
+    },
+    {
+      "path": "crates/nine65/src/ops/public_refresh_circuit.rs",
+      "bytes": 19123,
+      "sha256": "8894f47baf9b277a59fd7f1c722a7556688a4ace8f91f7f46cf470b62baed26f"
+    },
+    {
+      "path": "crates/nine65/src/ops/public_refresh_return.rs",
+      "bytes": 6273,
+      "sha256": "df4278e9c2e7bd3d032394872ecef368940bb677db9953f7cb10f41fb885d56f"
+    },
+    {
+      "path": "crates/nine65/src/ops/public_refresh_source.rs",
+      "bytes": 18558,
+      "sha256": "3471fda4d5d3e516111149331cb0b02ec17f8136972b2577ebf7b44153c58ef2"
+    },
+    {
+      "path": "crates/nine65/src/ops/rns_fhe.rs",
+      "bytes": 708901,
+      "sha256": "28794ee2bcab44f86737c8f3fa9d2c7c36e6079d3722e967e571318d16e29c7b"
+    },
+    {
+      "path": "crates/private-feedback-core/README.md",
+      "bytes": 1044,
+      "sha256": "b09cdbb1444bef67403a6d1c3ec0ada9b2526853b63bf2744c46ce5cf8b23829"
+    },
+    {
+      "path": "crates/private-feedback-core/src/lib.rs",
+      "bytes": 9639,
+      "sha256": "68cd61c5590e07e41436d1d336588fd11ae04270d920deff50be59253f953b5d"
+    },
+    {
+      "path": "crates/private-feedback-nine65/README.md",
+      "bytes": 1013,
+      "sha256": "f1b8e9a9fcd6d57df2a4925bccc86ec9458fe31734d34803fe1f1cd8e1a70d5a"
+    },
+    {
+      "path": "crates/qmnf-crtbigint/README.md",
+      "bytes": 2990,
+      "sha256": "e3929e4a113a35744b4fa57d3e399f23a5c5d8e272e7b9728cb3c04be81b6aca"
+    },
+    {
+      "path": "crates/qmnf-crtbigint/src/lib.rs",
+      "bytes": 48687,
+      "sha256": "9cc53b368850950d364d2d63e616c8fc424a7c76bb4079b86190151df1a3da99"
+    },
+    {
+      "path": "crates/unhal/src/accelerator.rs",
+      "bytes": 16463,
+      "sha256": "54c776271f2a049ca1eaae15c90e203bfe766dd7af5d2ec5d628204b84746cd2"
+    },
+    {
+      "path": "crates/unhal/src/lib.rs",
+      "bytes": 3493,
+      "sha256": "d43ad4765405a4d69f72b83b61a2a6e5d2f81285a487431b6dd9b25fbee6ce3e"
+    },
+    {
+      "path": "crates/unhal/src/ntt_simd32.rs",
+      "bytes": 12085,
+      "sha256": "0adcaf3011c2ec5dabe623a6a62c9eefe5c341759623459e328b782035366bb3"
+    },
+    {
+      "path": "docs/CLAIM_EVIDENCE_LEDGER.md",
+      "bytes": 8954,
+      "sha256": "35d13feef40b18cce6fb77d5fed87b29e159353b403d9497500b03893e75af1d"
+    },
+    {
+      "path": "docs/CRAM_INTEGRATION_CONTRACT.md",
+      "bytes": 6989,
+      "sha256": "ba516f6b67fa237b7d89f1e81fffc7ca663747c11bf4d9f48ba1bfb3a206292e"
+    },
+    {
+      "path": "docs/ENCRYPTED_INTEGER_DIVISION_2026-11-02.md",
+      "bytes": 9396,
+      "sha256": "bd099bdfbefa7f2d0f7e6061d7c8966280edd567092c36b42d3d9d669cec5cdf"
+    },
+    {
+      "path": "docs/K_ELIMINATION_IMPLEMENTATIONS_2026-09-03.md",
+      "bytes": 11434,
+      "sha256": "ab0331009c414473d5dbcc714bfd84fbb1ddf083cd0a8de061cf42b6ea23ddbb"
+    },
+    {
+      "path": "docs/PUBLIC_REFRESH_STATUS.md",
+      "bytes": 9724,
+      "sha256": "c04631ab1bb82d3f85b114c4bf8ad2db9fe8982d537128fe507151f83755be0b"
+    },
+    {
+      "path": "docs/WASSAN_A1_CONTRACT.md",
+      "bytes": 6998,
+      "sha256": "e95531b1c358a87c430f3cec78019938537d51ac29f9efc2a8260a2092a328c2"
+    },
+    {
+      "path": "docs/execution/2026-11-12/CRAM_PATH_REPAIR.md",
+      "bytes": 6472,
+      "sha256": "aa213ba58c480e7533ac37b0165942fec76e0bacd551c4d8cfa5f7f7654b3826"
+    },
+    {
+      "path": "docs/execution/2026-11-12/UNIVERSAL_CROSS_POLLINATION.md",
+      "bytes": 4716,
+      "sha256": "e8689c6b11ff7e735091e46c0073e779a9c433ddab5ce1a89eadd70012a4a4a6"
+    },
+    {
+      "path": "docs/proofs/README.md",
+      "bytes": 5642,
+      "sha256": "fd0f3354c033a6b1911c19dfad48f2cbb9fd72fe7cef097f53f8a9c8a90cab87"
+    },
+    {
+      "path": "lean4/KElimination/KElimination/PublicRefreshDigit.lean",
+      "bytes": 8627,
+      "sha256": "5bce4f18881234b2b5061fcbf6335c4e097fd8ae00f00de2e433dda7f96cbc15"
+    },
+    {
+      "path": "repository.patch",
+      "bytes": 367809,
+      "sha256": "d5f4d87886365e84e0f1fd9a816c033ec89fb38a1bda115e785700d13ceb3fbb"
+    },
+    {
+      "path": "research/universal-cross-pollination/.gitignore",
+      "bytes": 42,
+      "sha256": "162a3a6e8c67c1d4bbecb9d9763a40b84ebf199f770fe8ffd4e7a01ed7e248b4"
+    },
+    {
+      "path": "research/universal-cross-pollination/ARITHMETIC_CRYPTO_CONNECTIONS.md",
+      "bytes": 23219,
+      "sha256": "8e0bb4cb2b77b8040ed147b8bc48be2aaee46883c1995d63ce08d2886dbb85ba"
+    },
+    {
+      "path": "research/universal-cross-pollination/DISPARATE_DOMAIN_CONNECTIONS.md",
+      "bytes": 27519,
+      "sha256": "7a711bbebd3365d5efb92a3c6cbc1414d8d65430ee637e2078c1095f83dc47c0"
+    },
+    {
+      "path": "research/universal-cross-pollination/INNOVATION_INVENTORY.md",
+      "bytes": 29544,
+      "sha256": "a2ee8d4a2cc6b8b47619deb71081a50fb1f31c80aca41607c379c1454d566e7f"
+    },
+    {
+      "path": "research/universal-cross-pollination/PLANNER_PROOFS.md",
+      "bytes": 9465,
+      "sha256": "67aa711568e5fec098cc8432a3872214a360477f27f2d2bca21968cdb75c3a6d"
+    },
+    {
+      "path": "research/universal-cross-pollination/README.md",
+      "bytes": 14636,
+      "sha256": "8977213653234d07ff6b505c0fbf0449ce1ed80a0ef51663e1cc82eee5c01bc8"
+    },
+    {
+      "path": "research/universal-cross-pollination/REVIEW.md",
+      "bytes": 11179,
+      "sha256": "f81c9430455fa0b5cb80448f18a37d456a186f6ee6adfcc1bb9e269e8785ea81"
+    },
+    {
+      "path": "research/universal-cross-pollination/SOURCES.md",
+      "bytes": 6380,
+      "sha256": "96433d25a66f66bca4f11ffdd235769d4893b51b8cbf09ac16f5d6c77c651f9b"
+    },
+    {
+      "path": "research/universal-cross-pollination/evidence/arithmetic-witness.log",
+      "bytes": 79,
+      "sha256": "aa02298d283b47878ad272d5d026856bfe44e2fb21e35fa1ed7c26e9eeb47400"
+    },
+    {
+      "path": "research/universal-cross-pollination/evidence/domain-witness.log",
+      "bytes": 1280,
+      "sha256": "188ee49cb188f7dc8c03373d1ed393efb03dda70c5efa6c1d49bd51d815aaab0"
+    },
+    {
+      "path": "research/universal-cross-pollination/evidence/domain_witness.json",
+      "bytes": 1280,
+      "sha256": "188ee49cb188f7dc8c03373d1ed393efb03dda70c5efa6c1d49bd51d815aaab0"
+    },
+    {
+      "path": "research/universal-cross-pollination/evidence/planner-examples.json",
+      "bytes": 1578,
+      "sha256": "2ea42cf3f6be054f007428dba26c00ef75d2ae873c5ef36ca32c8251bec898cf"
+    },
+    {
+      "path": "research/universal-cross-pollination/evidence/planner-examples.log",
+      "bytes": 1578,
+      "sha256": "2ea42cf3f6be054f007428dba26c00ef75d2ae873c5ef36ca32c8251bec898cf"
+    },
+    {
+      "path": "research/universal-cross-pollination/evidence/repository-source-manifest.json",
+      "bytes": 12685,
+      "sha256": "8418cc6f149d83177b4278275bf1dc07d8fb01c3765df54c188b028176bc5358"
+    },
+    {
+      "path": "research/universal-cross-pollination/evidence/reviewer-oracles.log",
+      "bytes": 563,
+      "sha256": "1a14c491eb6f11de0c65353adf0f31c4e87ef4f53ec9a3d2d363bb35ebb422e4"
+    },
+    {
+      "path": "research/universal-cross-pollination/evidence/reviewer_oracles.json",
+      "bytes": 563,
+      "sha256": "1a14c491eb6f11de0c65353adf0f31c4e87ef4f53ec9a3d2d363bb35ebb422e4"
+    },
+    {
+      "path": "research/universal-cross-pollination/evidence/reviewer_oracles.py",
+      "bytes": 3643,
+      "sha256": "57b47008ed7e9023df87ed8b8dc4e4d985bf8bc640026d10824c63b6af9e2329"
+    },
+    {
+      "path": "research/universal-cross-pollination/evidence/reviewer_scope.json",
+      "bytes": 3311,
+      "sha256": "3b8da10cb28522d32a4550b3fda6aa3bb5c03f3eda4c49f7b60cb29ed3aea664"
+    },
+    {
+      "path": "research/universal-cross-pollination/evidence/unit-tests.log",
+      "bytes": 1969,
+      "sha256": "f2b04290fad8145f90b22c50d63604b950f42c36096d79f921a16f21d1bbc77a"
+    },
+    {
+      "path": "research/universal-cross-pollination/evidence/verification.json",
+      "bytes": 4854,
+      "sha256": "387fe7f74fa6d4818f0eccae81cbebe5476c82222af52481ac0031b9d8d29346"
+    },
+    {
+      "path": "research/universal-cross-pollination/evidence/workspace-tooling.json",
+      "bytes": 450,
+      "sha256": "c37d5228a29085bcc635f6d5c82ccf097fe169cfd450301569946132f595f08f"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/AllResearch.lean",
+      "bytes": 255,
+      "sha256": "2849639703577815b9d8a016898adc4e60beb1c649fd91b6bac86e4f44867a7b"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/ConsumerTransport.lean",
+      "bytes": 10307,
+      "sha256": "7f112491a2c01eef4508f7dffbd18afbe8718121e3cb50687171e056649219a7"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/CostedReadout.lean",
+      "bytes": 5230,
+      "sha256": "2946863aa7d1252b8687f0feb9073f073b4ba769368567cc9ea9cc3987a534d7"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/CoupledAnchors.lean",
+      "bytes": 11150,
+      "sha256": "4357100f2e4b0632d36c1e16cfcaa5da10fe2285a8029773aa1b2112a8b9e95d"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/ExactObservation.lean",
+      "bytes": 6074,
+      "sha256": "3e4f0dc07d9ecb189b4b3a7e490d07fad3a0f828e4ad773fa251876263a3f195"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/IntegerSpecialization.lean",
+      "bytes": 18563,
+      "sha256": "c7788921b59a7244e54d53cf1bda2013e3bacea98b9392b29c67b1fe91a3fa88"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/README.md",
+      "bytes": 5790,
+      "sha256": "7fb2d9e2fabb6c8570c1f999a48d9929a19a6c1c9d89c42192fd4313229ba710"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/ReferenceChange.lean",
+      "bytes": 2855,
+      "sha256": "ecd6296ba0e850d03a6cd7093947a0d1803b37f3502c1c77256c8f242711b0e1"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/ResidueAlgorithms.lean",
+      "bytes": 7247,
+      "sha256": "852030cea0a3404654d2a77f677e35a147efc917be33d26ba85ceb6b6d5b7b67"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/ResiduePrimitives.lean",
+      "bytes": 7992,
+      "sha256": "61ad481a6dd7e7c9831259416a883a90c8b82162ab326dbc293945425ef9de95"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/RingReadout.lean",
+      "bytes": 8540,
+      "sha256": "033dc2f2903b7fcffcb7576fcbdfba70dff2cf247b9a9f0d8ce2dd5495d1e67b"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/StarLift.lean",
+      "bytes": 6186,
+      "sha256": "90947ad64ef314f2e4f07af16a1586f2685ba9e453e74da097b5ea9b44cdde9c"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/UniversalKElimination.lean",
+      "bytes": 225,
+      "sha256": "0b1ea7311dc2ed7d1259668649e35e63d9ac71a5899f24345bdff4bc1bdbd458"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/UniversalLift.lean",
+      "bytes": 11114,
+      "sha256": "00da716f76d10806dc86f3d5a4206c380ea8f6b5a99c6d4f788c4053efba2924"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/check_negative_controls.py",
+      "bytes": 2622,
+      "sha256": "2bce4a1ad6d93965dee42eb74bcd36af2b3cdbef46ca9638738349be662338fd"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/check_proofs.py",
+      "bytes": 5962,
+      "sha256": "ebc66973f65dabd085a38b4b49cf86b69b92bf9a9a977ca2433fcc7eab2c6eb5"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/dependency-provenance.json",
+      "bytes": 3195,
+      "sha256": "700c5d15399da023ffb9ca770096464dc626ede477058af060ec9eba5e880a06"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/lean-toolchain",
+      "bytes": 29,
+      "sha256": "194fcae7a59d3268baa175bd3e352dafab6954fe08a5b7caec13bedf36f80315"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/negative-controls.json",
+      "bytes": 738,
+      "sha256": "9d17b9032e717d0204f038f9d8744eca6c5894a093759fbb870f3bc3427c6696"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/verification.json",
+      "bytes": 26756,
+      "sha256": "a14cae236609a695ba5b64f8ac636b7107b7a98730f53ccc969149e5660e9cde"
+    },
+    {
+      "path": "research/universal-cross-pollination/lean/verification.log",
+      "bytes": 14556,
+      "sha256": "87dd8e170df8524603f9e3b5ab32b2f94f02fd18e1d6308ceb0e475f2fac2935"
+    },
+    {
+      "path": "research/universal-cross-pollination/reference/arithmetic_witness.py",
+      "bytes": 1611,
+      "sha256": "067a30e5718af72cdd09e916427e7be12bf61e3a82b5aba6148ccd8f045daeab"
+    },
+    {
+      "path": "research/universal-cross-pollination/reference/domain_witness.py",
+      "bytes": 5735,
+      "sha256": "2b10c2e0396a5d8554310ab186504f678de269759214b748592160f57937e8b9"
+    },
+    {
+      "path": "research/universal-cross-pollination/reference/future_query.py",
+      "bytes": 2371,
+      "sha256": "fa1756dee867966d19eddbbf87894402cd20841dd8597aa29a5b00eb0079afc8"
+    },
+    {
+      "path": "research/universal-cross-pollination/reference/query_planner.py",
+      "bytes": 6830,
+      "sha256": "3a5fea21b6f3925aedcb30665701c80b46b9973c0ef90ac99f5a8eea81bf189b"
+    },
+    {
+      "path": "research/universal-cross-pollination/reference/test_future_query.py",
+      "bytes": 3181,
+      "sha256": "51e3d25916775a24e3ced0bb524526425118fe74b4c6831f2a97eda73eca208e"
+    },
+    {
+      "path": "research/universal-cross-pollination/reference/test_query_planner.py",
+      "bytes": 5902,
+      "sha256": "fc53fee6d1646bbb9188912a303599c655c650c2f9bb5fb2d44da29b328092b7"
+    },
+    {
+      "path": "research/universal-cross-pollination/verify.py",
+      "bytes": 4395,
+      "sha256": "05cf91e5f5576ea8c7027a75b7665b100e94996b597707d3ed1617f4f9c66de7"
+    },
+    {
+      "path": "verified-innovations/docs/VALIDATION_SUMMARY.md",
+      "bytes": 7713,
+      "sha256": "cb0477fdbff1874853b2dd45c4aa89a4fa4eeab29b0945fb18f2a94ddd3b761f"
+    },
+    {
+      "path": "verified-innovations/proofs/coq/EncryptedQuantum.v",
+      "bytes": 3014,
+      "sha256": "aa59108d8e561bbbd499622eda9a405df085fed9afa33a77ce4bddaa539b9b86"
+    },
+    {
+      "path": "verified-innovations/proofs/coq/StateCompression.v",
+      "bytes": 5039,
+      "sha256": "cea0f0124cf72d3ed9028142104d539d85792f17d12ef3b88f47baa7b70b684a"
+    }
+  ]
+}

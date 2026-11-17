@@ -1,0 +1,68 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65-swarm-gcd/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65-swarm-gcd/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/NINE65-swarm-gcd/crates/nine65)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.48s
+     Running unittests src/lib.rs (/workspace/.tooling/target-gcd-campaign/debug/deps/nine65-36b47786ddf418df)
+
+running 17 tests
+test ops::rns_fhe::cram_main::division::circuit::tests::fixed_euclid_round_bound_exhaustive_through_eight_bits ... ok
+test ops::rns_fhe::cram_main::division::circuit::tests::gcd_circuit_eight_bit_boundaries_and_seeded_cases ... ok
+test ops::rns_fhe::cram_main::division::circuit::tests::exhaustive_unsigned_division_with_unequal_widths ... ok
+GCD repeated-history completed=7, then typed noise refusal
+test ops::rns_fhe::cram_main::division::gcd_tests::encrypted_gcd_history_eventually_refuses_without_reset ... ok
+encrypted GCD n=8 exhaustive one-bit plan: (2, 10, 4, 136000)
+test ops::rns_fhe::cram_main::division::gcd_tests::encrypted_gcd_one_bit_exhaustive_and_public_schedule ... ok
+GCD width 1: rounds=2, gates=10, products=4, budget=136000
+GCD width 2: rounds=4, gates=92, products=54, budget=72000
+test ops::rns_fhe::cram_main::division::gcd_tests::encrypted_gcd_width_key_and_noise_refusals ... ok
+test ops::rns_fhe::cram_main::division::circuit::tests::gcd_circuit_exhaustive_small_unequal_widths ... ok
+test ops::rns_fhe::cram_main::division::circuit::tests::full_u64_boundaries_and_random_inputs ... ok
+GCD width 3: REFUSED at gate 625: certified phase bound exhausted before operation
+GCD width 4: REFUSED at gate 2295: certified phase bound exhausted before operation
+GCD width 5: REFUSED at gate 131: certified phase bound exhausted before operation
+GCD width 6: REFUSED at gate 138: certified phase bound exhausted before operation
+GCD width 7: REFUSED at gate 145: certified phase bound exhausted before operation
+GCD width 8: REFUSED at gate 147: certified phase bound exhausted before operation
+test ops::rns_fhe::cram_main::division::gcd_tests::encrypted_gcd_profiles_and_admitted_two_bit_cases ... ok
+test ops::rns_fhe::cram_main::division::tests::division_preserves_history_and_hides_zero_in_public_metadata ... ok
+native GCD n=8192 width=1 gcd(0,0)=0 rounds=2 products=4 budget=18000
+test ops::rns_fhe::cram_main::division::tests::encrypted_divisor_sharing_a_ciphertext_lane ... ok
+test ops::rns_fhe::cram_main::division::tests::integer_ingress_checks_width_and_key_domain ... ok
+
+thread 'ops::rns_fhe::cram_main::division::gcd_tests::large_ring_research_gcd_two_bit_checks_every_coefficient' panicked at crates/nine65/src/ops/cram_main_gcd_tests.rs:190:48:
+called `Result::unwrap()` on an `Err` value: Noise { gate: 58, reason: "certified phase bound exhausted before operation" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test ops::rns_fhe::cram_main::division::gcd_tests::large_ring_research_gcd_two_bit_checks_every_coefficient ... FAILED
+native GCD n=8192 width=1 gcd(1,0)=1 rounds=2 products=4 budget=18000
+secure_128 width 1: 2 products, 42000 millibits
+secure_128 width 2: integer division preflight at gate 18: certified phase bound exhausted before operation
+test ops::rns_fhe::cram_main::division::tests::encrypted_division_small_words_and_zero_status ... ok
+secure_128 width 3: integer division preflight at gate 35: certified phase bound exhausted before operation
+secure_128 width 4: integer division preflight at gate 63: certified phase bound exhausted before operation
+secure_128 width 5: integer division preflight at gate 19: certified phase bound exhausted before operation
+test ops::rns_fhe::cram_main::division::gcd_tests::native_encrypted_gcd_checks_every_plaintext_coefficient ... ok
+secure_192 width 1: 2 products, 66000 millibits
+secure_192 width 2: 19 products, 20000 millibits
+secure_192 width 3: integer division preflight at gate 35: certified phase bound exhausted before operation
+secure_192 width 4: integer division preflight at gate 63: certified phase bound exhausted before operation
+secure_192 width 5: integer division preflight at gate 19: certified phase bound exhausted before operation
+secure_256 width 1: 2 products, 95000 millibits
+secure_256 width 2: 19 products, 49000 millibits
+secure_256 width 3: 79 products, 3000 millibits
+secure_256 width 4: 287 products, 0 millibits
+secure_256 width 5: integer division preflight at gate 30: certified phase bound exhausted before operation
+test ops::rns_fhe::cram_main::division::tests::native_integer_division_preflight_profiles ... ok
+test ops::rns_fhe::cram_main::division::tests::native_encrypted_integer_division_checks_every_plaintext_coefficient has been running for over 60 seconds
+test ops::rns_fhe::cram_main::division::tests::native_encrypted_integer_division_checks_every_plaintext_coefficient ... ok
+
+failures:
+
+failures:
+    ops::rns_fhe::cram_main::division::gcd_tests::large_ring_research_gcd_two_bit_checks_every_coefficient
+
+test result: FAILED. 16 passed; 1 failed; 0 ignored; 0 measured; 1395 filtered out; finished in 459.18s
+
+error: test failed, to rerun pass `-p nine65 --lib`
+error: 1 target failed:
+    `-p nine65 --lib`

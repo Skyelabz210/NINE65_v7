@@ -1,0 +1,154 @@
+[
+  {
+    "file": "./TORUS_FIBER_CHECKS_REPRO_REPORT_2026-11-17.md",
+    "pass": true
+  },
+  {
+    "file": "./input_archive/torus_fiber_checks_2.zip",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/adapt_arbitrary_composite_bench.py",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/adapt_coprime_bench.py",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/arbitrary_composite_benchmark_summary.csv",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/arbitrary_composite_metadata.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/arbitrary_composite_probe.py",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/arbitrary_composite_probe_output.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/arbitrary_shared_checks.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/arbitrary_shared_checks_output.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/carry_questions_rerun.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/coprime_composite_probe.py",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/coprime_composite_probe_output.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/exact_checks_rerun.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/host_metadata.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/kbench_arbitrary_composite.rs",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/kbench_arbitrary_composite_run_1.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/kbench_arbitrary_composite_run_2.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/kbench_arbitrary_composite_run_3.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/kbench_coprime.rs",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/kbench_coprime_run_1.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/kbench_coprime_run_2.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/kbench_coprime_run_3.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/kbench_default_run_1.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/kbench_default_run_2.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/kbench_default_run_3.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/lunations_rerun.txt",
+    "pass": true
+  },
+  {
+    "file": "./reproduction/strict_int_audit_rerun.txt",
+    "pass": true
+  },
+  {
+    "file": "./torus_fiber_checks/README.txt",
+    "pass": true
+  },
+  {
+    "file": "./torus_fiber_checks/carry_questions.py",
+    "pass": true
+  },
+  {
+    "file": "./torus_fiber_checks/carry_questions_output.txt",
+    "pass": true
+  },
+  {
+    "file": "./torus_fiber_checks/exact_checks.py",
+    "pass": true
+  },
+  {
+    "file": "./torus_fiber_checks/exact_checks_output.txt",
+    "pass": true
+  },
+  {
+    "file": "./torus_fiber_checks/kbench.rs",
+    "pass": true
+  },
+  {
+    "file": "./torus_fiber_checks/kbench_output.txt",
+    "pass": true
+  },
+  {
+    "file": "./torus_fiber_checks/lunations.py",
+    "pass": true
+  },
+  {
+    "file": "./torus_fiber_checks/lunations_output.txt",
+    "pass": true
+  },
+  {
+    "file": "./torus_fiber_checks/strict_int_audit.py",
+    "pass": true
+  }
+]

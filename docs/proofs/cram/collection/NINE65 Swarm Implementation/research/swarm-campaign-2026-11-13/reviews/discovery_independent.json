@@ -1,0 +1,21 @@
+{
+  "status": "PASS",
+  "seed": 913651,
+  "scope": "Independent clear-model tests, not new Lean or encrypted execution",
+  "counts": {
+    "module_certificates": 432,
+    "decoder_sources": 2954,
+    "collision_certificates": 198,
+    "orientation_triples": 729,
+    "bbs_configurations": 1023,
+    "interpolation_points": 50187,
+    "jet_instances_including_composite_rings": 1100
+  },
+  "negative_controls": [
+    "general-jump interpolation obstruction"
+  ],
+  "source_sha256": {
+    "discovery_independent.py": "711a6b45ec79beb0af68085a1df34ab293a62935a79a42359fde6c7f0502f529",
+    "models.py": "231b68b99ac9e1f80eebfb7488836c5a1fe896f6480442b342d68cd807d502cf"
+  }
+}

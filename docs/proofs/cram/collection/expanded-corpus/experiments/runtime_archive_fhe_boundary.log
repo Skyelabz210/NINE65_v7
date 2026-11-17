@@ -1,0 +1,227 @@
+warning: function `mod_sub` is never used
+  --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/arith.rs:64:8
+   |
+64 | pub fn mod_sub(a: i128, b: i128, m: i128) -> i128 {
+   |        ^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: function `mod_neg` is never used
+  --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/arith.rs:70:8
+   |
+70 | pub fn mod_neg(x: i128, m: i128) -> i128 {
+   |        ^^^^^^^
+
+warning: methods `apply`, `validity_fraction`, and `label` are never used
+  --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/operators.rs:32:12
+   |
+29 | impl RootOp {
+   | ----------- methods in this implementation
+...
+32 |     pub fn apply(self, a: i128, b: i128, modulus: i128) -> Option<i128> {
+   |            ^^^^^
+...
+49 |     pub fn validity_fraction(self, modulus: i128) -> (i128, i128) {
+   |            ^^^^^^^^^^^^^^^^^
+...
+57 |     pub fn label(self) -> &'static str {
+   |            ^^^^^
+
+warning: variants `Identity`, `Negate`, and `Invert` are never constructed
+  --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/operators.rs:75:5
+   |
+73 | pub enum PostProc {
+   |          -------- variants in this enum
+74 |     /// x → x  (no transformation)
+75 |     Identity,
+   |     ^^^^^^^^
+76 |     /// x → -x ≡ p - x (mod p)
+77 |     Negate,
+   |     ^^^^^^
+...
+83 |     Invert,
+   |     ^^^^^^
+   |
+   = note: `PostProc` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: methods `apply` and `label` are never used
+  --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/operators.rs:89:12
+   |
+86 | impl PostProc {
+   | ------------- methods in this implementation
+...
+89 |     pub fn apply(self, x: i128, modulus: i128) -> Option<i128> {
+   |            ^^^^^
+...
+98 |     pub fn label(self) -> &'static str {
+   |            ^^^^^
+
+warning: fields `root_op` and `post_proc` are never read
+   --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/operators.rs:117:9
+    |
+113 | pub struct LaneConfig {
+    |            ---------- fields in this struct
+...
+117 |     pub root_op: RootOp,
+    |         ^^^^^^^
+118 |     /// The unary post-processor Ψ_i applied after the root.
+119 |     pub post_proc: PostProc,
+    |         ^^^^^^^^^
+    |
+    = note: `LaneConfig` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: methods `evaluate` and `validity_fraction` are never used
+   --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/operators.rs:129:12
+    |
+122 | impl LaneConfig {
+    | --------------- methods in this implementation
+...
+129 |     pub fn evaluate(&self, a: i128, b: i128) -> Option<i128> {
+    |            ^^^^^^^^
+...
+137 |     pub fn validity_fraction(&self) -> (i128, i128) {
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: fields `modulus`, `mixed_radix_coeffs`, and `multiplication_count` are never read
+  --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/garner.rs:32:9
+   |
+28 | pub struct GarnerResult {
+   |            ------------ fields in this struct
+...
+32 |     pub modulus: i128,
+   |         ^^^^^^^
+33 |     /// The mixed-radix coefficients v_1, v_2, ..., v_k.
+34 |     pub mixed_radix_coeffs: Vec<i128>,
+   |         ^^^^^^^^^^^^^^^^^^
+...
+37 |     pub multiplication_count: usize,
+   |         ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `GarnerResult` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: function `verify_roundtrip` is never used
+   --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/garner.rs:169:8
+    |
+169 | pub fn verify_roundtrip(x: i128, primes: &[i128], constants: &GarnerConstants) -> bool {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: fields `modulus` and `name` are never read
+  --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/topology.rs:23:9
+   |
+19 | pub struct Topology {
+   |            -------- fields in this struct
+...
+23 |     pub modulus: i128,
+   |         ^^^^^^^
+...
+27 |     pub name: &'static str,
+   |         ^^^^
+   |
+   = note: `Topology` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: multiple methods are never used
+   --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/topology.rs:50:12
+    |
+30  | impl Topology {
+    | ------------- methods in this implementation
+...
+50  |     pub fn k(&self) -> usize { self.lanes.len() }
+    |            ^
+...
+54  |     pub fn operator_state_space(&self) -> u64 {
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+61  |     pub fn shadow_entropy_bits(&self) -> usize {
+    |            ^^^^^^^^^^^^^^^^^^^
+...
+67  |     pub fn garner_multiplication_count(&self) -> usize {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+80  |     pub fn validity_fraction(&self) -> (i128, i128) {
+    |            ^^^^^^^^^^^^^^^^^
+...
+93  |     pub fn validity_percent(&self) -> f64 {
+    |            ^^^^^^^^^^^^^^^^
+...
+100 |     pub fn div_lane_count(&self) -> usize {
+    |            ^^^^^^^^^^^^^^
+...
+108 |     pub fn is_all_sqr(&self) -> bool {
+    |            ^^^^^^^^^^
+...
+113 |     pub fn print_summary(&self) {
+    |            ^^^^^^^^^^^^^
+
+warning: function `cram_s4_champion` is never used
+   --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/topology.rs:146:8
+    |
+146 | pub fn cram_s4_champion() -> Topology {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `cram_s4_plus` is never used
+   --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/topology.rs:180:8
+    |
+180 | pub fn cram_s4_plus() -> Topology {
+    |        ^^^^^^^^^^^^
+
+warning: function `cram_s3_minimal` is never used
+   --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/topology.rs:192:8
+    |
+192 | pub fn cram_s3_minimal() -> Topology {
+    |        ^^^^^^^^^^^^^^^
+
+warning: enum `CramError` is never used
+  --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/engine.rs:32:10
+   |
+32 | pub enum CramError {
+   |          ^^^^^^^^^
+
+warning: type alias `CramResult` is never used
+  --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/engine.rs:44:10
+   |
+44 | pub type CramResult<T> = Result<T, CramError>;
+   |          ^^^^^^^^^^
+
+warning: multiple methods are never used
+   --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/engine.rs:90:12
+    |
+81  | impl CramEngine {
+    | --------------- methods in this implementation
+...
+90  |     pub fn decompose(&self, x: i128) -> ResidueTuple {
+    |            ^^^^^^^^^
+...
+107 |     pub fn execute_residue(
+    |            ^^^^^^^^^^^^^^^
+...
+142 |     pub fn execute(&self, a_int: i128, b_int: i128) -> CramResult<i128> {
+    |            ^^^^^^^
+...
+151 |     pub fn execute_traced(&self, a_int: i128, b_int: i128)
+    |            ^^^^^^^^^^^^^^
+...
+176 |     pub fn execute_chain_lazy(
+    |            ^^^^^^^^^^^^^^^^^^
+...
+204 |     pub fn execute_chain_traditional(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+228 |     pub fn empirical_validity(&self, n: i128) -> (usize, usize) {
+    |            ^^^^^^^^^^^^^^^^^^
+...
+242 |     pub fn print_trace(&self, a_int: i128, b_int: i128) {
+    |            ^^^^^^^^^^^
+
+warning: field `k_elim_prime` is never read
+  --> /workspace/k-elimination-audit/expanded-corpus/experiments/../archives/14-Crate-12/fhe.rs:60:9
+   |
+55 | pub struct Nine65Engine {
+   |            ------------ field in this struct
+...
+60 |     pub k_elim_prime: i128,
+   |         ^^^^^^^^^^^^
+
+warning: 18 warnings emitted
+
+source=Crate-12/fhe.rs, initial=1, additions=5, expected=6, got=0, bootstraps=1, operations=5
+Confirmed: this archived simulator substitutes encrypt(0) after failed noise inversion. This is not the current NINE65 encrypted backend.

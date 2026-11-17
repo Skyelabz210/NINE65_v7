@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "scope": "Actual Boolean DAG clear evaluation; not ciphertext execution",
+  "equal_width_input_pairs": 87380,
+  "unequal_width_input_pairs": 7168,
+  "total_actual_dag_evaluations": 95448,
+  "gate_counts_by_width": {
+    "1": 10,
+    "2": 92,
+    "3": 636,
+    "4": 3962,
+    "5": 1790,
+    "6": 3144,
+    "7": 5054,
+    "8": 7616
+  },
+  "oracle": "Enumerate common divisors, independent of Euclidean recurrence",
+  "checks": [
+    "Exact GCD output",
+    "Every wire dependency strictly precedes current gate",
+    "DisjointOr inputs never both true",
+    "Private adapter marker=true and remainder empty"
+  ],
+  "commands": [
+    "RUSTUP_HOME=/workspace/.tooling/rustup /workspace/.tooling/cargo/bin/rustc --edition=2021 -O gcd_dag_independent.rs -o /workspace/.tooling/gcd-dag-review",
+    "/workspace/.tooling/gcd-dag-review"
+  ],
+  "source_sha256": {
+    "gcd_dag_independent.rs": "43f61ce2dbac7916cd5231d543d01845d6a90188481d75f72f6f0a48e7c6b461",
+    "integer_division_circuit_review_copy.rs": "032dc4e275e3138e96dc7c43caf4b2218243e35cb3b8e6b97eedc506df62dbd2"
+  },
+  "direct_table_pairs_all_width_combinations_1_to_4": 900
+}

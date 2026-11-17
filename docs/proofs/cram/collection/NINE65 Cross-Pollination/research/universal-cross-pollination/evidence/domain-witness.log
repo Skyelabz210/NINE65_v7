@@ -1,0 +1,52 @@
+{
+  "document_links": {
+    "relative_link_occurrences_checked": 11,
+    "status": "PASS"
+  },
+  "floor_division": {
+    "criterion": "b == 1 or P % (c*b) == 0",
+    "divisor_range_inclusive": [
+      1,
+      8
+    ],
+    "observation_period_range_inclusive": [
+      1,
+      64
+    ],
+    "parameter_triples": 4096,
+    "residue_positions_evaluated": 18432,
+    "status": "PASS",
+    "target_modulus_range_inclusive": [
+      1,
+      8
+    ]
+  },
+  "modular_max_merge": {
+    "indistinguishable_sources": [
+      0,
+      5
+    ],
+    "merge_operand": 3,
+    "modulus": 5,
+    "negative_controls": 1,
+    "projected_max_results": [
+      3,
+      0
+    ],
+    "status": "PASS"
+  },
+  "query_error_code": {
+    "allowed_symbol_errors": 1,
+    "alphabet_size": 5,
+    "codeword_length": 3,
+    "distinct_target_codewords": 5,
+    "received_words": 125,
+    "received_words_with_no_compatible_target": 60,
+    "received_words_with_one_compatible_target": 65,
+    "status": "PASS"
+  },
+  "repository_head": "88a7bdadbf0e1f8fbfdb2b37e9843101b8db3484",
+  "scope": "Finite mathematical witnesses and document links; not general formal proof or production execution",
+  "status": "PASS",
+  "witness_source_sha256": "2b10c2e0396a5d8554310ab186504f678de269759214b748592160f57937e8b9"
+}

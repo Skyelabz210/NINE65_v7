@@ -1,0 +1,15 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.00s
+     Running `target/debug/encoder_demo`
+Multi-turn absolute encoder — 35/36 adjacent-composite gears
+Supercycle: 1260 positions
+Exhaustive self-test: 0 errors
+
+      X |  gear35  gear36 |  recovered
+      0 |       0       0 |          0  OK
+    100 |      30      28 |        100  OK
+    629 |      34      17 |        629  OK
+    630 |       0      18 |        630  OK
+   1000 |      20      28 |       1000  OK
+   1259 |      34      35 |       1259  OK
+
+Per-readout: 1 subtraction, 1 modulo, 1 multiply, 1 add.

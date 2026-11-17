@@ -1,0 +1,922 @@
+{
+  "generated_utc": "2026-11-12T16:05:57.694529+00:00",
+  "scope": "Bounded current runtime and Crate-12 audit; not a full repository certification",
+  "current_repository": {
+    "path": "/workspace/NINE65_v7",
+    "commit": "88a7bdadbf0e1f8fbfdb2b37e9843101b8db3484",
+    "status_after": "",
+    "rustc": "rustc 1.89.0 (29483883e 2025-08-04)\nbinary: rustc\ncommit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2\ncommit-date: 2025-08-04\nhost: x86_64-unknown-linux-gnu\nrelease: 1.89.0\nLLVM version: 20.1.7",
+    "cargo": "cargo 1.89.0 (c24e10642 2025-06-23)",
+    "test_profile": "release lib unit tests, cfg(test), locked dependency graph",
+    "features": {
+      "selection": "package defaults; no explicit --features or --no-default-features",
+      "default": [
+        "exact_transcendentals_backend",
+        "accelerated",
+        "exact_rational",
+        "clockwork",
+        "adaptive-threading"
+      ],
+      "explicitly_not_enabled": [
+        "architecture-meter",
+        "allow_insecure",
+        "slow_tests",
+        "reference_ntt",
+        "parallel",
+        "generic-rayon"
+      ]
+    },
+    "test_environment": {
+      "CARGO_HOME": "/workspace/.tooling/cargo",
+      "RUSTUP_HOME": "/workspace/.tooling/rustup",
+      "CARGO_TARGET_DIR": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/nine65",
+      "CARGO_BUILD_JOBS": "2",
+      "PATH_prefix": "/workspace/.tooling/cargo/bin"
+    },
+    "commands": [
+      [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "nine65",
+        "--lib",
+        "--release",
+        "--no-fail-fast",
+        "cram_main::division::",
+        "--",
+        "--nocapture"
+      ],
+      [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "nine65",
+        "--lib",
+        "--release",
+        "--no-fail-fast",
+        "arithmetic::rank_residue_divider::",
+        "--",
+        "--nocapture"
+      ],
+      [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "nine65",
+        "--lib",
+        "--release",
+        "--no-fail-fast",
+        "arithmetic::recumbent::",
+        "--",
+        "--nocapture"
+      ],
+      [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "nine65",
+        "--lib",
+        "--release",
+        "--no-fail-fast",
+        "arithmetic::exact_scale_round::",
+        "--",
+        "--nocapture"
+      ],
+      [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "nine65",
+        "--lib",
+        "--release",
+        "--no-fail-fast",
+        "arithmetic::compare_bit::",
+        "--",
+        "--nocapture"
+      ]
+    ],
+    "targeted_test_count": 52,
+    "failures": 0,
+    "ignored": 0,
+    "initial_zero_match_filter_retained_not_counted": "ops::cram_main::division::",
+    "source_gate": {
+      "command": [
+        "python3",
+        "scripts/check_wr1_exact_route_denylist.py"
+      ],
+      "selftest_command": [
+        "python3",
+        "scripts/check_wr1_exact_route_denylist.py",
+        "--self-test"
+      ],
+      "route_sources": 4,
+      "production_lines": 2762,
+      "patterns": 19,
+      "violations": 0,
+      "negative_controls": 16
+    },
+    "native_refresh": "Not rerun; parent audit has separate historical/current refresh evidence"
+  },
+  "current_source_hashes": [
+    {
+      "path": "/workspace/NINE65_v7/AGENTS.md",
+      "bytes": 1407,
+      "sha256": "b8b5357973b25f86ce0dacb6db9c5bb6a3ae4b21bfccf46c11ea43428b479da5"
+    },
+    {
+      "path": "/workspace/NINE65_v7/CLAUDE.md",
+      "bytes": 3957,
+      "sha256": "02a4b52966b7407d7c91bfa2594cd141de811dbb83394ef8db4adcc547caa0da"
+    },
+    {
+      "path": "/workspace/NINE65_v7/Cargo.toml",
+      "bytes": 1360,
+      "sha256": "37bd46f5ac77fe53e191fef462508ad65b85c0f1af551f2b1273af3959eae892"
+    },
+    {
+      "path": "/workspace/NINE65_v7/Cargo.lock",
+      "bytes": 27773,
+      "sha256": "cfe3bdbced103df767be8d03ec7c57aefb0e84a878dc1ee6f7a2a099ac5003f5"
+    },
+    {
+      "path": "/workspace/NINE65_v7/crates/nine65/Cargo.toml",
+      "bytes": 13531,
+      "sha256": "5e45ec471740f612230d66a9e1f421632edbc00484c4586f4add594324048181"
+    },
+    {
+      "path": "/workspace/NINE65_v7/docs/ENCRYPTED_INTEGER_DIVISION_2026-11-02.md",
+      "bytes": 9396,
+      "sha256": "bd099bdfbefa7f2d0f7e6061d7c8966280edd567092c36b42d3d9d669cec5cdf"
+    },
+    {
+      "path": "/workspace/NINE65_v7/docs/FPD_DIVISION_SCOPE_2026-11-02.md",
+      "bytes": 10946,
+      "sha256": "60e4fb17d31a4e9fc227066717fafdec6d1f8d8f2ecbd7440dd98f93d11cfbc1"
+    },
+    {
+      "path": "/workspace/NINE65_v7/docs/work_requests/WR1_EXACT_EVALUATOR_INTEGRATION.md",
+      "bytes": 34190,
+      "sha256": "5ef10f1a65de012dec3149bc32b9603aa27542f40cc445f510f619a0509af49a"
+    },
+    {
+      "path": "/workspace/NINE65_v7/crates/nine65/src/ops/cram_public.rs",
+      "bytes": 20292,
+      "sha256": "242e4edafa691ba8cf2a8f4a92cb45d270310289c7cbf093ab440c771d7c3e22"
+    },
+    {
+      "path": "/workspace/NINE65_v7/crates/nine65/src/ops/cram_main.rs",
+      "bytes": 11703,
+      "sha256": "000f0fc1432aac4f646c47ccf6c03eb149ab81905b0c276da34f4557612f0aed"
+    },
+    {
+      "path": "/workspace/NINE65_v7/crates/nine65/src/ops/cram_main_division.rs",
+      "bytes": 10308,
+      "sha256": "ebd8b2a307b2c7c5193510295e0fcb8fce6e0dea0ba0cf5effeed41b4ba3a7e7"
+    },
+    {
+      "path": "/workspace/NINE65_v7/crates/nine65/src/ops/cram_main_division_tests.rs",
+      "bytes": 9673,
+      "sha256": "3d061b3df2491159758ecc0fe6e35ac8f9e9417985ad71ee165e27d903b29bca"
+    },
+    {
+      "path": "/workspace/NINE65_v7/crates/nine65/src/ops/integer_division_circuit.rs",
+      "bytes": 11984,
+      "sha256": "cad679ede21e85689d6a1febcfab2ae5aff7c08988261d07e59a96a1f5625bd9"
+    },
+    {
+      "path": "/workspace/NINE65_v7/crates/nine65/src/arithmetic/rank_residue_divider.rs",
+      "bytes": 19030,
+      "sha256": "30d7b05fb285d94a53717ceb0d8677d36939b368eddfcc06146d2e923bd88603"
+    },
+    {
+      "path": "/workspace/NINE65_v7/crates/nine65/src/arithmetic/recumbent.rs",
+      "bytes": 35121,
+      "sha256": "f5ef292ff438157dcc6668691f968d6fa96db45f7a8b4b448a126edd0dd31078"
+    },
+    {
+      "path": "/workspace/NINE65_v7/crates/nine65/src/arithmetic/exact_scale_round.rs",
+      "bytes": 32870,
+      "sha256": "ddba939dc0ff8c62726817c0f816c050cf21a8ba129cc2b1815a5e8bcf7f28f7"
+    },
+    {
+      "path": "/workspace/NINE65_v7/crates/nine65/src/arithmetic/main_only_base_ext.rs",
+      "bytes": 37891,
+      "sha256": "375554e3ac5fcf4775c597c9d3e53c5ea23d6855ac3a1b24fa46f199a7088501"
+    },
+    {
+      "path": "/workspace/NINE65_v7/crates/nine65/src/arithmetic/compare_bit.rs",
+      "bytes": 38021,
+      "sha256": "dc51794cf42bae294ff16caabd2eb630a7411e579876724b28c3b30ffd1aa482"
+    },
+    {
+      "path": "/workspace/NINE65_v7/crates/exact_transcendentals/src/crt.rs",
+      "bytes": 16236,
+      "sha256": "f36f0991e7e8f460f92c599981450503cb96b751993bc54a420447e397565f70"
+    },
+    {
+      "path": "/workspace/NINE65_v7/scripts/check_wr1_exact_route_denylist.py",
+      "bytes": 11399,
+      "sha256": "8d8aa771c6b56455dca99eb6a6d91e09193911db24e5eac5eaf9bfc7ff539624"
+    }
+  ],
+  "archive": {
+    "path": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12",
+    "source_variants": [
+      {
+        "sha256": "1c466f9052a62cea21f179e36b6cd51d2a4ad2cf3ea25180751c742399aaaab2",
+        "bytes": 17444,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/integration_tests.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/tests/integration_tests.rs"
+        ]
+      },
+      {
+        "sha256": "1f89885e41472649696723d1aee68766920a5dfb3c30c3779853e175e166964f",
+        "bytes": 22151,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/engine.rs"
+        ]
+      },
+      {
+        "sha256": "250c63226f5d16ad111c99b2698f121d69de052c22b504b5e2bfac2a9050bac5",
+        "bytes": 23043,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor.rs"
+        ]
+      },
+      {
+        "sha256": "251b9ec3b5429fa6147e72a81d7e38168c38890a245535d100f40fb90886d33e",
+        "bytes": 29972,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/subproduct_tree.rs"
+        ]
+      },
+      {
+        "sha256": "27274c42d50013f0959da9af6725a9c3d4b1c9150b41c062034e68b2d7bc95df",
+        "bytes": 12709,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/topology.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/topology.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/topology.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/topology.rs"
+        ]
+      },
+      {
+        "sha256": "3936f6df394d30910be91794569de82236d0a1c3110e34c18473dec5f6fa9541",
+        "bytes": 24032,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/main.rs"
+        ]
+      },
+      {
+        "sha256": "398432b626ecf1a1dcba4f66c0c7205438426a1d47d0ddd551e5a57450b482c7",
+        "bytes": 17811,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/main.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/main.rs"
+        ]
+      },
+      {
+        "sha256": "3f11fa3bc67a74d34cbe89f3c7df04b4cdaf239cc2f4f25004991ffadd4e0e8d",
+        "bytes": 23892,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/main.rs"
+        ]
+      },
+      {
+        "sha256": "50fd0b6719f20cda985a2f979b247d5151b879d339a8b0fa1f68d61debe86af6",
+        "bytes": 1710,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/lib.rs"
+        ]
+      },
+      {
+        "sha256": "73b853021c69782d78523e980aa662948150dee8779ed75b97d9ab93ca33ff1c",
+        "bytes": 21863,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/tests/integration_tests.rs"
+        ]
+      },
+      {
+        "sha256": "90e89676ebf4021e5a8f11101fe5cefd0dddce9ed4bb0fa7d91e1ddde4ae1fba",
+        "bytes": 14990,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/ahop.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/ahop.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/ahop.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/ahop.rs"
+        ]
+      },
+      {
+        "sha256": "96da5ae7da5ba4ac477e09292e5d2235ebc47c93df7997f802f05df28980925f",
+        "bytes": 632,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/Cargo.toml",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/Cargo.toml",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/Cargo.toml",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/Cargo.toml"
+        ]
+      },
+      {
+        "sha256": "978011790a9ec31bfff221593e5a52299c859f52316b4b8776b4c77e7f64a640",
+        "bytes": 26474,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/tests/integration_tests.rs"
+        ]
+      },
+      {
+        "sha256": "a12e01c937dfd6bbf3761170aeeb51528eb281bec50b2a28ac3a38e8df516b4d",
+        "bytes": 1475,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/lib.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/lib.rs"
+        ]
+      },
+      {
+        "sha256": "b68f63fd73dc6d45531a222cf9ec062a42eba498faa71474d945f8a2f9631168",
+        "bytes": 4819,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/arith.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/arith.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/arith.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/arith.rs"
+        ]
+      },
+      {
+        "sha256": "bc6316a704212a3a2ecca2ece6b7aee93f2319ce95b4f123b9b93d17cf3359c4",
+        "bytes": 16722,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/fhe.rs"
+        ]
+      },
+      {
+        "sha256": "c30f33797eabe5b790446bb2fd5c91841b497096efdd180243659ac867197ef6",
+        "bytes": 29158,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/subproduct_tree.rs"
+        ]
+      },
+      {
+        "sha256": "c44746967d7a0494fbab47616b6a00b23d6d734450c3f749afbe5664f216b7d7",
+        "bytes": 1637,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/lib.rs"
+        ]
+      },
+      {
+        "sha256": "c6301197077423ced6a1c96c0f326c200642305603c0e90c8b49982a3c045ba2",
+        "bytes": 22137,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/engine.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/engine.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/engine.rs"
+        ]
+      },
+      {
+        "sha256": "d1e90d9706349b8a4422f2e71019ba9c9123ea4f45e85277381a9e33680aa5db",
+        "bytes": 16643,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fhe.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/fhe.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/fhe.rs"
+        ]
+      },
+      {
+        "sha256": "de82f7b7ec5b0283fd97f53220332febf2208be00739f94de5bfa0d86f3cecb3",
+        "bytes": 9252,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/operators.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/operators.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/operators.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/operators.rs"
+        ]
+      },
+      {
+        "sha256": "e3858c9e6ba7a79cb6c32beee1415f32ae553d6f38c404c5caa7ddf1e087bb75",
+        "bytes": 11266,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/garner.rs"
+        ]
+      },
+      {
+        "sha256": "e67d3b22dad4ff117d7ef665a63b3d217804f793abf56b1b730fac4e8742e694",
+        "bytes": 25386,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/band_add.rs"
+        ]
+      },
+      {
+        "sha256": "f8f3893e3c59840fc46d216c546990ec27a37ebdeb511dab9e9bf322d0f0aee3",
+        "bytes": 12266,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/garner.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/garner.rs",
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/garner.rs"
+        ]
+      },
+      {
+        "sha256": "fce1c48519ef5778401b45aa71891b3627745f80f466a6e0d083984effd53fa8",
+        "bytes": 21544,
+        "paths": [
+          "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor_fix.rs"
+        ]
+      }
+    ],
+    "unique_source_contents": 25,
+    "unique_source_bytes": 409028,
+    "staging_integrity_checks": [
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/Cargo.toml",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram/Cargo.toml",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/ahop.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram/src/ahop.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/arith.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram/src/arith.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/engine.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram/src/engine.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/fhe.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram/src/fhe.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/garner.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram/src/garner.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/lib.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram/src/lib.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/main.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram/src/main.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/operators.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram/src/operators.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/src/topology.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram/src/topology.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram/tests/integration_tests.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram/tests/integration_tests.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/Cargo.toml",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_spt/Cargo.toml",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/ahop.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_spt/src/ahop.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/arith.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_spt/src/arith.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/engine.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_spt/src/engine.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/fhe.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_spt/src/fhe.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/garner.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_spt/src/garner.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/lib.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_spt/src/lib.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/main.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_spt/src/main.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/operators.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_spt/src/operators.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/src/topology.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_spt/src/topology.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_spt/tests/integration_tests.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_spt/tests/integration_tests.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/Cargo.toml",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_subproduct/Cargo.toml",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/ahop.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_subproduct/src/ahop.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/arith.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_subproduct/src/arith.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/engine.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_subproduct/src/engine.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/fhe.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_subproduct/src/fhe.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/garner.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_subproduct/src/garner.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/lib.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_subproduct/src/lib.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/main.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_subproduct/src/main.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/operators.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_subproduct/src/operators.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/subproduct_tree.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_subproduct/src/subproduct_tree.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/src/topology.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_subproduct/src/topology.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/mnt/user-data/outputs/cram_subproduct/tests/integration_tests.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/cram_subproduct/tests/integration_tests.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/Cargo.toml",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout/Cargo.toml",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/ahop.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout/src/ahop.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/arith.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout/src/arith.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/band_add.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout/src/band_add.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/engine.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout/src/engine.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fhe.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout/src/fhe.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout/src/fourth_attractor.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/fourth_attractor_fix.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout/src/fourth_attractor_fix.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/garner.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout/src/garner.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/lib.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout/src/lib.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/main.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout/src/main.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/operators.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout/src/operators.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/subproduct_tree.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout/src/subproduct_tree.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/topology.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout/src/topology.rs",
+        "same_bytes": true
+      },
+      {
+        "source": "/workspace/k-elimination-audit/expanded-corpus/archives/14-Crate-12/integration_tests.rs",
+        "staged": "/workspace/k-elimination-audit/expanded-corpus/build-runtime/source-crates/flat-layout/tests/integration_tests.rs",
+        "same_bytes": true
+      }
+    ],
+    "execution_result_files": [
+      "runtime_archive_results.json",
+      "runtime_archive_flat_layout.json",
+      "runtime_archive_standalone.json"
+    ],
+    "additional_counterexample": {
+      "source": "runtime_archive_fhe_boundary.rs",
+      "log": "runtime_archive_fhe_boundary.log",
+      "compile_command": [
+        "/workspace/.tooling/cargo/bin/rustc",
+        "--edition=2021",
+        "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_fhe_boundary.rs",
+        "-o",
+        "/workspace/k-elimination-audit/expanded-corpus/build-runtime/archive-fhe-boundary"
+      ],
+      "expected_observation": "initial 1 plus five 1s produces 0 instead of 6 in archived clear simulator"
+    }
+  },
+  "artifacts": [
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_band_add.log",
+      "bytes": 739,
+      "sha256": "848762bfdc284be5d125b92164b31df857b609489d7b8a17ec5c40ef049c43db",
+      "test_summaries": [
+        "test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_boundary.log",
+      "bytes": 1517,
+      "sha256": "c37d6e7ce74bbf37ad5d5ffdb944aadbe7c21181221e68406c73879ca54c9f2f",
+      "test_summaries": []
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_boundary.rs",
+      "bytes": 723,
+      "sha256": "529b0d963211fbc88b457767e70d5b05f055bf83a681bc023a2228531ca6625e"
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_cram.log",
+      "bytes": 12431,
+      "sha256": "a0512c4b888f5e2059d09510095db4ca146b5b703f3edcaee71b615d7b0443ab",
+      "test_summaries": [
+        "test result: FAILED. 58 passed; 8 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: FAILED. 21 passed; 7 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_cram_spt.log",
+      "bytes": 631,
+      "sha256": "f14658d0186bf27f0457a1bffe0f62887ac600f33494e430725fc0a1b01d144d",
+      "test_summaries": []
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_cram_subproduct.log",
+      "bytes": 682,
+      "sha256": "f0e88a1f97ef697f3e746a4f0946787739c32de26463e17e14f0aa032a85332c",
+      "test_summaries": []
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_fhe_boundary.log",
+      "bytes": 8280,
+      "sha256": "f99e94790f073a74ad1d553fbad53db1da84b329256768c67d2edb16803eb883",
+      "test_summaries": []
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_fhe_boundary.rs",
+      "bytes": 925,
+      "sha256": "ca133c6018497ef1e00e2cfd083a09a052dec2c2ec33a1312ecc6e4bfe216621"
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_flat_layout.json",
+      "bytes": 334,
+      "sha256": "6da19bbd3589bd61643308fb53f266ff701fee0dd439c57ca910f0106dd7dbe2"
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_flat_layout.log",
+      "bytes": 7091,
+      "sha256": "ee17b8acbb338128ffd84defe28e8423343b0173e01f5e497707e2a7acb4b98a",
+      "test_summaries": [
+        "test result: ok. 66 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: FAILED. 27 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_fourth_attractor.log",
+      "bytes": 2842,
+      "sha256": "52609af6ca45c5fe5d6a3b23f259bb7824d1aec1d366a96c5942f0301374d4a2",
+      "test_summaries": [
+        "test result: FAILED. 9 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s"
+      ]
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_fourth_attractor_fix.log",
+      "bytes": 3828,
+      "sha256": "8b085f0cb004b15c1a18c8ed1710a6079ac99f48a5fb1344a305cc97e807bc1a",
+      "test_summaries": [
+        "test result: FAILED. 9 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_results.json",
+      "bytes": 1094,
+      "sha256": "6104e80434ce1a2c79c351fdebd6cc80a1b12014bfe7784a16beed02cceb29de"
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_spt_flat.log",
+      "bytes": 5032,
+      "sha256": "e8e3c3a4110659f7db9863c1a2ca39901f57b477dfb331f36051fbf7a0b704be",
+      "test_summaries": [
+        "test result: ok. 38 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s"
+      ]
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_spt_nested.log",
+      "bytes": 4189,
+      "sha256": "c2081c59869e323d6a50ef71497a6207da8d3682e936dfafb650bb62571d8467",
+      "test_summaries": [
+        "test result: ok. 35 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s"
+      ]
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_standalone.json",
+      "bytes": 2858,
+      "sha256": "5e9e8248cd1ad586b61f41d5a1bc95afff2c425d98aa282a13a73cc2435d24db"
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_archive_standalone.py",
+      "bytes": 2875,
+      "sha256": "f86fd53e76402eaa6c645582589be449efde5d975aae9886d28b4feca0d7b52d"
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_compare_bit.log",
+      "bytes": 1583,
+      "sha256": "bcd02c3bc753ce66476a9573f042d25b3d4122ba1c48df6f3ad4525e5c09b5fa",
+      "test_summaries": [
+        "test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 1391 filtered out; finished in 0.03s"
+      ]
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_exact_route_denylist.log",
+      "bytes": 91,
+      "sha256": "3332451c07b9a87c48dc8de68f024ec38c05dbe466cb4a13eb3da57608f2a668",
+      "test_summaries": []
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_exact_route_denylist_selftest.log",
+      "bytes": 71,
+      "sha256": "ff8d1f5977c594e640d73e073a6df687616fc883fde9ad302fece72c9b74daca",
+      "test_summaries": []
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_exact_scale_round.log",
+      "bytes": 1445,
+      "sha256": "9a90fd53e1cf059f3b387bab26da2f1c92101181346a1a00fcbb4052f3337ca9",
+      "test_summaries": [
+        "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 1392 filtered out; finished in 0.01s"
+      ]
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_fallback_audit_rId15.jpg",
+      "bytes": 111071,
+      "sha256": "82d5e4a91a52105acaa94ea08f763924e52917e7e1c1a5963ce5d4529eac18fa"
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_fallback_audit_rId9.jpg",
+      "bytes": 87651,
+      "sha256": "5a8f282928411464efae744553ea4301e078a086f460b633c46fa574d63ab3e1"
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_integer_division.log",
+      "bytes": 2580,
+      "sha256": "e973a5fef6f9d953a03717f6a0c7bace96e99a06167d35ce193738ba10829ed4",
+      "test_summaries": [
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 1394 filtered out; finished in 24.27s"
+      ]
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_integer_division_initial_zero_matches.log",
+      "bytes": 3546,
+      "sha256": "618fe11884ac6c7a9be4ca7161d4a7f5b29d3f94483591cf597643b8686a0aba",
+      "test_summaries": [
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1402 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_kernel_gates.json",
+      "bytes": 1554,
+      "sha256": "9dcc154f6ae04e5e1214ca63f0a2e893d60288a1a6825218c4317ed39e1c1877"
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_kernel_gates.py",
+      "bytes": 976,
+      "sha256": "e97196d4a5b11aaed5fa1750c750525e0ec8c2789b8a6453bd3e379ca2305c34"
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_lib_test_inventory.log",
+      "bytes": 107123,
+      "sha256": "9730fe8fd1843567c643988b7d88a3834a7e3c1f2b360cac8a03fbdbd398ea23",
+      "test_summaries": []
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_manifest.py",
+      "bytes": 6991,
+      "sha256": "331ab2d9395dd98e57c566e8304cdca30817f27c799314b90514e04da3faee3c"
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_rank_residue_divider.log",
+      "bytes": 1391,
+      "sha256": "4aec971cedb121b2a38e886d1f9bce65cbd1827086d523761d8143219c9e3060",
+      "test_summaries": [
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 1394 filtered out; finished in 0.02s"
+      ]
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_recumbent.log",
+      "bytes": 2089,
+      "sha256": "2e0e022bd5d442000a6ffb6b828c1766051a2651ab2e3f6893277cfd48d43405",
+      "test_summaries": [
+        "test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 1387 filtered out; finished in 0.09s"
+      ]
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_word_circuit_counts.log",
+      "bytes": 382,
+      "sha256": "5786ecf885449f881975775a11bf7ce2208d6973eaac4a8bad95865071e54ae4",
+      "test_summaries": []
+    },
+    {
+      "path": "/workspace/k-elimination-audit/expanded-corpus/experiments/runtime_word_circuit_counts.rs",
+      "bytes": 608,
+      "sha256": "9d8c34374c142f476bfb354c4f67721ac608d7f18b9ecf7848fb3638348d3c48"
+    }
+  ],
+  "review": {
+    "path": "/workspace/k-elimination-audit/expanded-corpus/reviews/runtime.md",
+    "bytes": 26538,
+    "sha256": "3a37837c9dc5999120ca019f65e872bc83550f75a3a3767b2b5fe17d5945e2a2"
+  }
+}

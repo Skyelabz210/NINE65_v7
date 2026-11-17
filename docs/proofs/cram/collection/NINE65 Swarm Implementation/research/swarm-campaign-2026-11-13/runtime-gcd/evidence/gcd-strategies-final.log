@@ -1,0 +1,49 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65-swarm-gcd/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65-swarm-gcd/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/NINE65-swarm-gcd/crates/nine65)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.19s
+     Running unittests src/lib.rs (/workspace/.tooling/target-gcd-campaign/debug/deps/nine65-36b47786ddf418df)
+
+running 7 tests
+GCD width 1: rounds=2, gates=10, products=4, budget=136000
+GCD width 2: rounds=4, gates=92, products=54, budget=72000
+DIRECT GCD n=8 width=1 gcd(0,0)=0 products=3 budget=150000
+DIRECT GCD n=8 width=1 gcd(1,0)=1 products=3 budget=150000
+encrypted GCD n=8 exhaustive one-bit plan: (0, 10, 3, 150000)
+test ops::rns_fhe::cram_main::division::gcd_tests::encrypted_gcd_one_bit_exhaustive_and_public_schedule ... ok
+DIRECT GCD n=8 width=1 gcd(1,1)=1 products=3 budget=150000
+DIRECT GCD n=8 width=1 gcd(1,0)=1 products=3 budget=150000
+GCD repeated-history completed=7, then typed noise refusal
+test ops::rns_fhe::cram_main::division::gcd_tests::encrypted_gcd_history_eventually_refuses_without_reset ... ok
+test ops::rns_fhe::cram_main::division::gcd_tests::encrypted_gcd_width_key_and_noise_refusals ... ok
+DIRECT GCD n=8 width=2 gcd(0,0)=0 products=23 budget=140000
+DIRECT GCD n=8 width=2 gcd(3,0)=3 products=23 budget=140000
+DIRECT GCD n=8 width=2 gcd(3,3)=3 products=23 budget=140000
+DIRECT GCD n=8 width=2 gcd(3,2)=1 products=23 budget=140000
+DIRECT GCD n=8 width=3 gcd(0,0)=0 products=87 budget=131000
+DIRECT GCD n=8 width=3 gcd(7,0)=7 products=87 budget=131000
+GCD width 3: REFUSED at gate 625: certified phase bound exhausted before operation
+GCD width 4: REFUSED at gate 2295: certified phase bound exhausted before operation
+GCD width 5: REFUSED at gate 131: certified phase bound exhausted before operation
+GCD width 6: REFUSED at gate 138: certified phase bound exhausted before operation
+GCD width 7: REFUSED at gate 145: certified phase bound exhausted before operation
+GCD width 8: REFUSED at gate 147: certified phase bound exhausted before operation
+test ops::rns_fhe::cram_main::division::gcd_tests::encrypted_gcd_profiles_and_admitted_two_bit_cases ... ok
+DIRECT GCD n=8 width=3 gcd(7,7)=7 products=87 budget=131000
+DIRECT GCD n=8 width=3 gcd(7,6)=1 products=87 budget=131000
+DIRECT GCD n=8 width=4 gcd(0,0)=0 products=303 budget=128000
+DIRECT GCD n=8 width=4 gcd(15,0)=15 products=303 budget=128000
+DIRECT GCD n=8 width=4 gcd(15,15)=15 products=303 budget=128000
+DIRECT GCD n=8 width=4 gcd(15,14)=1 products=303 budget=128000
+test ops::rns_fhe::cram_main::division::gcd_tests::encrypted_gcd_direct_target_covers_all_small_widths ... ok
+native GCD n=8192 width=1 gcd(0,0)=0 rounds=2 products=4 budget=18000
+test ops::rns_fhe::cram_main::division::gcd_tests::large_ring_research_gcd_two_bit_refuses_exhausted_budget ... ok
+native GCD n=8192 width=1 gcd(1,0)=1 rounds=2 products=4 budget=18000
+native DIRECT GCD n=8192 width=2 gcd(3,2)=1 products=23 budget=41000
+native DIRECT GCD n=8192 width=2 gcd(0,0)=0 products=23 budget=41000
+native DIRECT GCD n=8192 width=2 gcd(2,2)=2 products=23 budget=41000
+test ops::rns_fhe::cram_main::division::gcd_tests::native_encrypted_gcd_checks_every_plaintext_coefficient ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 1406 filtered out; finished in 55.48s
+

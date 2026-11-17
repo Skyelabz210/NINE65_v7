@@ -1,0 +1,49 @@
+{
+  "status": "PASS",
+  "toolchain": "leanprover/lean4:v4.27.0-rc1",
+  "file": "ResidueAlgorithms.lean",
+  "sha256": "852030cea0a3404654d2a77f677e35a147efc917be33d26ba85ceb6b6d5b7b67",
+  "theorems": [
+    {
+      "name": "KElimination.ResidueAlgorithms.divLoop_correct",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.ResidueAlgorithms.encode_injective_on",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.ResidueAlgorithms.divmod_correct",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.ResidueAlgorithms.divmod_zero_refused",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "KElimination.ResidueAlgorithms.gcdLoop_correct",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "KElimination.ResidueAlgorithms.gcd_correct",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+'KElimination.ResidueAlgorithms.divLoop_correct' depends on axioms: [propext, Quot.sound]
+'KElimination.ResidueAlgorithms.encode_injective_on' depends on axioms: [propext, Quot.sound]
+'KElimination.ResidueAlgorithms.divmod_correct' depends on axioms: [propext, Quot.sound]
+'KElimination.ResidueAlgorithms.divmod_zero_refused' depends on axioms: [propext]
+'KElimination.ResidueAlgorithms.gcdLoop_correct' depends on axioms: [propext, Quot.sound]
+'KElimination.ResidueAlgorithms.gcd_correct' depends on axioms: [propext, Quot.sound]

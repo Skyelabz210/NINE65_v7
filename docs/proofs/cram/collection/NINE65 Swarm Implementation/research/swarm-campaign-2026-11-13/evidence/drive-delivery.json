@@ -1,0 +1,20 @@
+{
+  "account": "hackfate.ai@gmail.com",
+  "folder_id": "1CbC-CoHlIsT-5XNn8O5qHVDBnRW2uYql",
+  "folder_url": "https://drive.google.com/drive/folders/1CbC-CoHlIsT-5XNn8O5qHVDBnRW2uYql",
+  "baseline": {
+    "file_id": "18EO9e97BWd3-A823O_BdjjQhnin7o7js",
+    "url": "https://drive.google.com/file/d/18EO9e97BWd3-A823O_BdjjQhnin7o7js/view?usp=drivesdk",
+    "filename": "CRAM-Proofs-Verified-Baseline-2026-11-12.zip",
+    "bytes": 2546069,
+    "sha256": "9f9c2c816c2d3cd5d77005a6c29a4b41f016ffd2b8e3be0acd32996fcf28a78d",
+    "md5": "2bc238a2f3b598f05d8e5d42681b0f80",
+    "status": "UPLOADED_READBACK_SHA256_VERIFIED",
+    "readback_sha256": "9f9c2c816c2d3cd5d77005a6c29a4b41f016ffd2b8e3be0acd32996fcf28a78d"
+  },
+  "campaign": {
+    "folder_id": "1aux9NWx5SNRuHt2j7QssMt09PPSx2JOG",
+    "folder_url": "https://drive.google.com/drive/folders/1aux9NWx5SNRuHt2j7QssMt09PPSx2JOG",
+    "status": "FOLDER_CREATED_PAYLOAD_PREPARING"
+  }
+}

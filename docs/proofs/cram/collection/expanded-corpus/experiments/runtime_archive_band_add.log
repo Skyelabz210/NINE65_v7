@@ -1,0 +1,16 @@
+
+running 11 tests
+test tests::r10_band_modulus_assignment ... ok
+test tests::r11_specific_overflow_trigger_at_band_143 ... ok
+test tests::r2_band_add_checked_correct_for_small_values ... ok
+test tests::r1_band_add_checked_detects_overflow_at_band_143 ... ok
+test tests::r3_buggy_vs_fixed_diverge_exactly_on_overflow_inputs ... ok
+test tests::r5_band_add_is_commutative ... ok
+test tests::r4_zero_plus_zero_is_zero ... ok
+test tests::r7_zero_is_additive_identity ... ok
+test tests::r6_band_add_is_associative ... ok
+test tests::r9_extended_and_checked_agree_for_small_inputs ... ok
+test tests::r8_all_bands_are_correct_modular_residues ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

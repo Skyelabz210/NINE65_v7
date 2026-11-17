@@ -1,0 +1,20 @@
+   Compiling autocfg v1.5.1
+   Compiling num-traits v0.2.19
+   Compiling num-integer v0.1.47
+   Compiling num-bigint v0.4.8
+   Compiling certified_lift v0.1.0 (/workspace/scratch/cram-lock-2026-11-17/certified-lift-review/certified_lift)
+    Finished `release` profile [optimized] target(s) in 3.96s
+     Running tests/review_contract.rs (/workspace/scratch/cram-lock-2026-11-17/certified-lift-review/target/release/deps/review_contract-12950c657abe44b4)
+
+running 4 tests
+
+thread 'foreign_short_frame_can_panic' panicked at src/lib.rs:174:73:
+index out of bounds: the len is 2 but the index is 2
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test bound_is_exact_scalar_payload_on_add_mul_chains ... ok
+test exact_division_is_conservative_not_general ... ok
+test foreign_frame_is_accepted_and_breaks_certificate ... ok
+test foreign_short_frame_can_panic ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

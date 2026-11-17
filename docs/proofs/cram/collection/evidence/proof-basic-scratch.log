@@ -1,0 +1,6 @@
+KElimination/Basic.lean:19:33: warning: unused variable `hM`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+KElimination/Basic.lean:32:38: warning: unused variable `hM`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`

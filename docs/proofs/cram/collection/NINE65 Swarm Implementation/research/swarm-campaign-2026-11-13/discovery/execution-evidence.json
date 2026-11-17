@@ -1,0 +1,53 @@
+{
+  "status": "PASS",
+  "commands": [
+    {
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+        "run_models.py"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"status\": \"PASS\",\n  \"scope\": \"Finite exact research models; no new Lean or ciphertext execution\",\n  \"module_queries\": {\n    \"certificates\": 640,\n    \"decoders\": 312,\n    \"obstructions\": 328,\n    \"source_vectors\": 11335,\n    \"fixed_composite_and_rectangular_controls\": 4\n  },\n  \"geometry\": {\n    \"ordered_point_triples\": 15625,\n    \"positive\": 6444,\n    \"negative\": 6444,\n    \"collinear\": 2737,\n    \"capacity_negative_controls\": 1\n  },\n  \"bbs\": {\n    \"configurations\": 2046,\n    \"carrier_prefixes\": 36868,\n    \"rational_interpolation_points\": 149518,\n    \"general_jump_negative_controls\": 1\n  },\n  \"jets_and_hensel\": {\n    \"jet_instances\": 1560,\n    \"hensel_steps\": 48,\n    \"ordinary_derivative_failure_controls\": 1\n  },\n  \"internal_bridges\": {\n    \"theta_charts\": 2100,\n    \"theta_walls\": 300,\n    \"maa_reflections\": 2500,\n    \"allocations\": 1240,\n    \"skew_energy_coordinate_bound_counterexamples\": 1\n  },\n  \"source_sha256\": {\n    \"models.py\": \"231b68b99ac9e1f80eebfb7488836c5a1fe896f6480442b342d68cd807d502cf\",\n    \"run_models.py\": \"437d8ace1464783c0199cc06d972c804c87b60bc134240460e374827236c7dd4\"\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+        "-m",
+        "unittest",
+        "-v",
+        "test_models.py"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_bbs_retains_outgoing_carrier_and_requires_capacity (test_models.AdmissionTests.test_bbs_retains_outgoing_carrier_and_requires_capacity) ... ok\ntest_decoder_requires_observation_dimension_and_integer_type (test_models.AdmissionTests.test_decoder_requires_observation_dimension_and_integer_type) ... ok\ntest_geometry_cannot_infer_a_source_bound_from_observations (test_models.AdmissionTests.test_geometry_cannot_infer_a_source_bound_from_observations) ... ok\ntest_geometry_requires_capacity_and_canonical_lanes (test_models.AdmissionTests.test_geometry_requires_capacity_and_canonical_lanes) ... ok\ntest_local_root_and_jet_unit_admission (test_models.AdmissionTests.test_local_root_and_jet_unit_admission) ... ok\ntest_reject_certificate_that_does_not_diagonalize (test_models.AdmissionTests.test_reject_certificate_that_does_not_diagonalize) ... ok\ntest_reject_invalid_dimensions_and_noninteger_inputs (test_models.AdmissionTests.test_reject_invalid_dimensions_and_noninteger_inputs) ... ok\ntest_reject_nonunimodular_certificate (test_models.AdmissionTests.test_reject_nonunimodular_certificate) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n"
+    },
+    {
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+        "build_registry.py"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"families\": 22,\n  \"unordered_pairs\": 231,\n  \"directed_screens\": 462,\n  \"structural_candidates\": 45\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+        "verify_discovery.py"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"status\": \"PASS\",\n  \"families\": 22,\n  \"unordered_pairs\": 231,\n  \"directional_screens\": 462,\n  \"structural_matches_not_proofs\": 45,\n  \"deep_candidates\": 12,\n  \"candidate_categories\": {\n    \"practical_return\": 4,\n    \"frontier_generalization\": 4,\n    \"internal_composition\": 4\n  },\n  \"usable_imports\": 4,\n  \"fetched_source_documents\": 5,\n  \"model_hashes_verified\": 2,\n  \"registry_regeneration\": \"byte-identical\",\n  \"limits\": \"Checks registry integrity and evidence hash binding; run_models and unittest execute behavior.\"\n}\n",
+      "stderr": ""
+    }
+  ],
+  "source_sha256": {
+    "build_registry.py": "fc6b9ff6023a4047d24b73902bcbdfc68d2b2e11d8556f62002c9bdaf2ab8ead",
+    "models.py": "231b68b99ac9e1f80eebfb7488836c5a1fe896f6480442b342d68cd807d502cf",
+    "run_all.py": "9d61dcfec91cd0e8b08d9dc05d1a7ff31d9a4e23c0bc098782a756ad408e3020",
+    "run_models.py": "437d8ace1464783c0199cc06d972c804c87b60bc134240460e374827236c7dd4",
+    "test_models.py": "825f7b3b2e1990cae3df19e2b68b8525e5839594fbf5773a05e27e971221cf1f",
+    "verify_discovery.py": "c09a73f12126d298a3d363948683c216b4217cdd9dcaa6f683b2b1be9d762928"
+  },
+  "scope": "Finite research models, API admission checks, and registry integrity; no production FHE execution."
+}

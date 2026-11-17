@@ -1,0 +1,9 @@
+width=1 gates=5 ciphertext_products=2
+width=2 gates=38 ciphertext_products=19
+width=3 gates=173 ciphertext_products=79
+width=4 gates=761 ciphertext_products=287
+width=5 gates=203 ciphertext_products=120
+width=8 gates=515 ciphertext_products=312
+width=16 gates=2051 ciphertext_products=1264
+width=32 gates=8195 ciphertext_products=5088
+width=64 gates=32771 ciphertext_products=20416

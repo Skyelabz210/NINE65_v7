@@ -1,0 +1,43 @@
+{
+  "campaign": "2026-11-13",
+  "status": "IMPLEMENTATION_VERIFIED_DELIVERY_IN_PROGRESS",
+  "started_at_utc": "2026-11-13T02:02:17.216888+00:00",
+  "source_base_commit": "88a7bdadbf0e1f8fbfdb2b37e9843101b8db3484",
+  "preserved_research_commit": "d883d24",
+  "baseline_theorems": 144,
+  "allocation": "balanced_discovery_and_build",
+  "drive_account": "hackfate.ai@gmail.com",
+  "drive_folder_id": "1CbC-CoHlIsT-5XNn8O5qHVDBnRW2uYql",
+  "drive_folder_url": "https://drive.google.com/drive/folders/1CbC-CoHlIsT-5XNn8O5qHVDBnRW2uYql",
+  "missing_context": {
+    "thread": "6af548dd-c6d8-8191-90ed-c6d29cf470cb",
+    "reason": "No read_thread tool exposed; contents not inferred"
+  },
+  "workers": [
+    "campaign_corpus",
+    "campaign_formal",
+    "campaign_discovery",
+    "campaign_residue",
+    "campaign_gcd",
+    "campaign_review"
+  ],
+  "external_publication": false,
+  "gate_status": {
+    "intake": "PASS_WITH_DECLARED_SCOPE",
+    "universal_proofs": "PASS_WITH_DECLARED_SCOPE",
+    "residue_runtime": "PASS_WITH_DECLARED_SCOPE",
+    "encrypted_gcd": "PASS_WITH_DECLARED_SCOPE",
+    "discovery": "PASS_WITH_DECLARED_SCOPE",
+    "independent_review": "PASS_WITH_DECLARED_SCOPE",
+    "drive_delivery": "PRIVATE_FOLDER_CREATED_PAYLOAD_PREPARING"
+  },
+  "new_theorem_declarations": 49,
+  "integrated_lean_declarations": 223,
+  "runtime_commits": [
+    "ad8df08",
+    "24a9093",
+    "3ff079e"
+  ],
+  "original_lean_commit": "dd9c6cfb341ad3747f148c336a015e2b80664e87",
+  "combined_runtime_tests": 43
+}

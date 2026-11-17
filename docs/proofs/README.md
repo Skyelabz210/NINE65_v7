@@ -1,5 +1,10 @@
 # Written proof coverage and review
 
+The [CRAM proof collection](cram/README.md), imported 2026-11-17, adds the
+standalone engine specification, complete session proof/evidence archive and
+235-declaration universal Lean package. Its arithmetic scope and remaining
+Rust refinement obligations are separate from the refresh coverage below.
+
 Reviewed against source `a7f8531` on 2026-11-04. These notes supply explicit
 pen-and-paper arguments before further Lean development. They do not silently
 upgrade a Rust implementation, a model assumption or a security premise to a

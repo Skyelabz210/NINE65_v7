@@ -1,0 +1,20 @@
+{
+  "schema": "nine65-phase1-tropical-k-elimination-v1",
+  "scope": "clear full-polynomial identity oracle; no encrypted producer or refresh admission",
+  "source_q": 5000003,
+  "plaintext_modulus": 65537,
+  "ring_degree": 32,
+  "carry_bound": 16,
+  "safe_basis_tray": 32768,
+  "adjacent_sister_tray": 32769,
+  "phase_locked_tray": 65537,
+  "polynomial_cases": 40,
+  "coefficient_cases": 1280,
+  "maximum_observed_abs_carry": 6,
+  "nonzero_carries": 878,
+  "full_signed_corridor_residue_checks": 495,
+  "component_switch_difference_equals_tropical_carry": true,
+  "all_three_trays_recover_signed_carry": true,
+  "same_source_encrypted_pair_produced": false,
+  "public_refresh_admitted": false
+}

@@ -1,0 +1,39 @@
+{
+  "status": "passed",
+  "scope": "finite exact oracle; general derivations in tropical-bridge.md",
+  "checks": {
+    "matrix_unit_observer_states": 49,
+    "nonunit_fused_observer_states": 16,
+    "nonunit_kernel_alias": [
+      [
+        0,
+        0
+      ],
+      [
+        18,
+        12
+      ]
+    ],
+    "rank_two_rational_theta_cases": 441,
+    "theta_wall_minimizers": [
+      [
+        -1,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "small_chart_native_alias": {
+      "Q": "348959453350711275087786864768188417",
+      "D": "348959453350711275087786864715221600",
+      "period": 126095970,
+      "native_sheets": [
+        0,
+        1
+      ],
+      "native_centered_phase": "-52966817"
+    }
+  }
+}

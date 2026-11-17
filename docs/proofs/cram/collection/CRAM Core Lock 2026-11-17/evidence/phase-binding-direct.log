@@ -1,0 +1,12 @@
+'KElimination.PhaseBinding.query_phase_consistency' depends on axioms: [propext, Classical.choice, Quot.sound]
+'KElimination.PhaseBinding.producer_establishes_binding' does not depend on any axioms
+'KElimination.PhaseBinding.transition_preserves_binding' does not depend on any axioms
+'KElimination.PhaseBinding.identity_transition_correct' does not depend on any axioms
+'KElimination.PhaseBinding.transition_correct_composition' does not depend on any axioms
+'KElimination.PhaseBinding.finite_program_preserves_binding' does not depend on any axioms
+'KElimination.PhaseBinding.modular_translate_correct' depends on axioms: [propext]
+'KElimination.PhaseBinding.modular_translate_preserves_binding' depends on axioms: [propext]
+'KElimination.PhaseBinding.mixed_sources_pass_phase_check' does not depend on any axioms
+'KElimination.PhaseBinding.mixed_pair_is_bound_to_four' does not depend on any axioms
+'KElimination.PhaseBinding.mixed_pair_not_bound_to_zero' does not depend on any axioms
+'KElimination.PhaseBinding.phase_check_not_source_binding' does not depend on any axioms

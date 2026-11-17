@@ -1,0 +1,9 @@
+'KElimination.ExactObservation.recoverable_iff' depends on axioms: [Classical.choice]
+'KElimination.ExactObservation.refined_observation_suffices' does not depend on any axioms
+'KElimination.ExactObservation.collision_obstructs_query' does not depend on any axioms
+'KElimination.ExactObservation.refines_identity' does not depend on any axioms
+'KElimination.ExactObservation.refines_composition' does not depend on any axioms
+'KElimination.ExactObservation.finite_program_exact' does not depend on any axioms
+'KElimination.ExactObservation.finite_program_identifies_result' does not depend on any axioms
+'KElimination.ExactObservation.transduction_composes' does not depend on any axioms
+'KElimination.ExactObservation.transduction_round_trip' does not depend on any axioms

@@ -1,0 +1,16 @@
+'KElimination.RingReadout.Observation.map_zero' depends on axioms: [propext]
+'KElimination.RingReadout.Observation.map_sub' does not depend on any axioms
+'KElimination.RingReadout.Observation.map_neg' depends on axioms: [propext]
+'KElimination.RingReadout.left_mul_sub' depends on axioms: [propext, Quot.sound]
+'KElimination.RingReadout.phase_defect' does not depend on any axioms
+'KElimination.RingReadout.unit_readout' does not depend on any axioms
+'KElimination.RingReadout.right_unit_readout' does not depend on any axioms
+'KElimination.RingReadout.solution_fiber' depends on axioms: [propext, Quot.sound]
+'KElimination.RingReadout.injective_on_iff_lift_null_separates' depends on axioms: [propext, Quot.sound]
+'KElimination.RingReadout.unit_lift_null_iff' does not depend on any axioms
+'KElimination.RingReadout.lift_null_zero' depends on axioms: [propext]
+'KElimination.RingReadout.lift_null_add' does not depend on any axioms
+'KElimination.RingReadout.lift_null_neg' depends on axioms: [propext, Quot.sound]
+'KElimination.RingReadout.lift_null_mul_right' does not depend on any axioms
+'KElimination.RingReadout.lift_null_mul_left' does not depend on any axioms
+'KElimination.RingReadout.target_projection' does not depend on any axioms

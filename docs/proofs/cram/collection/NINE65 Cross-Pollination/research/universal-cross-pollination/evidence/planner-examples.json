@@ -1,0 +1,96 @@
+{
+  "available_producers": {
+    "combined_period": 36,
+    "cost": 3,
+    "demand": 18,
+    "selected": [
+      "nine"
+    ]
+  },
+  "backward_affine_demand": {
+    "combined_period": 3,
+    "demand": 3,
+    "extra_anchor": 1,
+    "queries": [
+      {
+        "coefficient": 6,
+        "modulus": 18,
+        "offset": 1
+      }
+    ],
+    "source_moduli": [
+      3
+    ],
+    "source_period": 3
+  },
+  "division_consumer": {
+    "combined_period": 420,
+    "demand": 35,
+    "extra_anchor": 35,
+    "queries": [
+      {
+        "divisor": 5,
+        "modulus": 7
+      }
+    ],
+    "source_moduli": [
+      12
+    ],
+    "source_period": 12
+  },
+  "linear_consumer_needs_less": {
+    "combined_period": 12,
+    "demand": 3,
+    "extra_anchor": 1,
+    "queries": [
+      {
+        "coefficient": 6,
+        "modulus": 18,
+        "offset": 0
+      }
+    ],
+    "source_moduli": [
+      12
+    ],
+    "source_period": 12
+  },
+  "overlap_requires_full_prime_power": {
+    "combined_period": 36,
+    "demand": 18,
+    "extra_anchor": 9,
+    "queries": [
+      {
+        "coefficient": 1,
+        "modulus": 18,
+        "offset": 0
+      }
+    ],
+    "source_moduli": [
+      12
+    ],
+    "source_period": 12
+  },
+  "safe_basis_shadow_already_sufficient": {
+    "combined_period": 9699690,
+    "demand": 77,
+    "extra_anchor": 1,
+    "queries": [
+      {
+        "coefficient": 1,
+        "modulus": 77,
+        "offset": 0
+      }
+    ],
+    "source_moduli": [
+      2,
+      3,
+      5,
+      7,
+      11,
+      13,
+      17,
+      19
+    ],
+    "source_period": 9699690
+  }
+}

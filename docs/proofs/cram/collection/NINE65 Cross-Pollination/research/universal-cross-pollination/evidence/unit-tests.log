@@ -1,0 +1,20 @@
+test_affine_modular_dynamics_keep_small_query (test_future_query.FutureQueryTests.test_affine_modular_dynamics_keep_small_query) ... ok
+test_exhaustive_minimality_against_all_small_partitions (test_future_query.FutureQueryTests.test_exhaustive_minimality_against_all_small_partitions) ... ok
+test_halving_makes_future_parity_reveal_all_bits (test_future_query.FutureQueryTests.test_halving_makes_future_parity_reveal_all_bits) ... ok
+test_invalid_or_nonclosed_models_refused (test_future_query.FutureQueryTests.test_invalid_or_nonclosed_models_refused) ... ok
+test_no_future_operations_and_empty_consumers (test_future_query.FutureQueryTests.test_no_future_operations_and_empty_consumers) ... ok
+test_affine_pullback (test_query_planner.PlannerTests.test_affine_pullback) ... ok
+test_available_selection_matches_subset_oracle (test_query_planner.PlannerTests.test_available_selection_matches_subset_oracle) ... ok
+test_information_and_transition_negative_controls (test_query_planner.PlannerTests.test_information_and_transition_negative_controls) ... ok
+test_invalid_inputs (test_query_planner.PlannerTests.test_invalid_inputs) ... ok
+test_large_prime_powers_and_overlap (test_query_planner.PlannerTests.test_large_prime_powers_and_overlap) ... ok
+test_linear_periods_against_signed_oracle (test_query_planner.PlannerTests.test_linear_periods_against_signed_oracle) ... ok
+test_minimal_anchor_exhaustive_divisibility (test_query_planner.PlannerTests.test_minimal_anchor_exhaustive_divisibility) ... ok
+test_no_queries_and_impossible_candidates (test_query_planner.PlannerTests.test_no_queries_and_impossible_candidates) ... ok
+test_plan_certificate_and_tampering (test_query_planner.PlannerTests.test_plan_certificate_and_tampering) ... ok
+test_quotient_periods_against_signed_oracle (test_query_planner.PlannerTests.test_quotient_periods_against_signed_oracle) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.217s
+
+OK

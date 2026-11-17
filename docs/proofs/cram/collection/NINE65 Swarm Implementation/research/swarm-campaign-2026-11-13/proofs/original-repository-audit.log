@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "toolchain": "leanprover/lean4:v4.27.0-rc1",
+  "lean_version": "Lean (version 4.27.0-rc1, x86_64-unknown-linux-gnu, commit 2fcce7258eeb6e324366bc25f9058293b04b7547, Release)",
+  "mathlib_revision": "3bdc7047b97538f795b725dc0713c28c0f53ed10",
+  "lake_manifest_sha256": "4beccaf721d857691e35e3e33cac79a629b92090201058a4160e4e75e35debbc",
+  "theorem_declarations": 223,
+  "axiom_free_declarations": 58,
+  "allowed_foundational_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "scope": "All maintained project Lean declarations; no Coq revalidation or source-level runtime refinement"
+}
