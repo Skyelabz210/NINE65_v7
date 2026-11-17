@@ -116,3 +116,9 @@ preflight on 2026-11-04 recomputed the separate outer and final work bounds;
 this is not a new encrypted native run. Existing five-module Lean proofs and
 their ten negative/positive gate controls were rerun successfully after
 installing the pinned tooling. See the [verification continuation](maintenance/VERIFICATION_2026-11-04.md).
+
+The [November 17 refresh-mode review](execution/2026-11-17/REFRESH_MODE_REVIEW.md)
+traces the symmetric-refresh report against its exact source history and
+records separate contracts and regression requirements for trusted-key,
+public leveled, public research, legacy and experimental refresh work.
+Its implementation plan does not change existing backends or their admission.
