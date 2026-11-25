@@ -158,11 +158,12 @@ class TimingSummaryTests(unittest.TestCase):
         summary = summarize(self.root / "ct_dudect_tests")
         return result, summary
 
-    def test_workflow_capture_collects_all_ten_tests_and_eleven_observables(self):
+    def test_workflow_capture_collects_all_eleven_tests_and_thirteen_observables(self):
         result, summary = self.capture_workflow(False)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(summary["blocking_gate_pass"], summary["errors"])
-        self.assertEqual(summary["observations"]["below_threshold"], 11)
+        self.assertEqual(len(summary["tests"]), 11)
+        self.assertEqual(summary["observations"]["below_threshold"], 13)
 
     def test_workflow_preserves_failed_process_and_continues_remaining_tests(self):
         result, summary = self.capture_workflow(True)
@@ -170,8 +171,8 @@ class TimingSummaryTests(unittest.TestCase):
         self.assertFalse(summary["blocking_gate_pass"])
         self.assertEqual(summary["evidence_status"], "timing_dependence")
         self.assertEqual(summary["observations"]["timing_dependence"], 1)
-        self.assertEqual(len(summary["tests"]), 10)
-        self.assertEqual(summary["observations"]["below_threshold"], 10)
+        self.assertEqual(len(summary["tests"]), 11)
+        self.assertEqual(summary["observations"]["below_threshold"], 12)
 
 
 if __name__ == "__main__":

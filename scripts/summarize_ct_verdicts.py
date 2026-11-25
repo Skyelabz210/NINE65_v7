@@ -25,6 +25,8 @@ EXPECTED_OBSERVATIONS = {
     "test_ct_dudect_exact_prime_drop_small_vs_large_residues": 1,
     "test_ct_dudect_adjacency_k_elim_operand_magnitude": 1,
     "test_ct_dudect_adjacency_k_elim_operand_order": 1,
+    # The cached extraction test covers secure_128 and secure_192 with witness lanes.
+    "test_ct_dudect_production_extract_k_cached_operand_magnitude": 2,
 }
 VERDICTS = {
     "CONSTANT-TIME at this sample size": "below_threshold",
