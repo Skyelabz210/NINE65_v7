@@ -21,6 +21,22 @@ open security obligations are in [current refresh status](PUBLIC_REFRESH_STATUS.
 | `WasmClientLeveled` | Browser/device process | Browser/device | Browser/device or compatible remote evaluator | Browser/device | Remote evaluator may be untrusted | Current single-modulus BFV client encryption and bounded leveled arithmetic | Claiming DualRNS, K-Elimination, or auto-bootstrap support from the current WASM crate |
 | `Experimental` | Declared per experiment | Declared per experiment | Declared per experiment | Declared per experiment | Unspecified until documented | Tests, benchmarks, research branches | Production or external security claims |
 
+### Trusted-key scalar refresh
+
+A `SymmetricProtected` caller holding the matching secret key can use
+`SymmetricBootstrap::bootstrap_secure` to decrypt coefficient zero and encrypt
+it under the supplied public key. `reencrypt_symmetric_secure` uses the secret
+key for both operations. Both methods obtain fresh randomness from the OS and
+return a scalar ciphertext on the full working basis. Callers must establish
+the input's key family, scalar encoding and remaining decode capacity. Passing
+a polynomial plaintext selects its constant term and discards the others.
+
+Public evaluation has its own entry points. The opt-in
+`PublicResearchRefreshScheduler` operates on sealed full-polynomial inputs
+and tracks the remaining source-conversion margin. Legacy Clockwork checks its
+Phase-1 support gate. The [public refresh status](PUBLIC_REFRESH_STATUS.md)
+records their separate evidence.
+
 ## Mandatory mode firewall
 
 Every application integration must declare:

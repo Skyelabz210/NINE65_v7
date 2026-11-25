@@ -1,110 +1,60 @@
-//! Symmetric Mode Bootstrap — Protected Re-Encryption via Three-Lock
+//! Trusted-key scalar refresh by decryption and fresh encryption.
 //!
-//! # The Fundamental Insight
+//! The operator holds the secret key and briefly processes a plaintext scalar.
+//! This is distinct from public homomorphic bootstrap: it installs no Three-Lock
+//! envelope and establishes no side-channel or production-security claim.
 //!
-//! In symmetric mode, you HAVE the secret key `s`. This changes everything:
-//!
-//! - **Public mode bootstrap**: Homomorphically evaluate decryption circuit
-//!   (expensive, depth-dependent, needs BSK/KSK/relinearization)
-//! - **Symmetric mode bootstrap**: Decrypt → re-encrypt (trivial, O(N) cost,
-//!   no homomorphic evaluation at all)
-//!
-//! The ONLY problem with decrypt-then-re-encrypt is the split-second where
-//! the plaintext `m` exists unprotected. The Three-Lock construction solves
-//! exactly this problem.
-//!
-//! # Architecture: Skip Phase 2 & 3, Apply Three-Lock
-//!
-//! Public mode Clockwork Bootstrap:
-//! ```text
-//! Phase 1: ModSwitch Q → t (cleartext)         ← we keep this
-//! Phase 2: Homomorphic inner product            ← SKIP (we have s)
-//! Phase 3: ModSwitch Q_boot → Q_work            ← SKIP (no boot space)
-//! ```
-//!
-//! Symmetric mode bootstrap:
-//! ```text
-//! ┌─── THREE-LOCK PROTECTION ENVELOPE ──────────────────────┐
-//! │                                                          │
-//! │  Lock 1 (Shannon): mask ct coefficients                  │
-//! │  Lock 2 (Montgomery): RLWE-encrypt masked ct             │
-//! │                                                          │
-//! │  ┌─── PROTECTED INTERIOR ────────────────────────┐       │
-//! │  │                                                │       │
-//! │  │  1. CRT reconstruct c0, c1 from RNS limbs     │       │
-//! │  │  2. Compute m = (c0 + c1·s) mod t              │       │
-//! │  │     (plaintext in registers, masked in memory)  │       │
-//! │  │  3. Fresh encrypt: ct' = Enc(pk, m)             │       │
-//! │  │     OR symmetric: ct' = SymEnc(s, m)            │       │
-//! │  │  4. Zeroize m immediately                       │       │
-//! │  │                                                │       │
-//! │  └────────────────────────────────────────────────┘       │
-//! │                                                          │
-//! │  Unlock: Shannon mask removal is algebraic               │
-//! └──────────────────────────────────────────────────────────┘
-//! ```
-//!
-//! # Why This Works (And Why It's Better Than Public Bootstrap)
-//!
-//! 1. **No homomorphic evaluation** → no noise from Phase 2
-//! 2. **No boot→work modswitch** → no Phase 3 rounding error
-//! 3. **No BSK/KSK** → no key material overhead
-//! 4. **Three-Lock protects plaintext** → conjunction security
-//!    (Shannon + RLWE + timing isolation must ALL be broken)
-//! 5. **Constant time** → O(N) decrypt + O(N) encrypt, no depth dependence
-//!
-//! # When to Use
-//!
-//! - Single-party computation where evaluator holds sk
-//! - Key management systems (HSM, key escrow)
-//! - Database encryption with server-side computation
-//! - Any scenario where symmetric mode depth >200 isn't enough
-//!   (which is... almost never, but the bootstrap exists as a safety net)
-//!
-//! HackFate.us Research, February 2026
+//! Inputs must encode a scalar in coefficient zero, use the supplied key and
+//! context, and still decrypt correctly. Shape/residue validation cannot prove
+//! those conditions, detect a wrong but well-formed key, or certify that noise
+//! has not already changed the nearest plaintext. Other plaintext coefficients
+//! are intentionally not preserved. See `docs/SECURITY_MODE_MATRIX.md` and
+//! `docs/PUBLIC_REFRESH_STATUS.md` for the separate public-refresh boundaries.
 
-use crate::entropy::ShadowHarvester;
-use crate::errors::Nine65Result;
+use crate::arithmetic::rns::{DualRNSContext, U256};
+use crate::arithmetic::NTTEngine;
+use crate::entropy::{FheRng, SecureRng, ShadowHarvester};
+use crate::errors::{Nine65Error, Nine65Result};
 use crate::keys::bootstrap::ensure_q_boot_representable;
 use crate::ops::rns_fhe::{
-    DualRNSCiphertext, DualRNSPoly, DualRNSPublicKey, DualRNSSecretKey, RNSFHEContext,
+    DualRNSCiphertext, DualRNSPoly, DualRNSPublicKey, DualRNSSecretKey, RNSFHEContext, MAX_LEVEL,
+    MAX_POLY_DEGREE,
 };
 use crate::params::FHEConfig;
-use zeroize::Zeroize;
+use zeroize::Zeroizing;
 
-/// Symmetric Bootstrap Engine — decrypt/re-encrypt with Three-Lock protection.
+/// Trusted-key decrypt/re-encrypt engine for scalar ciphertexts.
 ///
-/// This is architecturally simpler than `ClockworkBootstrap` because:
-/// - No BSK (bootstrap secret key) generation
-/// - No KSK (key-switch key) generation  
-/// - No homomorphic inner product (Phase 2)
-/// - No boot→work modswitch (Phase 3)
-///
-/// The entire operation is: CRT reconstruct → decrypt mod t → re-encrypt.
-/// Three-Lock protects the brief plaintext exposure.
+/// `bootstrap_secure` and `reencrypt_symmetric_secure` use the OS CSPRNG.
+/// The original `ShadowHarvester` entry points remain available for deterministic
+/// development tests and return a typed RNG-policy refusal in release builds.
+/// The public arithmetic context must retain its constructor-created internals;
+/// the checks below detect metadata/shape drift, not arbitrary tampering with
+/// every cached arithmetic constant or key provenance.
 pub struct SymmetricBootstrap {
     /// Working FHE configuration.
     pub config: FHEConfig,
-    /// Working RNS context (for NTT engines during re-encryption).
+    /// Working RNS context.
     pub ctx: RNSFHEContext,
     /// Plaintext modulus.
     pub t: u64,
     /// Polynomial degree.
     pub n: usize,
-    /// Bootstrap counter.
+    /// Number of successful refreshes.
     pub bootstrap_count: u64,
 }
 
-/// Statistics from a symmetric bootstrap execution.
+/// Timings and a fresh-encryption cost estimate for scalar refresh.
 #[derive(Clone, Debug)]
 pub struct SymBootstrapStats {
-    /// CRT reconstruction + decrypt time (ns)
+    /// Checked scalar decryption time (ns).
     pub decrypt_ns: u64,
-    /// Re-encryption time (ns)
+    /// Re-encryption time (ns).
     pub encrypt_ns: u64,
-    /// Total time (ns)
+    /// Total time, including validation (ns).
     pub total_ns: u64,
-    /// Post-bootstrap noise (millibits)
+    /// Modelled fresh-encryption noise cost (millibits), not a measured budget
+    /// or a certificate that the source ciphertext decrypted correctly.
     pub post_noise_mb: i64,
 }
 
@@ -112,7 +62,7 @@ impl std::fmt::Display for SymBootstrapStats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "SymBootstrap: {}us total ({}us decrypt, {}us encrypt) post_noise={}mb",
+            "SymBootstrap: {}us total ({}us decrypt, {}us encrypt) estimated_noise_cost={}mb",
             self.total_ns / 1000,
             self.decrypt_ns / 1000,
             self.encrypt_ns / 1000,
@@ -122,8 +72,13 @@ impl std::fmt::Display for SymBootstrapStats {
 }
 
 impl SymmetricBootstrap {
-    /// Create a symmetric bootstrap engine.
+    /// Create an engine for a supported scalar refresh basis.
+    ///
+    /// Refuses malformed degrees, non-prime/duplicate/incompatible main lanes,
+    /// invalid plaintext moduli and bases wider than the full-Q sampler before
+    /// entering constructors with assertion-based legacy preconditions.
     pub fn new(config: &FHEConfig) -> Nine65Result<Self> {
+        Self::validate_config(config)?;
         let ctx = RNSFHEContext::try_new(config)?;
         Ok(Self {
             config: config.clone(),
@@ -134,15 +89,109 @@ impl SymmetricBootstrap {
         })
     }
 
-    /// Bootstrap (refresh noise) via symmetric decrypt + re-encrypt.
-    ///
-    /// This is the core operation. It:
-    /// 1. CRT-reconstructs ciphertext coefficients from RNS limbs
-    /// 2. Decrypts: m = round((c0 + c1·s) · t / Q) mod t
-    /// 3. Re-encrypts fresh under the same key
-    ///
-    /// The plaintext `m` exists briefly in registers. In production,
-    /// wrap this call inside ThreeLockBootstrap for conjunction security.
+    fn mismatch(reason: &str) -> Nine65Error {
+        Nine65Error::BootstrapConfigMismatch {
+            reason: reason.into(),
+        }
+    }
+
+    fn validate_config(config: &FHEConfig) -> Nine65Result<()> {
+        if !config.n.is_power_of_two() || config.n > MAX_POLY_DEGREE {
+            return Err(Self::mismatch(
+                "refresh degree must be a power of two at most 32768",
+            ));
+        }
+        if !(2..=MAX_LEVEL).contains(&config.primes.len()) || config.t < 2 {
+            return Err(Self::mismatch(
+                "refresh requires 2..=32 main primes and t >= 2",
+            ));
+        }
+        ensure_q_boot_representable(&config.primes)?;
+        let anchors = DualRNSContext::canonical_anchor_primes_for_n(config.n);
+        for (i, &prime) in config.primes.iter().enumerate() {
+            if !crate::params::is_prime(prime)
+                || prime >= (1u64 << 63)
+                || config.primes[..i].contains(&prime)
+                || anchors.contains(&prime)
+                || (prime - 1) % (2 * config.n as u64) != 0
+            {
+                return Err(Self::mismatch("refresh main primes must be distinct, NTT-compatible, below 2^63 and disjoint from the anchor basis"));
+            }
+        }
+        let q = U256::product_u64s(&config.primes);
+        if q.le(U256::from_u64(config.t)) || config.eta > i64::MAX as usize {
+            return Err(Self::mismatch(
+                "refresh requires Q > t and a representable CBD parameter",
+            ));
+        }
+        Ok(())
+    }
+
+    fn validate_context(&self) -> Nine65Result<()> {
+        let cfg = &self.config;
+        if self.n != cfg.n
+            || self.t != cfg.t
+            || self.ctx.n != cfg.n
+            || self.ctx.t != cfg.t
+            || self.ctx.config.n != cfg.n
+            || self.ctx.config.t != cfg.t
+            || self.ctx.config.primes != cfg.primes
+            || self.ctx.config.eta != cfg.eta
+        {
+            return Err(Self::mismatch(
+                "refresh engine and context metadata disagree",
+            ));
+        }
+        // Arithmetic caches and NTT tables remain constructor-owned. These
+        // public fields cannot authenticate arbitrary caller mutations of them.
+        ensure_q_boot_representable(&cfg.primes)
+    }
+
+    fn validate_full_key_shape(&self, poly: &DualRNSPoly) -> Nine65Result<()> {
+        poly.validate()?;
+        if poly.n != self.n
+            || poly.main.len() != self.config.primes.len()
+            || poly.anchor.len() != self.ctx.dual_rns.anchor.primes.len()
+        {
+            return Err(Self::mismatch(
+                "refresh keys must cover the full output degree and basis",
+            ));
+        }
+        Ok(())
+    }
+
+    fn validate_full_key_poly(&self, poly: &DualRNSPoly) -> Nine65Result<()> {
+        self.validate_full_key_shape(poly)?;
+        poly.validate_residues(&self.config.primes, &self.ctx.dual_rns.anchor.primes)
+    }
+
+    fn prepare<R: FheRng>(
+        &self,
+        sk: &DualRNSSecretKey,
+        pk: Option<&DualRNSPublicKey>,
+        rng: &R,
+    ) -> Nine65Result<()> {
+        crate::entropy::rng_trait::try_require_secure_rng(
+            rng,
+            "SymmetricBootstrap scalar refresh",
+        )?;
+        self.validate_context()?;
+        self.validate_full_key_shape(&sk.s)?;
+        if let Some(pk) = pk {
+            self.validate_full_key_poly(&pk.pk0)?;
+            self.validate_full_key_poly(&pk.pk1)?;
+        }
+        if self.bootstrap_count == u64::MAX {
+            return Err(Nine65Error::Overflow {
+                operation: "scalar refresh counter",
+            });
+        }
+        Ok(())
+    }
+
+    /// Refresh coefficient zero using the supplied public key and deterministic
+    /// research randomness. See the module's scalar/key/noise preconditions.
+    /// Release builds return a typed RNG-policy refusal before decryption.
     pub fn bootstrap(
         &mut self,
         ct: &DualRNSCiphertext,
@@ -150,22 +199,40 @@ impl SymmetricBootstrap {
         pk: &DualRNSPublicKey,
         rng: &mut ShadowHarvester,
     ) -> Nine65Result<DualRNSCiphertext> {
-        // Step 1: Decrypt (uses the working context's decrypt path)
-        let mut m = self.ctx.decrypt_dual(ct, sk);
+        self.bootstrap_with_rng(ct, sk, pk, rng)
+    }
 
-        // Step 2: Re-encrypt fresh (full noise budget restored)
-        let fresh = self.ctx.encrypt_dual(m, pk, rng);
+    /// Trusted-key scalar refresh using fresh OS CSPRNG randomness.
+    ///
+    /// The keys must be a matching pair for this context; their shape does not
+    /// establish that relationship. Secure randomness does not confer public
+    /// bootstrap, plaintext isolation, or a noise-exhaustion detector. Existing
+    /// `SecureRng` draw methods panic if the OS entropy source fails.
+    pub fn bootstrap_secure(
+        &mut self,
+        ct: &DualRNSCiphertext,
+        sk: &DualRNSSecretKey,
+        pk: &DualRNSPublicKey,
+    ) -> Nine65Result<DualRNSCiphertext> {
+        self.bootstrap_with_rng(ct, sk, pk, &mut SecureRng::new())
+    }
 
-        // Zeroize the plaintext explicitly rather than relying on an
-        // ordinary drop, which leaves it in freed stack/heap memory.
-        m.zeroize();
-
+    fn bootstrap_with_rng<R: FheRng>(
+        &mut self,
+        ct: &DualRNSCiphertext,
+        sk: &DualRNSSecretKey,
+        pk: &DualRNSPublicKey,
+        rng: &mut R,
+    ) -> Nine65Result<DualRNSCiphertext> {
+        self.prepare(sk, Some(pk), rng)?;
+        let m = Zeroizing::new(self.ctx.try_decrypt_dual_scalar(ct, sk)?);
+        let fresh = self.ctx.encrypt_dual_with_rng(*m, pk, rng);
         self.bootstrap_count += 1;
-
         Ok(fresh)
     }
 
-    /// Bootstrap with timing statistics.
+    /// Deterministic scalar refresh with timings. The cost model in its stats
+    /// does not measure the source noise or prove successful source decryption.
     pub fn bootstrap_timed(
         &mut self,
         ct: &DualRNSCiphertext,
@@ -174,179 +241,110 @@ impl SymmetricBootstrap {
         rng: &mut ShadowHarvester,
     ) -> Nine65Result<(DualRNSCiphertext, SymBootstrapStats)> {
         let total_start = std::time::Instant::now();
-
+        self.prepare(sk, Some(pk), rng)?;
         let t0 = std::time::Instant::now();
-        let mut m = self.ctx.decrypt_dual(ct, sk);
+        let m = Zeroizing::new(self.ctx.try_decrypt_dual_scalar(ct, sk)?);
         let decrypt_ns = t0.elapsed().as_nanos() as u64;
-
         let t1 = std::time::Instant::now();
-        let fresh = self.ctx.encrypt_dual(m, pk, rng);
+        let fresh = self.ctx.encrypt_dual_with_rng(*m, pk, rng);
         let encrypt_ns = t1.elapsed().as_nanos() as u64;
-
-        // Zeroize the plaintext explicitly (see `bootstrap` above).
-        m.zeroize();
-
+        drop(m);
         self.bootstrap_count += 1;
-        let total_ns = total_start.elapsed().as_nanos() as u64;
-
-        // Estimate post-bootstrap noise
-        let post_noise_mb = crate::noise::budget::NoiseBudget::encrypt_cost(&self.config);
-
         let stats = SymBootstrapStats {
             decrypt_ns,
             encrypt_ns,
-            total_ns,
-            post_noise_mb,
+            total_ns: total_start.elapsed().as_nanos() as u64,
+            post_noise_mb: crate::noise::budget::NoiseBudget::encrypt_cost(&self.config),
         };
-
         Ok((fresh, stats))
     }
 
-    /// Direct symmetric re-encryption without public key.
-    ///
-    /// Uses symmetric encryption: ct = (-(a·s + e) + Δ·m, a)
-    /// This avoids needing a public key entirely — the secret key
-    /// is sufficient for both decrypt and re-encrypt.
-    ///
-    /// WARNING: No Three-Lock protection. Use only as inner primitive.
+    /// Scalar decrypt/re-encrypt without a public key, using deterministic
+    /// research randomness. The plaintext is briefly visible to this process.
     pub fn reencrypt_symmetric(
         &mut self,
         ct: &DualRNSCiphertext,
         sk: &DualRNSSecretKey,
         rng: &mut ShadowHarvester,
     ) -> Nine65Result<DualRNSCiphertext> {
-        let mut m = self.ctx.decrypt_dual(ct, sk);
+        self.reencrypt_symmetric_with_rng(ct, sk, rng)
+    }
 
-        // Symmetric encrypt: c0 = -(a·s + e) + Δ·m, c1 = a
-        let fresh = self.symmetric_encrypt(m, sk, rng);
+    /// Trusted-key scalar refresh without a public key, using the OS CSPRNG.
+    /// See `bootstrap_secure` for scalar, key, entropy and confidentiality scope.
+    pub fn reencrypt_symmetric_secure(
+        &mut self,
+        ct: &DualRNSCiphertext,
+        sk: &DualRNSSecretKey,
+    ) -> Nine65Result<DualRNSCiphertext> {
+        self.reencrypt_symmetric_with_rng(ct, sk, &mut SecureRng::new())
+    }
 
-        // Zeroize the plaintext explicitly (see `bootstrap` above) -- before
-        // the `?` below, so a typed refusal from `symmetric_encrypt` cannot
-        // leave `m` un-scrubbed on the early-return path.
-        m.zeroize();
-        let fresh = fresh?;
-
+    fn reencrypt_symmetric_with_rng<R: FheRng>(
+        &mut self,
+        ct: &DualRNSCiphertext,
+        sk: &DualRNSSecretKey,
+        rng: &mut R,
+    ) -> Nine65Result<DualRNSCiphertext> {
+        self.prepare(sk, None, rng)?;
+        let m = Zeroizing::new(self.ctx.try_decrypt_dual_scalar(ct, sk)?);
+        let fresh = self.symmetric_encrypt(*m, sk, rng)?;
         self.bootstrap_count += 1;
         Ok(fresh)
     }
 
-    /// Pure symmetric encryption (no public key needed).
-    ///
-    /// ct = (Δ·m - a·s + e, a) where:
-    /// - a is uniform over the WHOLE ring R_Q: one integer on `[0, Q)` per
-    ///   coefficient, reduced into every main and anchor lane
-    /// - e is CBD(η) error
-    /// - Δ = floor(q_i / t) for each prime q_i
-    ///
-    /// # Errors
-    ///
-    /// Returns `Nine65Error::BootstrapOverflow` if the main prime chain's
-    /// product cannot be represented by the 256-bit exact rejection sampler
-    /// (see `ensure_q_boot_representable`). Every shipped chain is at most
-    /// 175 bits, so this only fires for a chain that does not exist yet.
-    fn symmetric_encrypt(
+    /// Encrypt a scalar with one canonical full-Q mask and one signed CBD
+    /// error polynomial shared by all main/anchor lanes. Both bases encode
+    /// the same global Delta = floor(Q_main/t), including the anchors.
+    fn symmetric_encrypt<R: FheRng>(
         &self,
         m: u64,
         sk: &DualRNSSecretKey,
-        rng: &mut ShadowHarvester,
+        rng: &mut R,
     ) -> Nine65Result<DualRNSCiphertext> {
-        let n = self.n;
-        let num_main = self.config.primes.len();
-        let num_anchor = self.ctx.dual_rns.anchor.primes.len();
-
-        // `a` is the only thing hiding `a*s` in `c0 = Delta*m - a*s + e`, so
-        // it must be uniform over the whole ring R_Q. This used to draw every
-        // main lane and every anchor lane INDEPENDENTLY (`rng.next_u64() % p`
-        // per lane), so the lanes did not even encode one integer: main and
-        // anchor described two unrelated values, each `%`-biased within its
-        // own prime. That is the narrow-support defect class issue #82 named
-        // and WR-5A (PR #116) fixed in `ClockworkBootstrap::generate_circular_pk`
-        // and `KeySwitchKey::generate`; this was the third site (issue #141).
-        //
-        // Fix: exact full-width rejection sampling uniform on [0, Q), then
-        // reduce that ONE accepted integer independently into every main and
-        // anchor lane, via the crate's single canonical sampler
-        // (`RNSFHEContext::sample_uniform_dual_poly`) rather than a second
-        // implementation. Typed-refuse first if this chain's Q exceeds what
-        // the sampler can represent: `ensure_q_boot_representable` is a bound
-        // on any prime slice (the "boot" in its name is where it was first
-        // needed), and `RNSFHEContext::try_new` does not itself cap the main
-        // chain, so without this an oversized `FHEConfig` would reach the
-        // `U256::product_u64s` panic instead of a typed error.
         ensure_q_boot_representable(&self.config.primes)?;
         let a = self.ctx.sample_uniform_dual_poly(rng, &self.config.primes);
-        let a_main = a.main;
-        let a_anchor = a.anchor;
-
-        // Sample error e ~ CBD(η)
-        let e_signed: Vec<i64> = (0..n)
-            .map(|_| {
-                let mut sum = 0i64;
-                for _ in 0..self.config.eta {
-                    sum += (rng.next_u64() & 1) as i64 - (rng.next_u64() & 1) as i64;
-                }
-                sum
-            })
-            .collect();
-
-        // Compute c0 = Δ·m - a·s + e for each prime
-        let mut c0_main = vec![vec![0u64; n]; num_main];
-        for i in 0..num_main {
-            let p = self.config.primes[i];
-            let p128 = p as u128;
-            let delta_m = (self.ctx.delta_rns[i] as u128 * m as u128 % p128) as u64;
-
-            // a·s via NTT
-            let as_prod = self.ctx.ntt_engines[i].multiply(&a_main[i], &sk.s.main[i]);
-
-            for j in 0..n {
-                let e_mod_p = if e_signed[j] >= 0 {
-                    e_signed[j] as u64
-                } else {
-                    p - ((-e_signed[j]) as u64)
-                };
-                // c0[j] = delta_m - as_prod[j] + e[j]  (only slot 0 gets delta_m)
-                let msg_contrib = if j == 0 { delta_m as u128 } else { 0u128 };
-                c0_main[i][j] =
-                    ((msg_contrib + p128 - as_prod[j] as u128 + e_mod_p as u128) % p128) as u64;
-            }
-        }
-
-        // Anchor limbs
-        let mut c0_anchor = vec![vec![0u64; n]; num_anchor];
-        for i in 0..num_anchor {
-            let p = self.ctx.dual_rns.anchor.primes[i];
-            let p128 = p as u128;
-            let delta_anchor = (p / self.config.t) as u128;
-            let delta_m = (delta_anchor * m as u128 % p128) as u64;
-
-            let as_prod =
-                self.ctx.dual_rns.anchor.ntt_engines[i].multiply(&a_anchor[i], &sk.s.anchor[i]);
-
-            for j in 0..n {
-                let e_mod_p = if e_signed[j] >= 0 {
-                    e_signed[j] as u64
-                } else {
-                    p - ((-e_signed[j]) as u64)
-                };
-                let msg_contrib = if j == 0 { delta_m as u128 } else { 0u128 };
-                c0_anchor[i][j] =
-                    ((msg_contrib + p128 - as_prod[j] as u128 + e_mod_p as u128) % p128) as u64;
-            }
-        }
-
+        let e_signed = Zeroizing::new(rng.cbd_vector(self.n, self.config.eta));
+        let (delta, _) = U256::product_u64s(&self.config.primes).div_mod_u64(self.t);
+        let encrypt_lanes =
+            |primes: &[u64], engines: &[NTTEngine], mask: &[Vec<u64>], secret: &[Vec<u64>]| {
+                primes
+                    .iter()
+                    .enumerate()
+                    .map(|(i, &p)| {
+                        let product = Zeroizing::new(engines[i].multiply(&mask[i], &secret[i]));
+                        let delta_m = ((delta.mod_u64(p) as u128 * m as u128) % p as u128) as u64;
+                        (0..self.n)
+                            .map(|j| {
+                                let e_mod = (e_signed[j] as i128).rem_euclid(p as i128) as u128;
+                                let message = if j == 0 { delta_m as u128 } else { 0 };
+                                ((message + p as u128 - product[j] as u128 + e_mod) % p as u128)
+                                    as u64
+                            })
+                            .collect()
+                    })
+                    .collect::<Vec<Vec<u64>>>()
+            };
+        let c0_main = encrypt_lanes(
+            &self.config.primes,
+            &self.ctx.ntt_engines,
+            &a.main,
+            &sk.s.main,
+        );
+        let c0_anchor = encrypt_lanes(
+            &self.ctx.dual_rns.anchor.primes,
+            &self.ctx.dual_rns.anchor.ntt_engines,
+            &a.anchor,
+            &sk.s.anchor,
+        );
         Ok(DualRNSCiphertext {
             c0: DualRNSPoly {
                 main: c0_main,
                 anchor: c0_anchor,
-                n,
+                n: self.n,
             },
-            c1: DualRNSPoly {
-                main: a_main,
-                anchor: a_anchor,
-                n,
-            },
-            level: num_main,
+            c1: a,
+            level: self.config.primes.len(),
         })
     }
 }
@@ -355,7 +353,7 @@ impl SymmetricBootstrap {
 // DEPTH ANALYSIS: How Far Can We Push Without Bootstrap?
 // =============================================================================
 
-/// Compute exact noise budget and maximum depth for a given configuration.
+/// Legacy noise-cost model; this is not a measured depth or correctness bound.
 ///
 /// Returns (initial_budget_mb, cost_per_sym_mul_mb, cost_per_pub_mul_mb,
 ///          max_sym_depth, max_pub_depth)
@@ -379,7 +377,7 @@ pub fn analyze_depth_budget(config: &FHEConfig) -> DepthAnalysis {
     let max_sym_depth = if sym_net_cost > 0 {
         (initial_mb / sym_net_cost) as usize
     } else {
-        usize::MAX // Zero or negative net cost = unlimited
+        usize::MAX // Legacy model sentinel; not an unlimited-depth claim
     };
 
     let max_pub_depth = if pub_net_cost > 0 {
@@ -387,12 +385,6 @@ pub fn analyze_depth_budget(config: &FHEConfig) -> DepthAnalysis {
     } else {
         usize::MAX
     };
-
-    // Actual symmetric depth is MUCH higher because:
-    // 1. K-Elimination rescale is EXACT (zero rounding error)
-    // 2. Symmetric relin is EXACT (direct s² computation)
-    // 3. The millibits model is conservative
-    // In practice: symmetric depth > 200, public depth = 4-5
 
     DepthAnalysis {
         config_name: config.name.to_string(),
@@ -412,9 +404,8 @@ pub fn analyze_depth_budget(config: &FHEConfig) -> DepthAnalysis {
         pub_net_cost_mb: pub_net_cost,
         conservative_sym_depth: max_sym_depth,
         conservative_pub_depth: max_pub_depth,
-        // The real numbers based on testing
-        actual_sym_depth_note: "200+ tested, zero collapses, limited by prime count not noise",
-        actual_pub_depth_note: "4-5 (Clockwork Bootstrap extends to unlimited)",
+        actual_sym_depth_note: "not established by this legacy model",
+        actual_pub_depth_note: "not established; legacy public bootstrap remains gated",
     }
 }
 
@@ -495,6 +486,265 @@ mod tests {
     use crate::ops::bootstrap::ClockworkBootstrap;
     use crate::ops::rns_fhe::RNSFHEContext;
     use crate::params::SecureConfig;
+
+    fn scalar_refresh_config() -> FHEConfig {
+        FHEConfig::custom(
+            512,
+            vec![998_244_353, 1_004_535_809, 469_762_049],
+            65_537,
+            2,
+        )
+        .expect("test basis")
+    }
+
+    #[test]
+    fn scalar_refresh_secure_roundtrips_boundaries_and_reduced_level() {
+        let config = scalar_refresh_config();
+        let ctx = RNSFHEContext::try_new(&config).unwrap();
+        let keys = ctx.generate_keys_dual_secure();
+        let mut refresh = SymmetricBootstrap::new(&config).unwrap();
+        for m in [0, 1, 42, config.t - 1] {
+            let input = ctx.encrypt_dual_secure(m, &keys.public_key);
+            for source in [
+                input.clone(),
+                ctx.mod_switch_ct_to_level(&input, 2).unwrap(),
+            ] {
+                assert_eq!(
+                    ctx.try_decrypt_dual_scalar(&source, &keys.secret_key)
+                        .unwrap(),
+                    m
+                );
+                let pk_fresh = refresh
+                    .bootstrap_secure(&source, &keys.secret_key, &keys.public_key)
+                    .unwrap();
+                let sk_fresh = refresh
+                    .reencrypt_symmetric_secure(&source, &keys.secret_key)
+                    .unwrap();
+                let pk_repeated = refresh
+                    .bootstrap_secure(&source, &keys.secret_key, &keys.public_key)
+                    .unwrap();
+                let sk_repeated = refresh
+                    .reencrypt_symmetric_secure(&source, &keys.secret_key)
+                    .unwrap();
+                for fresh in [&pk_fresh, &sk_fresh, &pk_repeated, &sk_repeated] {
+                    ctx.validate_dual_ciphertext(fresh).unwrap();
+                    assert_eq!(fresh.level, config.primes.len());
+                    assert_eq!(
+                        ctx.try_decrypt_dual_scalar(fresh, &keys.secret_key)
+                            .unwrap(),
+                        m
+                    );
+                    assert_eq!(ctx.decrypt_dual(fresh, &keys.secret_key), m);
+                }
+                assert_ne!(pk_fresh.c1.main, pk_repeated.c1.main);
+                assert_ne!(sk_fresh.c1.main, sk_repeated.c1.main);
+            }
+        }
+        assert_eq!(refresh.bootstrap_count, 32);
+    }
+
+    #[test]
+    fn scalar_refresh_symmetric_phase_uses_one_global_delta_in_both_bases() {
+        let config = scalar_refresh_config();
+        let ctx = RNSFHEContext::try_new(&config).unwrap();
+        let mut rng = ShadowHarvester::with_seed(0x5ca1_a002);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let mut refresh = SymmetricBootstrap::new(&config).unwrap();
+        let input = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
+        let fresh = refresh
+            .reencrypt_symmetric(&input, &keys.secret_key, &mut rng)
+            .unwrap();
+        let (delta, _) = U256::product_u64s(&config.primes).div_mod_u64(config.t);
+        let phase_errors =
+            |prime: u64, engine: &NTTEngine, c0: &[u64], c1: &[u64], secret: &[u64]| {
+                let product = engine.multiply(c1, secret);
+                (0..config.n)
+                    .map(|j| {
+                        let message = if j == 0 {
+                            delta.mod_u64(prime) as u128 * 42 % prime as u128
+                        } else {
+                            0
+                        };
+                        let error = ((c0[j] as u128 + product[j] as u128 + prime as u128 - message)
+                            % prime as u128) as u64;
+                        let signed_error = if error <= config.eta as u64 {
+                            error as i64
+                        } else {
+                            error as i64 - prime as i64
+                        };
+                        assert!(
+                            signed_error.unsigned_abs() <= config.eta as u64,
+                            "coefficient {j}"
+                        );
+                        signed_error
+                    })
+                    .collect::<Vec<_>>()
+            };
+        let first_lane_errors = phase_errors(
+            config.primes[0],
+            &ctx.ntt_engines[0],
+            &fresh.c0.main[0],
+            &fresh.c1.main[0],
+            &keys.secret_key.s.main[0],
+        );
+        for i in 1..config.primes.len() {
+            assert_eq!(
+                phase_errors(
+                    config.primes[i],
+                    &ctx.ntt_engines[i],
+                    &fresh.c0.main[i],
+                    &fresh.c1.main[i],
+                    &keys.secret_key.s.main[i]
+                ),
+                first_lane_errors,
+                "main lane {i}"
+            );
+        }
+        for i in 0..ctx.dual_rns.anchor.primes.len() {
+            assert_eq!(
+                phase_errors(
+                    ctx.dual_rns.anchor.primes[i],
+                    &ctx.dual_rns.anchor.ntt_engines[i],
+                    &fresh.c0.anchor[i],
+                    &fresh.c1.anchor[i],
+                    &keys.secret_key.s.anchor[i]
+                ),
+                first_lane_errors,
+                "anchor lane {i}"
+            );
+        }
+        let multiplier = ctx.encrypt_dual(3, &keys.public_key, &mut rng);
+        let product = ctx.mul_dual_symmetric(&fresh, &multiplier, &keys.secret_key);
+        assert_eq!(
+            ctx.try_decrypt_dual_scalar(&product, &keys.secret_key)
+                .unwrap(),
+            126
+        );
+    }
+
+    #[test]
+    fn scalar_refresh_rejects_malformed_inputs_without_sampling_or_counting() {
+        let config = scalar_refresh_config();
+        let ctx = RNSFHEContext::try_new(&config).unwrap();
+        let mut setup_rng = ShadowHarvester::with_seed(0x5ca1_a003);
+        let keys = ctx.generate_keys_dual(&mut setup_rng);
+        let input = ctx.encrypt_dual(42, &keys.public_key, &mut setup_rng);
+        let mut cases = Vec::new();
+        let mut malformed = input.clone();
+        malformed.level = 0;
+        cases.push(malformed);
+        let mut malformed = input.clone();
+        malformed.c0.main[0][0] = config.primes[0];
+        cases.push(malformed);
+        let mut malformed = input.clone();
+        malformed.c1.anchor[0].pop();
+        cases.push(malformed);
+        for source in cases {
+            let mut refresh = SymmetricBootstrap::new(&config).unwrap();
+            let mut rng = ShadowHarvester::with_seed(91);
+            let mut unchanged = ShadowHarvester::with_seed(91);
+            assert!(refresh
+                .bootstrap(&source, &keys.secret_key, &keys.public_key, &mut rng)
+                .is_err());
+            assert!(refresh
+                .bootstrap_timed(&source, &keys.secret_key, &keys.public_key, &mut rng)
+                .is_err());
+            assert!(refresh
+                .reencrypt_symmetric(&source, &keys.secret_key, &mut rng)
+                .is_err());
+            assert_eq!(rng.next_u64(), unchanged.next_u64());
+            assert_eq!(refresh.bootstrap_count, 0);
+        }
+    }
+
+    #[test]
+    fn scalar_refresh_rejects_incomplete_output_keys_and_context_drift() {
+        let config = scalar_refresh_config();
+        let ctx = RNSFHEContext::try_new(&config).unwrap();
+        let mut rng = ShadowHarvester::with_seed(0x5ca1_a004);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let input = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
+        let reduced = ctx.mod_switch_ct_to_level(&input, 2).unwrap();
+        let mut refresh = SymmetricBootstrap::new(&config).unwrap();
+        let mut short_secret = keys.secret_key.clone();
+        short_secret.s.main.pop();
+        assert!(refresh
+            .reencrypt_symmetric(&reduced, &short_secret, &mut rng)
+            .is_err());
+        let mut malformed_pk = keys.public_key.clone();
+        malformed_pk.pk0.main.pop();
+        assert!(refresh
+            .bootstrap(&input, &keys.secret_key, &malformed_pk, &mut rng)
+            .is_err());
+        let mut malformed_pk = keys.public_key.clone();
+        malformed_pk.pk1.anchor[0][0] = ctx.dual_rns.anchor.primes[0];
+        assert!(refresh
+            .bootstrap(&input, &keys.secret_key, &malformed_pk, &mut rng)
+            .is_err());
+        let mut malformed_sk = keys.secret_key.clone();
+        malformed_sk.s.main[0][0] = config.primes[0];
+        assert!(refresh
+            .reencrypt_symmetric(&input, &malformed_sk, &mut rng)
+            .is_err());
+        refresh.t += 1;
+        assert!(refresh
+            .bootstrap(&input, &keys.secret_key, &keys.public_key, &mut rng)
+            .is_err());
+        assert_eq!(refresh.bootstrap_count, 0);
+    }
+
+    #[test]
+    fn scalar_refresh_legacy_timed_entry_matches_untimed_entry() {
+        let config = scalar_refresh_config();
+        let ctx = RNSFHEContext::try_new(&config).unwrap();
+        let mut setup_rng = ShadowHarvester::with_seed(0x5ca1_a005);
+        let keys = ctx.generate_keys_dual(&mut setup_rng);
+        let input = ctx.encrypt_dual(42, &keys.public_key, &mut setup_rng);
+        let mut refresh = SymmetricBootstrap::new(&config).unwrap();
+        let mut rng = ShadowHarvester::with_seed(92);
+        let mut same_rng = ShadowHarvester::with_seed(92);
+        let untimed = refresh
+            .bootstrap(&input, &keys.secret_key, &keys.public_key, &mut rng)
+            .unwrap();
+        let (timed, stats) = refresh
+            .bootstrap_timed(&input, &keys.secret_key, &keys.public_key, &mut same_rng)
+            .unwrap();
+        assert_eq!(timed.c0.main, untimed.c0.main);
+        assert_eq!(timed.c0.anchor, untimed.c0.anchor);
+        assert_eq!(timed.c1.main, untimed.c1.main);
+        assert_eq!(timed.c1.anchor, untimed.c1.anchor);
+        assert!(stats.total_ns >= stats.decrypt_ns + stats.encrypt_ns);
+        assert_eq!(refresh.bootstrap_count, 2);
+        assert_eq!(
+            ctx.try_decrypt_dual_scalar(&timed, &keys.secret_key)
+                .unwrap(),
+            42
+        );
+    }
+
+    #[test]
+    fn scalar_refresh_constructor_refuses_invalid_config_without_panicking() {
+        let config = scalar_refresh_config();
+        let mut cases = Vec::new();
+        let mut bad = config.clone();
+        bad.n = 0;
+        cases.push(bad);
+        let mut bad = config.clone();
+        bad.primes[1] = bad.primes[0];
+        cases.push(bad);
+        let mut bad = config.clone();
+        bad.primes[0] = 15;
+        cases.push(bad);
+        let mut bad = config.clone();
+        bad.t = 0;
+        cases.push(bad);
+        let mut bad = config.clone();
+        bad.primes = vec![998_244_353; 9];
+        cases.push(bad);
+        for bad in cases {
+            assert!(SymmetricBootstrap::new(&bad).is_err());
+        }
+    }
 
     // =====================================================================
     // CORRECTNESS CONTRACT TESTS
@@ -1128,8 +1378,8 @@ mod tests {
     /// noise budget exhaustion. This test documents the actual depth ceiling
     /// empirically rather than asserting a fixed target.
     ///
-    /// For unlimited depth: use AutoBootstrapEvaluator or SymmetricBootstrap.
-    /// For deeper no-bootstrap circuits: use secure_192 or secure_128_deep.
+    /// This retained historical survey does not establish a supported depth
+    /// or an unlimited-depth guarantee for the scalar refresh API.
     #[ignore = "VESTIGIAL: surveys how deep secure_128 gets without a refresh, and its loop is driven by the retired ladder: it calls ctx.mod_switch_ct_to_level(&ct_2, ct.level) each iteration and breaks when that returns None, then asserts only max_correct_depth >= 1. Both the level alignment and the 'for unlimited depth use AutoBootstrapEvaluator or SymmetricBootstrap' framing are retired premises. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_symmetric_depth_50_no_bootstrap() {
@@ -1184,7 +1434,7 @@ mod tests {
         );
     }
 
-    /// Verify noise budget is conservative: actual depth exceeds prediction
+    /// Historical consistency checks on the legacy noise-cost model.
     #[ignore = "VESTIGIAL: asserts analyze_depth_budget reports a positive initial budget and that the symmetric net cost is below the public net cost — a comparison between two per-multiply depletion rates. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_noise_budget_is_conservative() {
@@ -1192,9 +1442,9 @@ mod tests {
         let analysis = analyze_depth_budget(&cfg);
 
         // The millibits model predicts conservative_sym_depth
-        // Actual depth should exceed it (model is pessimistic)
+        // This estimate alone establishes no measured depth.
         println!(
-            "Conservative prediction: {} muls, actual tested: 200+",
+            "Legacy model estimate: {} muls; measured depth is not established here",
             analysis.conservative_sym_depth
         );
 

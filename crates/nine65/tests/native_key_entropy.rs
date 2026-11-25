@@ -1,4 +1,4 @@
-//! Exercise the native single-modulus key API through a separately linked
+//! Exercise native key, encryption and trusted refresh APIs through a separately linked
 //! library. A `--lib` unit test cannot check the release RNG guard: `cfg(test)`
 //! deliberately permits deterministic entropy inside that library build.
 
@@ -89,6 +89,29 @@ fn release_evaluation_key_refuses_shadow_before_sampling() {
     assert_refused_before_sampling("EvaluationKey::generate", |rng| {
         EvaluationKey::generate(&sk, &config, &ntt, rng)
     });
+}
+
+#[cfg(not(debug_assertions))]
+#[test]
+fn release_trusted_refresh_refuses_shadow_before_sampling() {
+    use nine65::ops::symmetric_bootstrap::SymmetricBootstrap;
+
+    let config = SecureConfig::secure_128().into_config();
+    let mut engine = SymmetricBootstrap::new(&config).unwrap();
+    let keys = engine.ctx.generate_keys_dual_secure();
+    let (sk, pk) = (&keys.secret_key, &keys.public_key);
+    let input = engine.ctx.encrypt_dual_secure(42, pk);
+
+    assert_error_before_sampling("SymmetricBootstrap", |rng| {
+        engine.bootstrap(&input, sk, pk, rng)
+    });
+    assert_error_before_sampling("SymmetricBootstrap", |rng| {
+        engine.bootstrap_timed(&input, sk, pk, rng)
+    });
+    assert_error_before_sampling("SymmetricBootstrap", |rng| {
+        engine.reencrypt_symmetric(&input, sk, rng)
+    });
+    assert_eq!(engine.bootstrap_count, 0);
 }
 
 #[test]
