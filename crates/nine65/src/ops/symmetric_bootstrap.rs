@@ -753,7 +753,7 @@ mod tests {
 
     /// CONTRACT §1: Prime Superset Invariant
     /// Boot primes must be a strict superset of work primes.
-    #[ignore = "VESTIGIAL: CONTRACT 1 — asserts the boot prime set is a strict superset of the work primes for all three secure configs. Strictly-more-primes is spare-basis bookkeeping for a switch that no longer happens. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical Clockwork contract fixture. Current legacy gate checks live in the production-boundary suite."]
     #[test]
     fn test_contract_1_prime_superset_all_configs() {
         for (label, cfg) in [
@@ -781,7 +781,7 @@ mod tests {
 
     /// CONTRACT §2: Single Drop Prime Invariant
     /// Exactly one boot prime is not in work primes.
-    #[ignore = "VESTIGIAL: CONTRACT 2 — asserts exactly one boot prime is absent from the work primes (the drop prime) across all three secure configs. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical Clockwork contract fixture. Current legacy gate checks live in the production-boundary suite."]
     #[test]
     fn test_contract_2_single_drop_prime_all_configs() {
         for (label, cfg) in [
@@ -809,7 +809,7 @@ mod tests {
 
     /// CONTRACT §3: Canonical Anchor Invariant
     /// Boot context anchors must match canonical anchor list for N.
-    #[ignore = "VESTIGIAL: CONTRACT 3 — asserts each bootstrap context's anchor primes match the canonical anchor list for N. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical Clockwork contract fixture. Current legacy gate checks live in the production-boundary suite."]
     #[test]
     fn test_contract_3_canonical_anchors_all_configs() {
         for (label, cfg) in [
@@ -830,7 +830,7 @@ mod tests {
 
     /// CONTRACT §4: Anchor Recomputation After Prime Drop
     /// After Phase 3, anchors must equal CRT(main) mod anchor_prime.
-    #[ignore = "VESTIGIAL: CONTRACT 4 — asserts that after Phase 3 the anchor limbs equal CRT(main) mod anchor_prime, i.e. anchors were correctly recomputed after the prime drop. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical Clockwork contract fixture. Current legacy gate checks live in the production-boundary suite."]
     #[test]
     fn test_contract_4_anchor_recomputation_post_bootstrap() {
         let cfg = SecureConfig::secure_128().into_config();
@@ -881,7 +881,7 @@ mod tests {
 
     /// CONTRACT §5: Key-Switch Uses Full CRT Reconstruction
     /// Verifies non-circular bootstrap_with_ksk roundtrips correctly.
-    #[ignore = "VESTIGIAL: CONTRACT 5 — asserts boot.bootstrap_with_ksk roundtrips m through full CRT reconstruction in the key-switch. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical Clockwork contract fixture. Current legacy gate checks live in the production-boundary suite."]
     #[test]
     fn test_contract_5_ksk_full_crt_reconstruction() {
         let cfg = SecureConfig::secure_128().into_config();
@@ -906,7 +906,7 @@ mod tests {
     /// CONTRACT §6: Non-Circular Ordering (Key-Switch Then ModSwitch)
     /// The test_ksk_bootstrap_roundtrip in bootstrap.rs exercises this.
     /// Here we verify the output is in work prime space (not boot space).
-    #[ignore = "VESTIGIAL: CONTRACT 6 — asserts the non-circular bootstrap output has work-prime limb count and work-prime-bounded coefficients, i.e. it came back out of boot space. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical Clockwork contract fixture. Current legacy gate checks live in the production-boundary suite."]
     #[test]
     fn test_contract_6_ksk_output_in_work_space() {
         let cfg = SecureConfig::secure_128().into_config();
@@ -943,7 +943,7 @@ mod tests {
 
     /// CONTRACT §7: u128 CRT Ceiling Guard
     /// secure_192 and secure_256 must use U256 fallback, not silently overflow.
-    #[ignore = "VESTIGIAL: CONTRACT 7 — asserts the secure_192 and secure_256 prime products overflow u128 and that ClockworkBootstrap::new still succeeds via the U256 fallback. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical Clockwork contract fixture. Current legacy gate checks live in the production-boundary suite."]
     #[test]
     fn test_contract_7_u128_ceiling_guard() {
         // secure_192: 5 × 30-bit ≈ 150 bits, overflows u128
@@ -983,7 +983,7 @@ mod tests {
     }
 
     /// CONTRACT §7 continued: U256 bootstrap roundtrip for 192-bit security
-    #[ignore = "VESTIGIAL: CONTRACT 7 (continued) — asserts a full secure_192 encrypt -> bootstrap -> decrypt roundtrip through the U256 CRT path. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical Clockwork contract fixture. Current legacy gate checks live in the production-boundary suite."]
     #[test]
     fn test_contract_7_u256_roundtrip_192() {
         let cfg = SecureConfig::secure_192().into_config();
@@ -1007,7 +1007,7 @@ mod tests {
 
     /// CONTRACT §8: Bootstrap Depth Budget
     /// Boot prime count >= max(bootstrap_depth + 2, work_primes + 1).
-    #[ignore = "VESTIGIAL: CONTRACT 8 — asserts boot_primes >= bootstrap_depth + 2 and boot_primes >= work_primes + 1. This is a depth budget expressed directly as a prime count; it is the exact accounting this substrate retires. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical Clockwork contract fixture. Current legacy gate checks live in the production-boundary suite."]
     #[test]
     fn test_contract_8_depth_budget_all_configs() {
         for (label, cfg) in [
@@ -1043,7 +1043,7 @@ mod tests {
     // =====================================================================
 
     /// Basic symmetric bootstrap roundtrip: encrypt → bootstrap → decrypt
-    #[ignore = "VESTIGIAL: asserts SymmetricBootstrap::bootstrap roundtrips m for m in [0, 1, 42, 1000, 65536]. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical trusted-key refresh fixture. The active scalar_refresh tests exercise the current wrapper."]
     #[test]
     fn test_symmetric_bootstrap_roundtrip() {
         let cfg = SecureConfig::secure_128().into_config();
@@ -1063,7 +1063,7 @@ mod tests {
     }
 
     /// Symmetric bootstrap after multiplication: mul → sym_bootstrap → mul
-    #[ignore = "VESTIGIAL: asserts 3*7=21 -> symmetric bootstrap -> 21*5=105, with the refresh in the middle as the stated reason the second multiply has budget. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical trusted-key refresh fixture. The active scalar_refresh tests exercise the current wrapper."]
     #[test]
     fn test_symmetric_bootstrap_after_mul() {
         let cfg = SecureConfig::secure_128().into_config();
@@ -1092,7 +1092,7 @@ mod tests {
     }
 
     /// Symmetric bootstrap with timing stats
-    #[ignore = "VESTIGIAL: asserts SymmetricBootstrap::bootstrap_timed roundtrips 42 and reports non-zero total/decrypt/encrypt nanoseconds — an instrumentation test of the refresh path. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical trusted-key refresh fixture. The active scalar_refresh tests exercise the current wrapper."]
     #[test]
     fn test_symmetric_bootstrap_timing() {
         let cfg = SecureConfig::secure_128().into_config();
@@ -1114,7 +1114,7 @@ mod tests {
     }
 
     /// Pure symmetric encrypt (no pk needed) roundtrip
-    #[ignore = "VESTIGIAL: asserts SymmetricBootstrap::reencrypt_symmetric roundtrips m without a public key. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical trusted-key refresh fixture. The active scalar_refresh tests exercise the current wrapper."]
     #[test]
     fn test_symmetric_reencrypt_roundtrip() {
         let cfg = SecureConfig::secure_128().into_config();
@@ -1303,7 +1303,7 @@ mod tests {
     }
 
     /// Compare symmetric vs public bootstrap: sym should be faster
-    #[ignore = "VESTIGIAL: times ten SymmetricBootstrap::bootstrap calls against ten ClockworkBootstrap::bootstrap calls and prints the ratio; it asserts nothing, and both arms are the vestigial path. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical timing comparison uses gated legacy Clockwork. Use the trusted_scalar_refresh_timings example for the scalar path."]
     #[test]
     fn test_symmetric_vs_public_bootstrap_perf() {
         let cfg = SecureConfig::secure_128().into_config();
@@ -1357,7 +1357,7 @@ mod tests {
     // =====================================================================
 
     /// Print depth analysis for all production configs
-    #[ignore = "VESTIGIAL: prints analyze_depth_budget for four configs. The depth-budget model it renders presumes depth is a consumable quantity. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical cost-model diagnostic. Measured depth depends on the tuple and operand sequence."]
     #[test]
     fn test_depth_analysis_all_configs() {
         for sc in [
@@ -1380,7 +1380,7 @@ mod tests {
     ///
     /// This retained historical survey does not establish a supported depth
     /// or an unlimited-depth guarantee for the scalar refresh API.
-    #[ignore = "VESTIGIAL: surveys how deep secure_128 gets without a refresh, and its loop is driven by the retired ladder: it calls ctx.mod_switch_ct_to_level(&ct_2, ct.level) each iteration and breaks when that returns None, then asserts only max_correct_depth >= 1. Both the level alignment and the 'for unlimited depth use AutoBootstrapEvaluator or SymmetricBootstrap' framing are retired premises. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical depth survey. The active fixed-seed regression is symmetric_depth_is_finite_and_noise_limited."]
     #[test]
     fn test_symmetric_depth_50_no_bootstrap() {
         let cfg = SecureConfig::secure_128().into_config();
@@ -1435,7 +1435,7 @@ mod tests {
     }
 
     /// Historical consistency checks on the legacy noise-cost model.
-    #[ignore = "VESTIGIAL: asserts analyze_depth_budget reports a positive initial budget and that the symmetric net cost is below the public net cost — a comparison between two per-multiply depletion rates. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical cost-model diagnostic. Measured depth depends on the tuple and operand sequence."]
     #[test]
     fn test_noise_budget_is_conservative() {
         let cfg = SecureConfig::secure_128().into_config();
@@ -1455,7 +1455,7 @@ mod tests {
     }
 
     /// Test that public mode depth matches prediction
-    #[ignore = "VESTIGIAL: asserts analyze_depth_budget's conservative_pub_depth falls in [1, 15] — a prediction of how many multiplies fit before a refresh is required. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical cost-model diagnostic. Measured depth depends on the tuple and operand sequence."]
     #[test]
     fn test_public_depth_matches_prediction() {
         let cfg = SecureConfig::secure_128().into_config();
@@ -1477,7 +1477,7 @@ mod tests {
     /// Phase 1 modswitch gives us c0_small, c1_small in Z_t.
     /// With sk available, compute m = (c0_small + c1_small·s) mod t directly.
     /// Then re-encrypt. This skips Phase 2 and 3 entirely.
-    #[ignore = "VESTIGIAL: asserts that boot.modswitch_to_t (Phase 1) followed by a hand-rolled negacyclic decrypt in Z_t recovers m, i.e. that Phases 2 and 3 of bootstrap can be skipped when sk is on hand. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical negative control. Independent component rounding omits the displaced Phase-1 carry."]
     #[test]
     fn test_hybrid_skip_phase23_direct_decrypt() {
         let cfg = SecureConfig::secure_128().into_config();
@@ -1541,7 +1541,7 @@ mod tests {
 
     /// End-to-end hybrid: Phase 1 → direct decrypt → re-encrypt → verify
     /// This is the symmetric bootstrap without the Three-Lock wrapper.
-    #[ignore = "VESTIGIAL: asserts the chain 3*5=15 -> symmetric bootstrap -> 15*15=225 -> symmetric bootstrap -> 225*3=675, with each refresh presented as what buys the next multiply. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    #[ignore = "Historical trusted-key refresh fixture. The active scalar_refresh tests exercise the current wrapper."]
     #[test]
     fn test_hybrid_full_reencrypt_chain() {
         let cfg = SecureConfig::secure_128().into_config();

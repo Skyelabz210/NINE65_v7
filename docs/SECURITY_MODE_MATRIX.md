@@ -29,7 +29,9 @@ it under the supplied public key. `reencrypt_symmetric_secure` uses the secret
 key for both operations. Both methods obtain fresh randomness from the OS and
 return a scalar ciphertext on the full working basis. Callers must establish
 the input's key family, scalar encoding and remaining decode capacity. Passing
-a polynomial plaintext selects its constant term and discards the others.
+a polynomial plaintext selects its constant term and discards the others. See the
+[scalar refresh tests and timings](execution/2026-11-24/TRUSTED_SCALAR_REFRESH.md)
+for the tested tuples and measured costs.
 
 Public evaluation has its own entry points. The opt-in
 `PublicResearchRefreshScheduler` operates on sealed full-polynomial inputs
