@@ -1,0 +1,6 @@
+name = "foliatedCoprimeGeometry"
+version = "0.1.0"
+defaultTargets = ["FoliatedCoprimeGeometry"]
+
+[[lean_lib]]
+name = "FoliatedCoprimeGeometry"

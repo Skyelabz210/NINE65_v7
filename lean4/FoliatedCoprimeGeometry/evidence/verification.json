@@ -1,0 +1,882 @@
+{
+  "status": "PASS",
+  "toolchain": "leanprover/lean4:v4.27.0-rc1",
+  "lean_version": "Lean (version 4.27.0-rc1, x86_64-unknown-linux-gnu, commit 2fcce7258eeb6e324366bc25f9058293b04b7547, Release)",
+  "fresh_temporary_build": true,
+  "project_olean_reused": false,
+  "external_packages": [],
+  "bundled_imports": [
+    "Lean"
+  ],
+  "lean_executable_sha256": "8fadc3ed92cc9decb94c96ee9c0876e91e03a3a5e69138f32114f02789e2766c",
+  "snapshot_unchanged_at_completion": true,
+  "source_base_commit": "64c1c89b191093dc12cf81b87da5fb1a02c46dc1",
+  "authored_theorems": 67,
+  "audited_authored_declarations": 97,
+  "axiom_free_theorems": 0,
+  "used_axioms": [
+    "Quot.sound",
+    "propext"
+  ],
+  "allowed_foundational_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "module_order": [
+    "FoliatedCoprimeGeometry.Basic",
+    "FoliatedCoprimeGeometry.Cocycle",
+    "FoliatedCoprimeGeometry.Cover",
+    "FoliatedCoprimeGeometry.Cycles",
+    "FoliatedCoprimeGeometry.Projectors",
+    "FoliatedCoprimeGeometry.Integration",
+    "FoliatedCoprimeGeometry"
+  ],
+  "source_sha256": {
+    "FoliatedCoprimeGeometry/Basic.lean": "e4888a9d530733e5895ef0d6d08d6afa8174051e0085989efe0b1711fc468395",
+    "FoliatedCoprimeGeometry/Cocycle.lean": "10b9b910226ee3820b03392b9a6d639e8907762491296b0d9c5f41ea31cf165b",
+    "FoliatedCoprimeGeometry/Cover.lean": "7410163b7315d5e8ff9eb8799af43b87770ba7a0e3beaadbebafcaece7947af8",
+    "FoliatedCoprimeGeometry/Cycles.lean": "12311aad604276e51a0a2c795183aeec15abb8de878af1132ef8ebffdbbe6651",
+    "FoliatedCoprimeGeometry/Integration.lean": "95420e1cfd2f84a375d201830bccc3b04ae4f77fc6769b049823fd9d3cedbaf3",
+    "FoliatedCoprimeGeometry/Projectors.lean": "e64af0269f3a4a545237f5e9df49c0831f85d89244e41b61de4612d4118aaed9",
+    "FoliatedCoprimeGeometry.lean": "79b386955cfce1d95431df1a372d3e297fb7d2dc3dc4aceb49b6a449710cb976",
+    "lake-manifest.json": "1d30980a9403830e689ab5a77b5272c2e96b72190466a85fc966858c6b75afc3",
+    "lakefile.toml": "9f5ae6097deaa478bb9858577f0ac82ca22c8a833f4839393cec0c9411e16e53",
+    "lean-toolchain": "194fcae7a59d3268baa175bd3e352dafab6954fe08a5b7caec13bedf36f80315",
+    "scripts/check_proofs.py": "89ede04f397e1e62e694ff4907e22b98326c9629fce0a01c21b05be1afa1536f"
+  },
+  "declarations": [
+    {
+      "name": "FoliatedCoprimeGeometry.iter",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Basic.lean",
+      "axioms": []
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.iter_add",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Basic.lean",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.iter_mul",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Basic.lean",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.iter_conj",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Basic.lean",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.add_mod_left_drop",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Basic.lean",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.add_mod_right_drop",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Basic.lean",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.nat_mod_cancel",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Basic.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.mod_eq_of_add_eq",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Basic.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.mod_mod_of_dvd",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Basic.lean",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.bezout",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Basic.lean",
+      "axioms": []
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.bezout_spec",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Basic.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.gcd_div_coprime",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Basic.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.coprime_dvd_of_dvd_mul",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Basic.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.liftStep",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Cocycle.lean",
+      "axioms": []
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.psumFrom",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Cocycle.lean",
+      "axioms": []
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.tau",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Cocycle.lean",
+      "axioms": []
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.psumFrom_split",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cocycle.lean",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.psumFrom_shift_M",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cocycle.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.psumFrom_M_const",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cocycle.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.liftStep_iter",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cocycle.lean",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.liftStep_monodromy",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cocycle.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.liftStep_iter_M_mul",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cocycle.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.gauge",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Cocycle.lean",
+      "axioms": []
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.gaugeInv",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Cocycle.lean",
+      "axioms": []
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.gaugeInv_gauge",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cocycle.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.gauge_gaugeInv",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cocycle.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.CocycleEquiv",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Cocycle.lean",
+      "axioms": []
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.cocycle_equiv_iff_tau_eq",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cocycle.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.toSheet",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.fromSheet",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.toSheet_fromSheet",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.fromSheet_toSheet",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.succTotal",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.sheetStep",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.toSheet_succTotal",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.iter_succTotal",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.sheetStep_monodromy",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.kElim_exact",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.kElim_int_exact",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.rawShadowStep",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.shadowToSheet",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.sheetToShadow",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.shadowToSheet_sheetToShadow",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.sheetToShadow_shadowToSheet",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.kElim_gauge_conjugacy",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cover.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.cycleLength",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Cycles.lean",
+      "axioms": []
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.cycleLength_pos",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cycles.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.liftStep_iter_cycleLength",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cycles.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.cycleLength_dvd_return",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cycles.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.cycleRep",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Cycles.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.orbit_complete",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cycles.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.orbit_disjoint",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cycles.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.liftStep_iter_cycleLength_mul",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cycles.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.orbit_intersection",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cycles.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.cycleCount_mul_cycleLength",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cycles.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.unitCarryCocycle",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Cycles.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.unitCarry_psum_lt",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cycles.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.unitCarry_tau",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cycles.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.cover_30030_connected",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Cycles.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.CoordinateEquiv",
+      "kind": "structure",
+      "file": "FoliatedCoprimeGeometry/Integration.lean",
+      "axioms": []
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.coverEquiv",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Integration.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.shadowGaugeEquiv",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Integration.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.discrepancyEquiv",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Integration.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.sheetStep_eq_liftStep",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Integration.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.sheetStep_period",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Integration.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.sheetStep_return_iff",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Integration.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.rawShadowStep_return_iff",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Integration.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.phase_lock_iff_shared_map",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Integration.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projection_collision",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Integration.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.Pullback",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": []
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projU",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projV",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.succ77",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.succ143",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projU_mem_pullback",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projU_preserves_77",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projU_preserves_13",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projU_idempotent",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projU_fix_pullback",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projU_unique",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projU_well_defined",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projU_comm_succ",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projV_mem_pullback",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projV_preserves_7",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projV_preserves_143",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projV_idempotent",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projV_fix_pullback",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projV_unique",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projV_well_defined",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.projV_comm_succ",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.discrepancy",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.discrepancy_zero_iff",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.psi",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.psiInv",
+      "kind": "def",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.psiInv_psi",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.psi_psiInv",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "FoliatedCoprimeGeometry.discrepancy_succ_invariant",
+      "kind": "theorem",
+      "file": "FoliatedCoprimeGeometry/Projectors.lean",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    }
+  ]
+}

@@ -14,6 +14,17 @@ Published collection prepared 2026-11-17. This directory brings the complete loc
 - [Full collection index](collection/CRAM_PROOFS_INDEX.md)
 - [Publication inventory and exclusions](PUBLICATION_MANIFEST.json)
 
+## Finite covering and phase-locking extension — 2026-11-26
+
+The [Foliated Coprime Geometry package](../../../lean4/FoliatedCoprimeGeometry/README.md)
+adds the supplied finite-cover, general cocycle/cycle classification and 77/143
+projector proofs. A fresh pinned build checks **67 theorems / 97 authored
+declarations**, with only `propext` and `Quot.sound` in the transitive axiom
+inventory. It has no external packages and remains separate from the historical
+Mathlib-backed audit below. Its shared-shadow transition theorem advances the
+P4/P6 mathematical obligations; actual Rust producer/serialization refinement
+and infinite-family topology remain separate.
+
 ## Checked mathematical package
 
 The standalone package is [lean4/CRAMUniversal](../../../lean4/CRAMUniversal/README.md). Its 21 audited source files and Lake dependency manifest match the successful 2026-11-17 integrated audit byte-for-byte: **235 declarations, 67 axiom-free**, with remaining dependencies confined to `propext`, `Classical.choice` and `Quot.sound`.
