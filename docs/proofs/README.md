@@ -10,6 +10,11 @@ pen-and-paper arguments before further Lean development. They do not silently
 upgrade a Rust implementation, a model assumption or a security premise to a
 machine-checked theorem.
 
+The [2026-11-26 finite-cover extension](../../lean4/FoliatedCoprimeGeometry/README.md)
+adds a separately audited, core-only package for sheet dynamics, cocycle periods,
+shared-shadow transitions and lossless discrepancy transport. Its fresh evidence
+is scoped separately from the historical refresh and universal-package counts.
+
 ## Read in this order
 
 1. [Arithmetic and encoding](REFRESH_ARITHMETIC.md): construction of the G/H

@@ -1,0 +1,115 @@
+$ /workspace/.tools/lean-4.27.0-rc1-linux/bin/lean --version
+Lean (version 4.27.0-rc1, x86_64-unknown-linux-gnu, commit 2fcce7258eeb6e324366bc25f9058293b04b7547, Release)
+
+$ /workspace/.tools/lean-4.27.0-rc1-linux/bin/lean -o FoliatedCoprimeGeometry/Basic.olean FoliatedCoprimeGeometry/Basic.lean
+
+$ /workspace/.tools/lean-4.27.0-rc1-linux/bin/lean -o FoliatedCoprimeGeometry/Cocycle.olean FoliatedCoprimeGeometry/Cocycle.lean
+
+$ /workspace/.tools/lean-4.27.0-rc1-linux/bin/lean -o FoliatedCoprimeGeometry/Cover.olean FoliatedCoprimeGeometry/Cover.lean
+
+$ /workspace/.tools/lean-4.27.0-rc1-linux/bin/lean -o FoliatedCoprimeGeometry/Cycles.olean FoliatedCoprimeGeometry/Cycles.lean
+
+$ /workspace/.tools/lean-4.27.0-rc1-linux/bin/lean -o FoliatedCoprimeGeometry/Projectors.olean FoliatedCoprimeGeometry/Projectors.lean
+
+$ /workspace/.tools/lean-4.27.0-rc1-linux/bin/lean -o FoliatedCoprimeGeometry/Integration.olean FoliatedCoprimeGeometry/Integration.lean
+
+$ /workspace/.tools/lean-4.27.0-rc1-linux/bin/lean -o FoliatedCoprimeGeometry.olean FoliatedCoprimeGeometry.lean
+
+$ /workspace/.tools/lean-4.27.0-rc1-linux/bin/lean Audit.lean
+'FoliatedCoprimeGeometry.iter' does not depend on any axioms
+'FoliatedCoprimeGeometry.iter_add' depends on axioms: [propext]
+'FoliatedCoprimeGeometry.iter_mul' depends on axioms: [propext]
+'FoliatedCoprimeGeometry.iter_conj' depends on axioms: [propext]
+'FoliatedCoprimeGeometry.add_mod_left_drop' depends on axioms: [propext]
+'FoliatedCoprimeGeometry.add_mod_right_drop' depends on axioms: [propext]
+'FoliatedCoprimeGeometry.nat_mod_cancel' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.mod_eq_of_add_eq' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.mod_mod_of_dvd' depends on axioms: [propext]
+'FoliatedCoprimeGeometry.bezout' does not depend on any axioms
+'FoliatedCoprimeGeometry.bezout_spec' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.gcd_div_coprime' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.coprime_dvd_of_dvd_mul' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.liftStep' does not depend on any axioms
+'FoliatedCoprimeGeometry.psumFrom' does not depend on any axioms
+'FoliatedCoprimeGeometry.tau' does not depend on any axioms
+'FoliatedCoprimeGeometry.psumFrom_split' depends on axioms: [propext]
+'FoliatedCoprimeGeometry.psumFrom_shift_M' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.psumFrom_M_const' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.liftStep_iter' depends on axioms: [propext]
+'FoliatedCoprimeGeometry.liftStep_monodromy' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.liftStep_iter_M_mul' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.gauge' does not depend on any axioms
+'FoliatedCoprimeGeometry.gaugeInv' does not depend on any axioms
+'FoliatedCoprimeGeometry.gaugeInv_gauge' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.gauge_gaugeInv' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.CocycleEquiv' does not depend on any axioms
+'FoliatedCoprimeGeometry.cocycle_equiv_iff_tau_eq' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.toSheet' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.fromSheet' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.toSheet_fromSheet' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.fromSheet_toSheet' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.succTotal' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.sheetStep' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.toSheet_succTotal' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.iter_succTotal' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.sheetStep_monodromy' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.kElim_exact' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.kElim_int_exact' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.rawShadowStep' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.shadowToSheet' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.sheetToShadow' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.shadowToSheet_sheetToShadow' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.sheetToShadow_shadowToSheet' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.kElim_gauge_conjugacy' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.cycleLength' does not depend on any axioms
+'FoliatedCoprimeGeometry.cycleLength_pos' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.liftStep_iter_cycleLength' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.cycleLength_dvd_return' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.cycleRep' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.orbit_complete' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.orbit_disjoint' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.liftStep_iter_cycleLength_mul' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.orbit_intersection' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.cycleCount_mul_cycleLength' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.unitCarryCocycle' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.unitCarry_psum_lt' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.unitCarry_tau' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.cover_30030_connected' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.CoordinateEquiv' does not depend on any axioms
+'FoliatedCoprimeGeometry.coverEquiv' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.shadowGaugeEquiv' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.discrepancyEquiv' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.sheetStep_eq_liftStep' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.sheetStep_period' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.sheetStep_return_iff' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.rawShadowStep_return_iff' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.phase_lock_iff_shared_map' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projection_collision' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.Pullback' does not depend on any axioms
+'FoliatedCoprimeGeometry.projU' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projV' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.succ77' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.succ143' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projU_mem_pullback' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projU_preserves_77' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projU_preserves_13' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projU_idempotent' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projU_fix_pullback' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projU_unique' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projU_well_defined' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projU_comm_succ' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projV_mem_pullback' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projV_preserves_7' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projV_preserves_143' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projV_idempotent' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projV_fix_pullback' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projV_unique' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projV_well_defined' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.projV_comm_succ' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.discrepancy' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.discrepancy_zero_iff' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.psi' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.psiInv' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.psiInv_psi' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.psi_psiInv' depends on axioms: [propext, Quot.sound]
+'FoliatedCoprimeGeometry.discrepancy_succ_invariant' depends on axioms: [propext, Quot.sound]

@@ -76,3 +76,32 @@ Next bounded implementation priorities are P1/P4 fixed-primary states, actual si
 The full Prime Family read adds explicit P1/P4 obligations from its conditional transfer principle (PDF p. 35): identify the represented property, establish the map/inverse or query-fiber laws, and prove operation preservation. The 77/143 shared-11 fiber product is a written model for dependent views; it does not yet formalize the live sister constructor. Before registering inherited signatures, repair the PDF's nonunit-11 orbit statement, linear-pair offset premise, residue-ring/extension-field distinction, and non-expansion versus pointwise-preservation wording. Proofs must use the corrected predicates, not historical certification labels.
 
 For the fixed coprime carrier base, add a Lean obligation for `alpha_max=floor(sum_i (m_i-1)/m_i)`, attainability of every rank through that maximum, and the resulting exact-rank threshold `q>alpha_max`. S6 has maximum 4, not 5. Under P6, add division-free affine powering via `(p,s)*(q,t)=(pq,s+pt)`; binary exponentiation computes both the power and geometric sum over arbitrary residue rings without assuming `a-1` is a unit. These are written mathematical derivations and future formalization targets, not part of the current 235 declarations.
+
+
+## Finite-cover integration — 2026-11-26
+
+The [new standalone package](../../../FoliatedCoprimeGeometry/README.md) preserves
+the user's supplied finite-cover theorem statements and adds explicit composition
+results. Its [fresh receipt](../../../FoliatedCoprimeGeometry/evidence/verification.json)
+checks 67 theorems / 97 authored declarations under Lean 4.27.0-rc1, with no
+external packages, no admitted proofs, and only `propext` / `Quot.sound` in the
+transitive axiom inventory. These counts do not amend the frozen 235-declaration
+audit above. Source inspection covered the supplied formalization, this ledger,
+and the existing `ConsumerTransport` / `PhaseBinding` contracts at repository
+base `64c1c89b191093dc12cf81b87da5fb1a02c46dc1`.
+
+| Obligation | Disposition and freshly checked result | Exact remaining difference |
+| --- | --- | --- |
+| P1/P3 finite sheet view | SPECIALIZE / INTEGRATE: `coverEquiv`, `kElim_exact`, `shadowGaugeEquiv`; fixed 30030=2730·11 view and on-demand coordinate map | Actual fixed-primary runtime type and serialization; finite semantic coordinate models do not mandate stored K |
+| P4 shared 11 compatibility | EXTEND: both projectors preserve exclusive lanes and land in `Pullback`; `phase_lock_iff_shared_map` characterizes all compatible-pair-preserving function pairs | Bind real producers to source/epoch; instantiate other required 2/11 interfaces and named transported signatures |
+| P6 successor and heterogeneous transitions | EXTEND: projector equivariance, discrepancy invariance and common shared-map criterion | Register concrete operators against this criterion; arithmetic coherence alone does not establish authenticity or convergence |
+| P7 reversible transport | INTEGRATE: `discrepancyEquiv` bundles both inverse laws; `projection_collision` identifies the information a repair would otherwise discard | Choose an authoritative repair policy or retain discrepancy through the actual consumer and serialization path |
+| P8/P9 finite dynamics | EXTEND: general positive minimal cycle length, complete/disjoint orbits, and exact return times for concrete raw residues | Compatible infinite-family construction and topology; actual runtime transition refinement; no claim of universal finite-observation magnitude recovery |
+
+Next dependency order: implement and prove actual same-source constructors for
+the required sister interfaces; instantiate heterogeneous operator compatibility;
+carry the lossless discrepancy contract through consumers; then compose compatible
+refinements into the intended inverse system. Existing universal transport,
+source-binding and signed congruence proofs remain reusable dependencies. The
+finite results above are complete at their stated scope, not reopened as future
+proof obligations by the remaining implementation work.
