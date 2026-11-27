@@ -56,6 +56,10 @@ pub mod cram_precharge;
 #[path = "tropical_phase_clock_tests.rs"]
 mod tropical_phase_clock_tests;
 
+#[cfg(test)]
+#[path = "scalar_decrypt_tests.rs"]
+mod scalar_decrypt_tests;
+
 #[inline]
 fn emit_diagnostic_warn(message: &str) {
     #[cfg(feature = "logging")]
@@ -431,13 +435,13 @@ pub struct RNSKeySet {
 // ============================================================================
 
 /// Maximum polynomial degree to prevent DoS attacks via excessive allocation
-const MAX_POLY_DEGREE: usize = 32768;
+pub(super) const MAX_POLY_DEGREE: usize = 32768;
 
 /// Maximum number of RNS limbs to prevent DoS attacks
 const MAX_RNS_LIMBS: usize = 64;
 
 /// Maximum ciphertext level to prevent invalid state
-const MAX_LEVEL: usize = 32;
+pub(super) const MAX_LEVEL: usize = 32;
 
 /// Maximum payload sizes (bytes) for deserialization pre-flight checks.
 /// Prevents unbounded allocation before validation runs.
@@ -3267,12 +3271,10 @@ impl RNSFHEContext {
         self.decrypt_dual_with_diagnostics(ct, sk).0
     }
 
-    /// Checked decryption: returns `Err(NoiseExhausted)` when noise budget is
-    /// exhausted (rounding margin negative), instead of silently returning garbage.
-    ///
-    /// The rounding margin from `decrypt_dual_with_diagnostics` indicates how
-    /// close the noise is to causing a decryption failure. A negative margin
-    /// means the error exceeded Δ/2 and the decoded value is unreliable.
+    /// Returns `Err(NoiseExhausted)` for a negative floored-Delta diagnostic
+    /// margin. A positive margin measures proximity to the selected decode
+    /// point. A ciphertext which already crossed into another cell can still
+    /// have a positive margin.
     pub fn try_decrypt_dual(
         &self,
         ct: &DualRNSCiphertext,
@@ -3286,6 +3288,112 @@ impl RNSFHEContext {
                 operation_count: 0,
                 last_op: crate::noise::budget::NoiseOpType::MulCt,
             })
+        } else {
+            Ok(decoded)
+        }
+    }
+
+    /// Decode coefficient zero without constructing the other phase coefficients.
+    ///
+    /// This key-holder boundary validates ciphertext/key shape and canonical
+    /// residues, then computes the constant term of `c0 + c1*s` in each active
+    /// main lane. The negacyclic product is
+    /// `c1[0]*s[0] - sum(c1[j]*s[n-j], j=1..n)`, so it needs O(level*N)
+    /// work and no anchor convolutions or complete phase polynomial.
+    ///
+    /// Supports main-prime prefixes of at least two lanes whose `Q_level*t`
+    /// fits U256. The secret may contain additional inactive main lanes.
+    /// Returns `DecryptionFailed` when the existing floored-Delta diagnostic
+    /// margin is negative. A nonnegative margin is only consistency with the
+    /// selected decoding cell: it does not authenticate the key, establish the
+    /// original plaintext, or prove that other coefficients encode zero.
+    /// This method has no constant-time or ciphertext-validity guarantee.
+    pub fn try_decrypt_dual_scalar(
+        &self,
+        ct: &DualRNSCiphertext,
+        sk: &DualRNSSecretKey,
+    ) -> Nine65Result<u64> {
+        self.validate_dual_ciphertext(ct)?;
+        if self.config.n != self.n
+            || self.config.t != self.t
+            || self.rns.n != self.n
+            || self.rns.primes != self.config.primes
+        {
+            return Err(Nine65Error::InvalidParameter {
+                message: "scalar decryption context metadata is inconsistent".into(),
+            });
+        }
+        let level = ct.level;
+        if ct.c0.n != self.n {
+            return Err(Nine65Error::InvalidPolynomialDegree {
+                got: ct.c0.n,
+                expected: self.n,
+            });
+        }
+        if level < 2 || self.t == 0 {
+            return Err(Nine65Error::InvalidParameter {
+                message: "scalar decryption requires at least two active lanes and nonzero t"
+                    .into(),
+            });
+        }
+        // Check public decode capacity before invoking fixed-width arithmetic.
+        let mut factors = self.config.primes[..level].to_vec();
+        factors.push(self.t);
+        if U256::checked_product_u64s(&factors).is_none() {
+            return Err(Nine65Error::Overflow {
+                operation: "scalar decryption Q_level*t exceeds U256",
+            });
+        }
+        if !U256::product_u64s(&self.config.primes[..level]).ge(U256::from_u64(self.t)) {
+            return Err(Nine65Error::InvalidParameter {
+                message: "scalar decryption requires Q_level >= t".into(),
+            });
+        }
+        // Reject malformed secret material without including its residues in
+        // errors. Validate every represented lane once; the shared decoder
+        // below consumes only the resulting constant-term residues.
+        let secret_level = sk.s.main.len();
+        if sk.s.n != self.n
+            || !(level..=self.config.primes.len()).contains(&secret_level)
+            || sk.s.anchor.len() != self.dual_rns.anchor.primes.len()
+            || sk
+                .s
+                .main
+                .iter()
+                .zip(&self.config.primes)
+                .any(|(limb, &q)| limb.len() != self.n || limb.iter().any(|&x| x >= q))
+            || sk
+                .s
+                .anchor
+                .iter()
+                .zip(&self.dual_rns.anchor.primes)
+                .any(|(limb, &q)| limb.len() != self.n || limb.iter().any(|&x| x >= q))
+        {
+            return Err(Nine65Error::InvalidParameter {
+                message: "invalid scalar decryption secret key".into(),
+            });
+        }
+
+        let mut residues = Zeroizing::new(Vec::with_capacity(level));
+        for lane in 0..level {
+            let mont = &self.ntt_engines[lane].mont;
+            let a = &ct.c1.main[lane];
+            let s = &sk.s.main[lane];
+            // With standard-domain operands each product carries a common R^-1.
+            // Normalize their signed sum once, after the negacyclic dot product.
+            let mut dot = mont.montgomery_mul(a[0], s[0]);
+            for (&a_j, &s_neg_j) in a[1..].iter().zip(s[1..].iter().rev()) {
+                dot = mont.montgomery_sub(dot, mont.montgomery_mul(a_j, s_neg_j));
+            }
+            residues.push(mont.montgomery_add(ct.c0.main[lane][0], mont.to_montgomery(dot)));
+        }
+        #[cfg(feature = "architecture-meter")]
+        self.rns
+            .architecture_meter
+            .record_projection(cram_core::ProjectionCapability::UserOutput);
+        let (decoded, margin) = self.decode_dual_constant_residues(&residues, level);
+        if margin < 0 {
+            Err(Nine65Error::DecryptionFailed)
         } else {
             Ok(decoded)
         }
@@ -3391,6 +3499,7 @@ impl RNSFHEContext {
     /// property `try_decrypt_dual` depends on — instead of being reported as
     /// exactly zero (which previously made noise-exhaustion undetectable on
     /// every config wide enough to require this path).
+    #[cfg(test)]
     fn decrypt_dual_u256(&self, inner: &DualRNSPoly, ct_level: usize) -> (u64, i128) {
         let rns_coeff: Vec<u64> = inner
             .main
@@ -3398,8 +3507,16 @@ impl RNSFHEContext {
             .take(ct_level)
             .map(|limb| limb[0])
             .collect();
-        let is_negative = self.is_upper_half_main(&rns_coeff, ct_level);
-        let full_value = self.rns.to_u256_level(&rns_coeff, ct_level);
+        self.decode_dual_constant_residues_u256(&rns_coeff, ct_level)
+    }
+
+    fn decode_dual_constant_residues_u256(
+        &self,
+        rns_coeff: &[u64],
+        ct_level: usize,
+    ) -> (u64, i128) {
+        let is_negative = self.is_upper_half_main(rns_coeff, ct_level);
+        let full_value = self.rns.to_u256_level(rns_coeff, ct_level);
         let q_level = U256::product_u64s(&self.config.primes[..ct_level]);
         // Deliberately the FLOORED delta (matches the u128 path's `delta`).
         // `decoded` is derived from a rounding against the *exact* Q/t ratio,
@@ -3441,15 +3558,10 @@ impl RNSFHEContext {
         (decoded, margin)
     }
 
-    /// Decrypt with diagnostics: returns (decrypted, rounding_margin)
-    ///
-    /// The rounding margin indicates how close we are to a rounding failure:
-    /// - Positive margin: decryption succeeded with this much safety room
-    /// - Negative margin: rounding failed (error exceeded Δ/2)
-    ///
-    /// This is the key diagnostic for noise budget exhaustion.
-    /// This function is level-aware and works with modulus-switched ciphertexts.
-    #[cfg(any(test, debug_assertions))]
+    /// Return coefficient zero and its diagnostic margin at the active level.
+    /// The margin measures distance to the decoded value's floored-Delta grid
+    /// point. Establishing that the cell still represents the original message
+    /// requires an independent bound on the input error.
     pub fn decrypt_dual_with_diagnostics(
         &self,
         ct: &DualRNSCiphertext,
@@ -3475,6 +3587,13 @@ impl RNSFHEContext {
             self.dual_poly_add(&ct.c0, &c1_s)
         };
 
+        let rns_coeff: Vec<u64> = inner.main.iter().map(|limb| limb[0]).collect();
+        self.decode_dual_constant_residues(&rns_coeff, ct_level)
+    }
+
+    /// Shared exact scalar decode rules for full-phase and coefficient-zero
+    /// decryption. Callers establish canonical residues and supported capacity.
+    fn decode_dual_constant_residues(&self, rns_coeff: &[u64], ct_level: usize) -> (u64, i128) {
         // Diagnostics use u128 reconstruction; fall back for large-Q configurations.
         // NOTE: We also need q_level * t to fit for the decoding arithmetic.
         // q_fits_u128 checks Q fits, but we need Q*t < 2^128 for the multiplication.
@@ -3486,21 +3605,20 @@ impl RNSFHEContext {
             Some(q) => q,
             None => {
                 // Q doesn't fit in u128, use U256 path
-                return self.decrypt_dual_u256(&inner, ct_level);
+                return self.decode_dual_constant_residues_u256(rns_coeff, ct_level);
             }
         };
 
         // Check if Q * t fits in u128 (needed for decode arithmetic)
         if q_level.checked_mul(self.t as u128).is_none() {
-            return self.decrypt_dual_u256(&inner, ct_level);
+            return self.decode_dual_constant_residues_u256(rns_coeff, ct_level);
         }
 
         let delta = q_level / self.t as u128;
 
         // Reconstruct constant term from main RNS (level-aware)
-        let rns_coeff: Vec<u64> = inner.main.iter().map(|limb| limb[0]).collect();
-        let is_negative = self.is_upper_half_main(&rns_coeff, ct_level);
-        let full_value = self.rns.to_int_level(&rns_coeff, ct_level);
+        let is_negative = self.is_upper_half_main(rns_coeff, ct_level);
+        let full_value = self.rns.to_int_level(rns_coeff, ct_level);
 
         // Use the computed q_level and delta (already level-aware from above)
         let delta_half = delta / 2;
@@ -3540,90 +3658,6 @@ impl RNSFHEContext {
             let error = (full_value as i128) - (ideal_point as i128);
             let margin = delta_half as i128 - error.abs();
             (decoded, margin)
-        };
-
-        (decoded, margin)
-    }
-
-    /// Non-cfg version for release builds (level-aware)
-    ///
-    /// Public to match the test/debug variant above: integration tests built
-    /// with `--release` link against this variant (noise_profile.rs).
-    #[cfg(not(any(test, debug_assertions)))]
-    pub fn decrypt_dual_with_diagnostics(
-        &self,
-        ct: &DualRNSCiphertext,
-        sk: &DualRNSSecretKey,
-    ) -> (u64, i128) {
-        #[cfg(feature = "architecture-meter")]
-        self.rns
-            .architecture_meter
-            .record_projection(cram_core::ProjectionCapability::UserOutput);
-        let ct_level = ct.c0.main.len();
-        let sk_level = sk.s.main.len();
-
-        // inner = c0 + c1 * s (level-aware)
-        let inner = if ct_level < sk_level {
-            // Ciphertext has been modulus-switched - project sk down
-            let sk_projected = self.project_poly_to_level(&sk.s, ct_level);
-            let c1_s = self.dual_poly_mul_level(&ct.c1, &sk_projected);
-            self.dual_poly_add_level(&ct.c0, &c1_s)
-        } else {
-            // Standard case: ct and sk have same level
-            let c1_s = self.dual_poly_mul(&ct.c1, &sk.s);
-            self.dual_poly_add(&ct.c0, &c1_s)
-        };
-
-        // Check if Q fits in u128 and if Q*t fits (needed for decode arithmetic)
-        let q_level_opt: Option<u128> = self.config.primes[..ct_level]
-            .iter()
-            .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128));
-
-        let q_level = match q_level_opt {
-            Some(q) if q.checked_mul(self.t as u128).is_some() => q,
-            _ => {
-                // Q doesn't fit in u128 or Q*t overflows, use U256 path
-                return self.decrypt_dual_u256(&inner, ct_level);
-            }
-        };
-
-        // Reconstruct constant term from main RNS (level-aware)
-        let rns_coeff: Vec<u64> = inner.main.iter().map(|limb| limb[0]).collect();
-        let is_negative = self.is_upper_half_main(&rns_coeff, ct_level);
-        let full_value = self.rns.to_int_level(&rns_coeff, ct_level);
-
-        let delta = q_level / self.t as u128;
-        let delta_half = delta / 2;
-        let q_half = q_level / 2;
-
-        // Decode: round(inner * t / Q_level) mod t, with margin computation
-        let (decoded, margin) = if is_negative {
-            let neg_magnitude = q_level - full_value;
-            let scaled_neg = (neg_magnitude * self.t as u128 + q_half) / q_level;
-            let decoded = if scaled_neg == 0 {
-                0
-            } else {
-                self.t - (scaled_neg % self.t as u128) as u64
-            };
-
-            // `decoded` is the WRAPPED representative (`t - k`); the ideal
-            // point is defined from the magnitude `k` — see
-            // `negative_branch_magnitude` (issue #84).
-            let k = negative_branch_magnitude(decoded, self.t);
-            let ideal_point = q_level.saturating_sub(k as u128 * delta);
-            let error = if full_value > ideal_point {
-                (full_value - ideal_point) as i128
-            } else {
-                -((ideal_point - full_value) as i128)
-            };
-            (decoded, delta_half as i128 - error.abs())
-        } else {
-            let scaled = (full_value * self.t as u128 + q_half) / q_level;
-            let decoded = (scaled % self.t as u128) as u64;
-
-            let ideal_point = decoded as u128 * delta;
-            let error = (full_value as i128) - (ideal_point as i128);
-            (decoded, delta_half as i128 - error.abs())
         };
 
         (decoded, margin)
@@ -6490,7 +6524,10 @@ fn round_div_u256_small(x: U256, delta: U256, upper: u64) -> u64 {
     let mut hi: u64 = upper;
 
     while lo < hi {
-        let mid = lo + ((hi - lo + 1) >> 1);
+        // Upper midpoint without `hi - lo + 1`, which overflows when
+        // the public quotient bound is u64::MAX (a valid plaintext modulus).
+        let distance = hi - lo;
+        let mid = lo + (distance >> 1) + (distance & 1);
         let prod = delta.mul_u64(mid);
         if prod.le(x) {
             lo = mid;
@@ -6528,7 +6565,7 @@ fn round_div_u256_small(x: U256, delta: U256, upper: u64) -> u64 {
 /// this still holds for it (`t - 0` would be wrong) for definiteness.
 ///
 /// Centralized so the U256 path (used by both the test/debug and release
-/// `decrypt_dual_with_diagnostics`) and the two duplicated u128 variants
+/// `decrypt_dual_with_diagnostics`) and the shared u128 decoder
 /// compute the same magnitude the same way and cannot drift apart.
 #[inline]
 fn negative_branch_magnitude(decoded: u64, t: u64) -> u64 {
